@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31702.278
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbEx", "src\DbEx\DbEx.csproj", "{1C02E315-1886-4F77-976F-7081764A4FCB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{97C99299-8645-46CC-A851-6F3E79112221}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbEx.Test", "tests\DbEx.Test\DbEx.Test.csproj", "{6FF78B79-D3C8-437B-A35B-55F441905A86}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1C02E315-1886-4F77-976F-7081764A4FCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C02E315-1886-4F77-976F-7081764A4FCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C02E315-1886-4F77-976F-7081764A4FCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C02E315-1886-4F77-976F-7081764A4FCB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6FF78B79-D3C8-437B-A35B-55F441905A86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FF78B79-D3C8-437B-A35B-55F441905A86}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FF78B79-D3C8-437B-A35B-55F441905A86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FF78B79-D3C8-437B-A35B-55F441905A86}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6FF78B79-D3C8-437B-A35B-55F441905A86} = {97C99299-8645-46CC-A851-6F3E79112221}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1A02148E-CFB1-43D0-8DC0-123232A179A7}
+	EndGlobalSection
+EndGlobal

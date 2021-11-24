@@ -1,0 +1,73 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>DbEx</RootNamespace>
+    <Version>1.0.1</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>DbEx Developers</Authors>
+    <Company>Avanade</Company>
+    <Description>DbEx Database Extensions.</Description>
+    <LangVersion>preview</LangVersion>
+    <Copyright>Avanade (c)</Copyright>
+    <PackageProjectUrl>https://github.com/Avanade/DbEx</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Avanade/DbEx</RepositoryUrl>
+    <Product>DbEx</Product>
+    <SignAssembly>true</SignAssembly>
+    <DelaySign>false</DelaySign>
+    <AssemblyOriginatorKeyFile>strong-name-key.snk</AssemblyOriginatorKeyFile>
+    <PackageIconUrl>https://github.com/Avanade/DbEx/raw/main/images/Logo256x256.png</PackageIconUrl>
+    <PackageIcon>Logo256x256.png</PackageIcon>
+    <RepositoryType>git</RepositoryType>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Title>DbEx Database Extensions.</Title>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <PackageTags>DbEx database dbo dbup db-up</PackageTags>
+    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+    <Nullable>enable</Nullable>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <IncludeSymbols>true</IncludeSymbols>
+    <EmbedAllSources>true</EmbedAllSources>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\SelectTableAlwaysGeneratedColumns.sql" />
+    <None Remove="Resources\SelectTableAndColumns.sql" />
+    <None Remove="Resources\SelectTableForeignKeys.sql" />
+    <None Remove="Resources\SelectTableGeneratedColumns.sql" />
+    <None Remove="Resources\SelectTableIdentityColumns.sql" />
+    <None Remove="Resources\SelectTablePrimaryKey.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\SqlServer\SelectTableAlwaysGeneratedColumns.sql" />
+    <EmbeddedResource Include="Resources\SelectTableAndColumns.sql" />
+    <EmbeddedResource Include="Resources\SelectTableForeignKeys.sql" />
+    <EmbeddedResource Include="Resources\SqlServer\SelectTableGeneratedColumns.sql" />
+    <EmbeddedResource Include="Resources\SqlServer\SelectTableIdentityColumns.sql" />
+    <EmbeddedResource Include="Resources\SelectTablePrimaryKey.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\images\Logo256x256.png" Link="Logo256x256.png">
+      <PackagePath>\</PackagePath>
+      <Pack>true</Pack>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="dbup-sqlserver" Version="4.5.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="3.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.21" />
+  </ItemGroup>
+
+</Project>
