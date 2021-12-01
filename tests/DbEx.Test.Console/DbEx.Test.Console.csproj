@@ -13,6 +13,7 @@
     <None Remove="Migrations\004-create-test-contact-table.sql" />
     <None Remove="Migrations\005-create-test-multipk-table.sql" />
     <None Remove="Migrations\006-create-test-person-table.sql" />
+    <None Remove="Resources\Table_sql.hb" />
     <None Remove="Schema\spGetContact.sql" />
   </ItemGroup>
 
@@ -24,6 +25,7 @@
     <EmbeddedResource Include="Migrations\006-create-test-person-table.sql" />
     <EmbeddedResource Include="Migrations\005-create-test-multipk-table.sql" />
     <EmbeddedResource Include="Migrations\004-create-test-contact-table.sql" />
+    <EmbeddedResource Include="Resources\Table_sql.hb" />
     <EmbeddedResource Include="Schema\spGetContact.sql" />
   </ItemGroup>
 

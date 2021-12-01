@@ -73,7 +73,10 @@ namespace DbEx.Console
 
             // Where only creating a new script, then quickly do it and get out of here!
             if (Args.MigrationCommand.HasFlag(MigrationCommand.Script))
+            {
+                Logger?.LogInformation(string.Empty);
                 return await migrator.CreateScriptAsync(Args.ScriptName, Args.ScriptParameters).ConfigureAwait(false);
+            }
 
             // Prepare 
             if (Args.DataParserArgs != null)

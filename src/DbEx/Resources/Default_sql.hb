@@ -1,5 +1,6 @@
 ﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
-{{! FILENAME:new-script }}
+{{! FILENAME:script-comment-text }}
+{{! PARAM:name=value }}
 -- Migration Script
 
 BEGIN TRANSACTION

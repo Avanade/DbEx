@@ -443,13 +443,13 @@ namespace DbEx.Migration
                 extensions = new string[] { "_sql.hb", "_sql.hbs" };
 
             // Find the resource.
-            var sr = StreamLocator.GetResourcesStreamReader(resourceName);
+            var sr = StreamLocator.GetResourcesStreamReader(resourceName, Assemblies.ToArray());
             foreach (var ext in extensions)
             {
                 if (sr != null)
                     break;
 
-                sr = StreamLocator.GetResourcesStreamReader(resourceName + ext);
+                sr = StreamLocator.GetResourcesStreamReader(resourceName + ext, Assemblies.ToArray());
             }
 
             if (sr == null)
@@ -463,6 +463,7 @@ namespace DbEx.Migration
             var txt = await usr.ReadToEndAsync().ConfigureAwait(false);
 
             // Extract the filename from content if specified.
+            var data = new { Parameters = parameters ?? new Dictionary<string, string?>() };
             var lines = txt.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
             string fn = "new-script";
             foreach (var line in lines)
@@ -471,13 +472,22 @@ namespace DbEx.Migration
                 if (lt.StartsWith("{{! FILENAME:", StringComparison.InvariantCultureIgnoreCase) && lt.EndsWith("}}", StringComparison.InvariantCultureIgnoreCase))
                 {
                     fn = lt[13..^2].Trim();
-                    break;
+                    continue;
+                }
+
+                if (lt.StartsWith("{{! PARAM:", StringComparison.InvariantCultureIgnoreCase) && lt.EndsWith("}}", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var pv = lt[10..^2].Trim();
+                    if (string.IsNullOrEmpty(pv))
+                        continue;
+
+                    var parts = pv.Split('=', StringSplitOptions.RemoveEmptyEntries);
+                    data.Parameters.TryAdd(parts[0], parts.Length <= 1 ? null : parts[1].Trim());
                 }
             }
 
             // Update the filename.
-            var data = new { Parameters = parameters };
-            fn = $"{DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture)}-{fn.Replace("[", "{{").Replace("]", "}}")}";
+            fn = $"{DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture)}-{fn.Replace("[", "{{").Replace("]", "}}")}.sql";
             fn = Path.Combine(OutputDirectory.FullName, MigrationsNamespace, new HandlebarsCodeGenerator(fn).Generate(data).Replace(" ", "-").ToLowerInvariant());
             var fi = new FileInfo(fn);
 

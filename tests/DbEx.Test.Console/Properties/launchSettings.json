@@ -2,7 +2,7 @@
   "profiles": {
     "DbEx.Test.Console": {
       "commandName": "Project",
-      "commandLineArgs": "dropandall"
+      "commandLineArgs": "script table NTangle"
     }
   }
 }

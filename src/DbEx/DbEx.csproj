@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
@@ -39,14 +39,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\SelectTableAndColumns.sql" />
-    <None Remove="Resources\SelectTableForeignKeys.sql" />
-    <None Remove="Resources\SelectTablePrimaryKey.sql" />
-    <None Remove="Resources\SqlServer\DeleteAllAndReset.sql" />
-    <None Remove="Resources\SqlServer\TableInsertOrMerge_sql.hb" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <EmbeddedResource Include="Resources\Default_sql.hb" />
     <EmbeddedResource Include="Resources\SelectTableAlwaysGeneratedColumns.sql" />
     <EmbeddedResource Include="Resources\SelectTableAndColumns.sql" />
     <EmbeddedResource Include="Resources\SelectTableForeignKeys.sql" />
