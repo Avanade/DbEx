@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.x
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build
+      run: dotnet build --no-restore
+
+    - name: Pull SqlServer
+      run: docker pull mcr.microsoft.com/mssql/server
+      
+    - name: Start SqlServer
+      run: docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=yourStrong(!)Password" --name sqlserver -p 1433:1433 -d mcr.microsoft.com/mssql/server:2019-latest
+      
+    - name: Set EnvVar for Test
+      run: |
+        echo "DbEx_ConnectionStrings__NoneDb=Data Source=localhost, 1433;Initial Catalog=DbEx.None;User id=sa;Password=yourStrong(!)Password" >> $GITHUB_ENV
+        echo "DbEx_ConnectionStrings__EmptyDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Empty;User id=sa;Password=yourStrong(!)Password" >> $GITHUB_ENV
+        echo "DbEx_ConnectionStrings__ConsoleDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Console;User id=sa;Password=yourStrong(!)Password" >> $GITHUB_ENV
+        
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+              
