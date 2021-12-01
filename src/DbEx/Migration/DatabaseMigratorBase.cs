@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using DbEx.Migration.Data;
 using DbUp.Engine;
 using Microsoft.Extensions.Logging;
 using System;
@@ -18,8 +19,10 @@ namespace DbEx.Migration
     /// </summary>
     public abstract class DatabaseMigratorBase
     {
+        private const string NothingFoundText = "  ** Nothing found. **";
+
         /// <summary>
-        /// Initializes an instance of the <see cref="SqlServerMigrator"/> class.
+        /// Initializes an instance of the <see cref="DatabaseMigratorBase"/> class.
         /// </summary>
         /// <param name="connectionString">The database connection string.</param>
         /// <param name="command">The <see cref="MigrationCommand"/>.</param>
@@ -41,6 +44,7 @@ namespace DbEx.Migration
             }
 
             Namespaces = list;
+            ParserArgs = new DataParserArgs();
         }
 
         /// <summary>
@@ -105,6 +109,12 @@ namespace DbEx.Migration
         protected abstract string[] KnownSchemaObjectTypes { get; }
 
         /// <summary>
+        /// Gets or sets the <see cref="DataParserArgs"/>.
+        /// </summary>
+        /// <remarks>This is used by <see cref="MigrationCommand.Data"/> only; specifically by the <see cref="DataParser"/>.</remarks>
+        public DataParserArgs ParserArgs { get; set; }
+
+        /// <summary>
         /// Orchestrates the migration steps as specified by the <see cref="MigrationCommand"/>.
         /// </summary>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
@@ -127,7 +137,7 @@ namespace DbEx.Migration
                 return false;
 
             // Database reset.
-            if (!await CommandExecuteAsync(MigrationCommand.Schema, "DATABASE RESET: Resets database by dropping data from all tables...", async () => await DatabaseResetAsync().ConfigureAwait(false)))
+            if (!await CommandExecuteAsync(MigrationCommand.Reset, "DATABASE RESET: Resets database by dropping data from all tables...", async () => await DatabaseResetAsync().ConfigureAwait(false)))
                 return false;
 
             // Database data load.
@@ -142,33 +152,37 @@ namespace DbEx.Migration
         /// </summary>
         private async Task<bool> CommandExecuteAsync(MigrationCommand command, string title, Func<Task<bool>> action, Func<string>? summary = null)
         {
-            if (!await OnBeforeCommandAsync(command).ConfigureAwait(false))
+            var isSelected = Command.HasFlag(command);
+
+            if (!await OnBeforeCommandAsync(command, isSelected).ConfigureAwait(false))
                 return false;
 
-            if (Command.HasFlag(MigrationCommand.Migrate))
-                return false;
+            if (isSelected)
+            {
+                if (!await CommandExecuteAsync(title, action, summary).ConfigureAwait(false))
+                    return false;
+            }
 
-            if (!await CommandExecuteAsync(title, action, summary).ConfigureAwait(false))
-                return false;
-
-            return await OnAfterCommandAsync(command).ConfigureAwait(false);
+            return await OnAfterCommandAsync(command, isSelected).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Provides an opportunity to perform additional processing <i>before</i> the <paramref name="command"/> is executed.
         /// </summary>
         /// <param name="command">The <see cref="MigrationCommand"/>.</param>
+        /// <param name="isSelected">Indicates whether the <paramref name="command"/> is selected (see <see cref="Command"/>).</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
         /// <remarks>This will be invoked for a command even where not selected for execution.</remarks>
-        protected virtual Task<bool> OnBeforeCommandAsync(MigrationCommand command) => Task.FromResult(true);
+        protected virtual Task<bool> OnBeforeCommandAsync(MigrationCommand command, bool isSelected) => Task.FromResult(true);
 
         /// <summary>
         /// Provides an opportunity to perform additional processing <i>after</i> the <paramref name="command"/> is executed.
         /// </summary>
         /// <param name="command">The <see cref="MigrationCommand"/>.</param>
+        /// <param name="isSelected">Indicates whether the <paramref name="command"/> is selected (see <see cref="Command"/>).</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
         /// <remarks>This will be invoked for a command even where not selected for execution, or unless the command execution failed.</remarks>
-        protected virtual Task<bool> OnAfterCommandAsync(MigrationCommand command) => Task.FromResult(true);
+        protected virtual Task<bool> OnAfterCommandAsync(MigrationCommand command, bool isSelected) => Task.FromResult(true);
 
         /// <summary>
         /// Wraps and times the command execution.
@@ -190,7 +204,7 @@ namespace DbEx.Migration
                 var result = await (action ?? throw new ArgumentNullException(nameof(action))).Invoke().ConfigureAwait(false);
                 sw.Stop();
 
-                Logger.LogInformation($"Complete [{sw.ElapsedMilliseconds}ms{summary?.Invoke() ?? ""}].");
+                Logger.LogInformation($"Complete [{sw.ElapsedMilliseconds}ms{summary?.Invoke() ?? string.Empty}].");
                 return result;
             }
             catch (Exception ex)
@@ -226,24 +240,28 @@ namespace DbEx.Migration
         /// </summary>
         private async Task<bool> DatabaseMigrateAsync()
         {
-            Logger.LogInformation($"Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.sql"))}");
+            Logger.LogInformation($"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.sql"))}");
 
             var scripts = new List<SqlScript>();
             foreach (var ass in Assemblies)
             {
                 foreach (var name in ass.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture))))
                 {
-                    scripts.Add(SqlScript.FromStream(name, ass.GetManifestResourceStream(name), Encoding.Default, new SqlScriptOptions { ScriptType = DbUp.Support.ScriptType.RunOnce }));
+                    // Determine run order and add script to list.
+                    var order = name.EndsWith(".pre.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 1 :
+                                name.EndsWith(".post.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 3 : 2;
+
+                    scripts.Add(SqlScript.FromStream(name, ass.GetManifestResourceStream(name), Encoding.Default, new SqlScriptOptions { RunGroupOrder = order, ScriptType = DbUp.Support.ScriptType.RunOnce }));
                 }
             }
 
             if (scripts.Count == 0)
             {
-                Logger.LogInformation($"Nothing found.");
+                Logger.LogInformation(NothingFoundText);
                 return true;
             }
 
-            Logger.LogInformation("Deploying (using DbUp) the embedded resources...");
+            Logger.LogInformation("  Migrate (using DbUp) the embedded resources...");
             return (await DeployChangesAsync(scripts).ConfigureAwait(false)).Successful;
         }
 
@@ -259,7 +277,7 @@ namespace DbEx.Migration
             if (OutputDirectory != null)
             {
                 var di = new DirectoryInfo(Path.Combine(OutputDirectory.FullName, SchemaNamespace));
-                Logger.LogInformation($"Probing for files (recursively): {Path.Combine(di.FullName, "*", "*.sql")}");
+                Logger.LogInformation($"  Probing for files (recursively): {Path.Combine(di.FullName, "*", "*.sql")}");
 
                 if (di.Exists)
                 {
@@ -274,7 +292,7 @@ namespace DbEx.Migration
             }
 
             // Get all the resources from the assemblies.
-            Logger.LogInformation($"Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{SchemaNamespace}.*.sql"))}");
+            Logger.LogInformation($"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{SchemaNamespace}.*.sql"))}");
             foreach (var ass in Assemblies)
             {
                 foreach (var rn in ass.GetManifestResourceNames())
@@ -294,7 +312,7 @@ namespace DbEx.Migration
             // Make sure there is work to be done.
             if (scripts.Count == 0)
             {
-                Logger.LogInformation($"Nothing found.");
+                Logger.LogInformation(NothingFoundText);
                 return true;
             }
 
@@ -308,7 +326,7 @@ namespace DbEx.Migration
         /// <param name="scripts">The <see cref="DatabaseMigrationScript"/> list discovered during the file and resource probes.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
         /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{Task{bool}}, Func{string}?)"/>.</remarks>
-        protected abstract Task<bool> DatabaseSchemaAsync(IReadOnlyCollection<DatabaseMigrationScript> scripts);
+        protected abstract Task<bool> DatabaseSchemaAsync(List<DatabaseMigrationScript> scripts);
 
         /// <summary>
         /// Performs the <see cref="MigrationCommand.Reset"/> command.
@@ -322,7 +340,7 @@ namespace DbEx.Migration
         /// </summary>
         private async Task<bool> DatabaseDataAsync()
         {
-            Logger.LogInformation($"Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{SchemaNamespace}.*.sql", true))}");
+            Logger.LogInformation($"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*.sql", true))}");
 
             var list = new List<(Assembly Assembly, string ResourceName)>();
             foreach (var ass in Assemblies.Reverse())
@@ -330,7 +348,7 @@ namespace DbEx.Migration
                 foreach (var rn in ass.GetManifestResourceNames())
                 {
                     // Filter on schema namespace prefix and suffix of '.sql'.
-                    if (!(Namespaces.Any(x => rn.StartsWith($"{x}.{SchemaNamespace}.", StringComparison.InvariantCulture) && rn.EndsWith(".sql", StringComparison.InvariantCultureIgnoreCase))))
+                    if (!Namespaces.Any(x => rn.StartsWith($"{x}.{DataNamespace}.", StringComparison.InvariantCulture) && (rn.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".yml", StringComparison.InvariantCultureIgnoreCase))))
                         continue;
 
                     list.Add((ass, rn));
@@ -340,21 +358,57 @@ namespace DbEx.Migration
             // Make sure there is work to be done.
             if (list.Count == 0)
             {
-                Logger.LogInformation($"Nothing found.");
+                Logger.LogInformation(NothingFoundText);
                 return true;
             }
 
-            // Execute the data insert/merge logic.
-            return await DatabaseDataAsync(list);
+            // Infer database schema.
+            Logger.LogInformation("  Querying database to infer table(s)/column(s) schema...");
+            var db = CreateDatabase(ConnectionString) ?? throw new InvalidOperationException($"An {nameof(IDatabase)} instance must be returned from the {nameof(CreateDatabase)} method.");
+            var pargs = ParserArgs ?? new DataParserArgs();
+            var dbTables = await db.SelectSchemaAsync(pargs.RefDataPredicate).ConfigureAwait(false);
+
+            // Iterate through each resource - parse the data, then insert/merge as requested.
+            var parser = new DataParser(dbTables, pargs);
+            foreach (var item in list)
+            {
+                try
+                {
+                    Logger.LogInformation(string.Empty);
+                    Logger.LogInformation($"** Parsing and executing: {item.ResourceName}");
+                    using var sr = new StreamReader(item.Assembly.GetManifestResourceStream(item.ResourceName)!);
+
+                    var tables = await parser.ParseYamlAsync(sr);
+
+                    if (!await DatabaseDataAsync(db, tables).ConfigureAwait(false))
+                        return false;
+                }
+                catch (DataParserException dpex)
+                {
+                    Logger.LogError(dpex.Message);
+                    return false;
+                }
+            }
+
+            // All good if we got this far!
+            return true;
         }
 
         /// <summary>
-        /// Performs the <see cref="MigrationCommand.Reset"/> command.
+        /// Performs the <see cref="MigrationCommand.Data"/> command.
         /// </summary>
-        /// <param name="resources">The list of resources that contain data to be inserted/merged.</param>
+        /// <param name="database">The <see cref="IDatabase"/>.</param>
+        /// <param name="dataTables">The <see cref="DataTable"/> list that contains the parsed data to be inserted/merged.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
         /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{Task{bool}}, Func{string}?)"/>.</remarks>
-        protected abstract Task<bool> DatabaseDataAsync(IReadOnlyList<(Assembly Assembly, string ResourceName)> resources);
+        protected abstract Task<bool> DatabaseDataAsync(IDatabase database, List<DataTable> dataTables);
+
+        /// <summary>
+        /// Create an <see cref="IDatabase"/> instance.
+        /// </summary>
+        /// <param name="connectionString">The database connection string.</param>
+        /// <returns>The <see cref="IDatabase"/> instance.</returns>
+        protected abstract IDatabase CreateDatabase(string connectionString);
 
         /// <summary>
         /// Gets the <see cref="Namespaces"/> with the specified namespace suffix applied.
@@ -370,7 +424,7 @@ namespace DbEx.Migration
                 list.Add($"{ns}.{suffix}");
             }
 
-            return list;
+            return list.Count == 0 ? new string[] { "(none)" } : list;
         }
     }
 }

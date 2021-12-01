@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using DbEx.Utility;
+using DbEx.Schema;
+using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -11,10 +12,10 @@ using System.Threading.Tasks;
 namespace DbEx
 {
     /// <summary>
-    /// Provides the base database access functionality.
+    /// Provides the common/base database access functionality.
     /// </summary>
     /// <typeparam name="TConnection">The <see cref="DbConnection"/> <see cref="Type"/>.</typeparam>
-    public abstract class Database<TConnection> : IDatabase, IDisposable where TConnection : DbConnection
+    public class Database<TConnection> : IDatabase, IDisposable where TConnection : DbConnection
     {
         private readonly Func<TConnection> _dbConnCreate;
         private TConnection? _dbConn;
@@ -23,7 +24,7 @@ namespace DbEx
         /// Initializes a new instance of the <see cref="Database{TConn}"/> class.
         /// </summary>
         /// <param name="create">The function to create the <typeparamref name="TConnection"/> <see cref="DbConnection"/>.</param>
-        protected Database(Func<TConnection> create) => _dbConnCreate = create ?? throw new ArgumentNullException(nameof(create));
+        public Database(Func<TConnection> create) => _dbConnCreate = create ?? throw new ArgumentNullException(nameof(create));
 
         /// <summary>
         /// Gets the <typeparamref name="TConnection"/> <see cref="DbConnection"/>.
@@ -55,30 +56,26 @@ namespace DbEx
         public virtual void OnDbException(DbException dbex) { }
 
         /// <inheritdoc/>
-        public virtual async Task<List<Schema.DbTable>> SelectSchemaAsync(Schema.DbSchemaArgs? args)
+        /// <remarks>The <paramref name="refDataPredicate"/> where not specified will default to checking whether the <see cref="DbTableSchema"/> has any non-primary key <see cref="string"/>-based <see cref="DbTableSchema.Columns">columns</see> named '<c>Code</c>' and '<c>Text</c>'.</remarks>
+        public virtual async Task<List<DbTableSchema>> SelectSchemaAsync(Func<DbTableSchema, bool>? refDataPredicate = null, string? refDataAlternateSchema = null)
         {
-            args ??= new Schema.DbSchemaArgs();
-            var tables = new List<Schema.DbTable>();
-            Schema.DbTable? table = null;
+            var tables = new List<DbTableSchema>();
+            DbTableSchema? table = null;
 
             // Get all the tables and their columns.
-            using var sr = StreamLocator.GetResourcesStreamReader("SelectTableAndColumns.sql")!;
+            using var sr = StreamLocator.GetResourcesStreamReader("SelectTableAndColumns.sql", typeof(IDatabase).Assembly)!;
             await SqlStatement(await sr.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
             {
-                var dt = new Schema.DbTable 
+                var dt = new DbTableSchema(dr.GetValue<string>("TABLE_SCHEMA"), dr.GetValue<string>("TABLE_NAME"))
                 { 
-                    Name = dr.GetValue<string>("TABLE_NAME"), 
-                    Schema = dr.GetValue<string>("TABLE_SCHEMA"), 
                     IsAView = dr.GetValue<string>("TABLE_TYPE") == "VIEW" 
                 };
 
                 if (table == null || table.Schema != dt.Schema || table.Name != dt.Name)
                     tables.Add(table = dt);
 
-                var dc = new Schema.DbColumn
+                var dc = new DbColumnSchema(table, dr.GetValue<string>("COLUMN_NAME"), dr.GetValue<string>("DATA_TYPE"))
                 {
-                    Name = dr.GetValue<string>("COLUMN_NAME"),
-                    Type = dr.GetValue<string>("DATA_TYPE"),
                     IsNullable = dr.GetValue<string>("IS_NULLABLE").ToUpperInvariant() == "YES",
                     Length = dr.GetValue<int?>("CHARACTER_MAXIMUM_LENGTH"),
                     Precision = dr.GetValue<byte?>("NUMERIC_PRECISION") ?? dr.GetValue<short?>("DATETIME_PRECISION"),
@@ -94,13 +91,14 @@ namespace DbEx
                 return tables;
 
             // Determine whether a table is considered reference data.
+            refDataPredicate ??= new Func<DbTableSchema, bool>(t => t.Columns.Any(c => c.Name == "Code" && !c.IsPrimaryKey && c.DotNetType == "string") && t.Columns.Any(c => c.Name == "Text" && !c.IsPrimaryKey && c.DotNetType == "string"));
             foreach (var t in tables)
             {
-                t.IsRefData = args.RefDataPredicate(t);
+                t.IsRefData = refDataPredicate(t);
             }
 
             // Configure all the single column primary and unique constraints.
-            using var sr2 = StreamLocator.GetResourcesStreamReader("SelectTablePrimaryKey.sql")!;
+            using var sr2 = StreamLocator.GetResourcesStreamReader("SelectTablePrimaryKey.sql", typeof(IDatabase).Assembly)!;
             var pks = await SqlStatement(await sr2.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("CONSTRAINT_NAME"),
@@ -125,17 +123,14 @@ namespace DbEx
                                select c).Single();
 
                     if (pk.IsPrimaryKey)
-                    {
                         col.IsPrimaryKey = true;
-                        col.IsIdentity = col.DefaultValue != null;
-                    }
                     else
                         col.IsUnique = true;
                 }
             }
 
             // Configure all the single column foreign keys.
-            using var sr3 = StreamLocator.GetResourcesStreamReader("SelectTableForeignKeys.sql")!;
+            using var sr3 = StreamLocator.GetResourcesStreamReader("SelectTableForeignKeys.sql", typeof(IDatabase).Assembly)!;
             var fks = await SqlStatement(await sr3.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("FK_CONSTRAINT_NAME"),
@@ -158,7 +153,59 @@ namespace DbEx
                 r.c.ForeignSchema = fk.ForeignSchema;
                 r.c.ForeignTable = fk.ForeignTable;
                 r.c.ForeignColumn = fk.ForiegnColumn;
-                r.c.IsForeignRefData = r.t.IsRefData;
+                r.c.IsForeignRefData = (from t in tables where t.Schema == fk.ForeignSchema && t.Name == fk.ForeignTable select t.IsRefData).FirstOrDefault();
+            }
+
+            // Select the table identity columns.
+            using var sr4 = StreamLocator.GetResourcesStreamReader("SelectTableIdentityColumns.sql", typeof(IDatabase).Assembly)!;
+            await SqlStatement(await sr4.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
+            {
+                var t = tables.Single(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
+                var c = t.Columns.Single(x => x.Name == dr.GetValue<string>("COLUMN_NAME"));
+                c.IsIdentity = true;
+                c.IdentitySeed = 1;
+                c.IdentityIncrement = 1;
+            })).ConfigureAwait(false);
+
+            // Select the "always" generated columns.
+            using var sr5 = StreamLocator.GetResourcesStreamReader("SelectTableAlwaysGeneratedColumns.sql", typeof(IDatabase).Assembly)!;
+            await SqlStatement(await sr5.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
+            {
+                var t = tables.Single(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
+                var c = t.Columns.Single(x => x.Name == dr.GetValue<string>("COLUMN_NAME"));
+                t.Columns.Remove(c);
+            })).ConfigureAwait(false);
+
+            // Select the generated columns.
+            using var sr6 = StreamLocator.GetResourcesStreamReader("SelectTableGeneratedColumns.sql", typeof(IDatabase).Assembly)!;
+            await SqlStatement(await sr6.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
+            {
+                var t = tables.Single(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
+                var c = t.Columns.Single(x => x.Name == dr.GetValue<string>("COLUMN_NAME"));
+                c.IsComputed = true;
+            })).ConfigureAwait(false);
+
+            // Attempt to infer foreign key reference data relationship where not explicitly specified.
+            foreach (var t in tables.Where(x => !x.IsRefData))
+            {
+                foreach (var c in t.Columns.Where(x => !x.IsPrimaryKey && x.ForeignTable == null))
+                {
+                    if (!c.Name.EndsWith("Id", StringComparison.InvariantCultureIgnoreCase))
+                        continue;
+
+                    var tn = c.Name[0..^2];
+                    var fk = tables.Where(x => x.Schema == t.Schema && x.Name == tn).SingleOrDefault();
+                    if (fk == null && refDataAlternateSchema != null)
+                        fk = tables.Where(x => x.Schema == refDataAlternateSchema && x.Name == tn).SingleOrDefault();
+
+                    if (fk == null || !fk.IsRefData || fk.PrimaryKeyColumns.Count != 1)
+                        continue;
+
+                    c.ForeignSchema = fk.Schema;
+                    c.ForeignTable = fk.Name;
+                    c.ForeignColumn = fk.PrimaryKeyColumns[0].Name;
+                    c.IsForeignRefData = true;
+                }
             }
 
             return tables;

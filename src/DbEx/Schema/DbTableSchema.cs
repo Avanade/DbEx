@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -11,14 +12,12 @@ namespace DbEx.Schema
     /// <summary>
     /// Represents the Database <b>Table</b> schema definition.
     /// </summary>
-    public class DbTable
+    public class DbTableSchema
     {
         /// <summary>
         /// The <see cref="Regex"/> expression pattern for splitting strings into words.
         /// </summary>
         public const string WordSplitPattern = "([a-z](?=[A-Z])|[A-Z](?=[A-Z][a-z]))";
-
-        private string? _name;
 
         /// <summary>
         /// Create an alias from the name.
@@ -31,32 +30,34 @@ namespace DbEx.Schema
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
 
-            var s = Regex.Replace(name, WordSplitPattern, "$1 "); // Split the string into words.
+            var s = StringConverter.ToSentenceCase(name)!;
             return new string(s.Replace(" ", " ").Replace("_", " ").Replace("-", " ").Split(' ').Where(x => !string.IsNullOrEmpty(x)).Select(x => x.Substring(0, 1).ToLower(System.Globalization.CultureInfo.InvariantCulture).ToCharArray()[0]).ToArray());
         }
 
         /// <summary>
-        /// Gets or sets the table name.
+        /// Initializes a new instance of the <see cref="DbTableSchema"/> class.
         /// </summary>
-        public string? Name
+        /// <param name="schema">The schema.</param>
+        /// <param name="name">The table name.</param>
+        public DbTableSchema(string schema, string name)
         {
-            get { return _name; }
-
-            set
-            {
-                _name = value;
-                if (!string.IsNullOrEmpty(_name) && string.IsNullOrEmpty(Alias))
-                    Alias = CreateAlias(_name);
-            }
+            Schema = schema ?? throw new ArgumentNullException(nameof(schema));
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Alias = CreateAlias(Name);
         }
 
         /// <summary>
-        /// Gets or sets the schema.
+        /// Gets the table name.
         /// </summary>
-        public string? Schema { get; set; }
+        public string Name { get; }
 
         /// <summary>
-        /// Gets or sets the alias (automatically updated when the <see cref="Name"/> is set and the current alias value is <c>null</c>).
+        /// Gets the schema.
+        /// </summary>
+        public string Schema { get; }
+
+        /// <summary>
+        /// Gets or sets the alias (automatically updated from the <see cref="Name"/> when instantiated).
         /// </summary>
         public string? Alias { get; set; }
 
@@ -76,13 +77,13 @@ namespace DbEx.Schema
         public bool IsRefData { get; set; }
 
         /// <summary>
-        /// Gets or sets the <see cref="DbColumn"/> list.
+        /// Gets or sets the <see cref="DbColumnSchema"/> list.
         /// </summary>
-        public List<DbColumn> Columns { get; private set; } = new List<DbColumn>();
+        public List<DbColumnSchema> Columns { get; private set; } = new List<DbColumnSchema>();
 
         /// <summary>
-        /// Gets the primary key <see cref="DbColumn"/> list.
+        /// Gets the primary key <see cref="DbColumnSchema"/> list.
         /// </summary>
-        public List<DbColumn> PrimaryKeyColumns => Columns?.Where(x => x.IsPrimaryKey).ToList() ?? new List<DbColumn>();
+        public List<DbColumnSchema> PrimaryKeyColumns => Columns?.Where(x => x.IsPrimaryKey).ToList() ?? new List<DbColumnSchema>();
     }
 }

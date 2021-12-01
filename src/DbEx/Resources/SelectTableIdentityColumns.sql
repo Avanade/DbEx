@@ -1,4 +1,4 @@
-﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/OnRamp
+﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 SELECT * 
    FROM INFORMATION_SCHEMA.TABLES as t

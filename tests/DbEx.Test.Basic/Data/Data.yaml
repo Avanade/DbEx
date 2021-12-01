@@ -1,0 +1,10 @@
+﻿Test:
+- $ContactType:
+  - E: External
+  - I: Internal
+- Contact:
+  - { ContactId: 1, ContactType: 1, Name: Bob, DateOfBirth: 2001-10-22 }
+  - { ContactId: 2, ContactType: I, Name: Jane, Phone: 1234 }
+- ^Person:
+  - { PersonId: 88, Name: '^(DbEx.Test.RuntimeValues.Name, DbEx.Test)' }
+  - { Name: '^(DefaultName)' }

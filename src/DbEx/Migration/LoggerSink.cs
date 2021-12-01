@@ -25,16 +25,16 @@ namespace DbEx.Migration
         /// <summary>
         /// Writes/logs an error message.
         /// </summary>
-        public void WriteError(string format, params object[] args) => Logger.LogError($"  {format}", args);
+        public void WriteError(string format, params object[] args) => Logger.LogError($"    {format}", args);
 
         /// <summary>
         /// Writes/logs an informational message.
         /// </summary>
-        public void WriteInformation(string format, params object[] args) => Logger.LogInformation($"  {format}", args);
+        public void WriteInformation(string format, params object[] args) => Logger.LogInformation($"    {format}", args);
 
         /// <summary>
         /// Writes/logs a warning message.
         /// </summary>
-        public void WriteWarning(string format, params object[] args) => Logger.LogWarning($"  {format}", args);
+        public void WriteWarning(string format, params object[] args) => Logger.LogWarning($"    {format}", args);
     }
 }

@@ -45,8 +45,9 @@ namespace DbEx
         /// <summary>
         /// Selects all the table and column schema details from the database.
         /// </summary>
-        /// <param name="args">The optional <see cref="DbSchemaArgs"/>.</param>
+        /// <param name="refDataPredicate">The reference data predicate used to determine whether a <see cref="DbTableSchema"/> is considered a reference data table (sets <see cref="DbTableSchema.IsRefData"/>).</param>
+        /// <param name="refDataSchema">The reference data alternate schema name; used where attempting to infer reference data relationship after using same schema as the first option.</param>
         /// <returns>A list of all the table and column schema details.</returns>
-        Task<List<DbTable>> SelectSchemaAsync(DbSchemaArgs? args);
+        Task<List<DbTableSchema>> SelectSchemaAsync(Func<DbTableSchema, bool>? refDataPredicate = null, string? refDataSchema = null);
     }
 }

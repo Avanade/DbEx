@@ -1,4 +1,4 @@
-﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/OnRamp
+﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 -- https://technet.microsoft.com/en-us/library/aa175805(v=sql.80).aspx
 SELECT 
