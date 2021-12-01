@@ -13,9 +13,9 @@ namespace DbEx.Test
         [Test]
         public async Task SelectSchema()
         {
-            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("BasicDb");
+            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Drop | Migration.MigrationCommand.Create | Migration.MigrationCommand.Migrate | Migration.MigrationCommand.Schema, l, typeof(Basic.Test).Assembly);
+            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Drop | Migration.MigrationCommand.Create | Migration.MigrationCommand.Migrate | Migration.MigrationCommand.Schema, l, typeof(Console.Program).Assembly);
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             var db = new Database<SqlConnection>(() => new SqlConnection(cs));
@@ -31,7 +31,7 @@ namespace DbEx.Test
             Assert.AreEqual("[Test].[ContactType]", tab.QualifiedName);
             Assert.IsFalse(tab.IsAView);
             Assert.IsTrue(tab.IsRefData);
-            Assert.AreEqual(3, tab.Columns.Count);
+            Assert.AreEqual(4, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
 
             var col = tab.Columns[0];
@@ -79,6 +79,9 @@ namespace DbEx.Test
             col = tab.Columns[2];
             Assert.AreEqual("Text", col.Name);
 
+            col = tab.Columns[3];
+            Assert.AreEqual("SortOrder", col.Name);
+
             // [Test].[Contact]
             tab = tables.Where(x => x.Name == "Contact").SingleOrDefault();
             Assert.IsNotNull(tab);
@@ -88,7 +91,7 @@ namespace DbEx.Test
             Assert.AreEqual("[Test].[Contact]", tab.QualifiedName);
             Assert.IsFalse(tab.IsAView);
             Assert.IsFalse(tab.IsRefData);
-            Assert.AreEqual(5, tab.Columns.Count);
+            Assert.AreEqual(6, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
 
             col = tab.Columns[0];
@@ -153,6 +156,27 @@ namespace DbEx.Test
             Assert.AreEqual("ContactType", col.ForeignTable);
             Assert.AreEqual("ContactTypeId", col.ForeignColumn);
             Assert.AreEqual("((1))", col.DefaultValue);
+
+            col = tab.Columns[5];
+            Assert.AreEqual("GenderId", col.Name);
+            Assert.AreEqual("int", col.Type);
+            Assert.AreEqual("INT NULL", col.SqlType);
+            Assert.IsNull(col.Length);
+            Assert.AreEqual(0, col.Scale);
+            Assert.AreEqual(10, col.Precision);
+            Assert.AreEqual("int", col.DotNetType);
+            Assert.IsTrue(col.IsNullable);
+            Assert.IsFalse(col.IsPrimaryKey);
+            Assert.IsFalse(col.IsIdentity);
+            Assert.IsNull(col.IdentitySeed);
+            Assert.IsNull(col.IdentityIncrement);
+            Assert.IsFalse(col.IsUnique);
+            Assert.IsFalse(col.IsComputed);
+            Assert.IsTrue(col.IsForeignRefData);
+            Assert.AreEqual("Test", col.ForeignSchema);
+            Assert.AreEqual("Gender", col.ForeignTable);
+            Assert.AreEqual("GenderId", col.ForeignColumn);
+            Assert.IsNull(col.DefaultValue);
 
             // [Test].[MultiPk]
             tab = tables.Where(x => x.Name == "MultiPk").SingleOrDefault();

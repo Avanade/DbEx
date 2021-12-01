@@ -36,11 +36,11 @@ namespace DbEx.Test
         }
 
         [Test]
-        public async Task A120_MigrateAll_Basic()
+        public async Task A120_MigrateAll_Console()
         {
-            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("BasicDb");
+            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Basic.Test).Assembly);
+            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Console.Program).Assembly);
 
             m.ParserArgs.Parameters.Add("DefaultName", "Bazza");
             m.ParserArgs.RefDataColumnDefaults.Add(("SortOrder", (i) => i));
@@ -57,7 +57,8 @@ namespace DbEx.Test
                 Name = dr.GetValue<string>("Name"),
                 Phone = dr.GetValue<string>("Phone"),
                 DateOfBirth = dr.GetValue<DateTime?>("DateOfBirth"),
-                ContactTypeId = dr.GetValue<int>("ContactTypeId")
+                ContactTypeId = dr.GetValue<int>("ContactTypeId"),
+                GenderId = dr.GetValue<int?>("GenderId")
             }).ConfigureAwait(false)).ToList();
 
             Assert.AreEqual(2, res.Count);
@@ -68,6 +69,7 @@ namespace DbEx.Test
             Assert.AreEqual(null, row.Phone);
             Assert.AreEqual(new DateTime(2001, 10, 22), row.DateOfBirth);
             Assert.AreEqual(1, row.ContactTypeId);
+            Assert.AreEqual(2, row.GenderId);
 
             row = res[1];
             Assert.AreEqual(2, row.ContactId);
@@ -75,6 +77,7 @@ namespace DbEx.Test
             Assert.AreEqual("1234", row.Phone);
             Assert.AreEqual(null, row.DateOfBirth);
             Assert.AreEqual(2, row.ContactTypeId);
+            Assert.IsNull(row.GenderId);
 
             // Check that the person data was updated as expected - converted and auto-assigned id, plus createdby and createddate columns, and finally runtime variable.
             var res2 = (await db.SqlStatement("SELECT * FROM [Test].[Person]").SelectAsync(dr => new
@@ -105,7 +108,8 @@ namespace DbEx.Test
                 Name = dr.GetValue<string>("Name"),
                 Phone = dr.GetValue<string>("Phone"),
                 DateOfBirth = dr.GetValue<DateTime?>("DateOfBirth"),
-                ContactTypeId = dr.GetValue<int>("ContactTypeId")
+                ContactTypeId = dr.GetValue<int>("ContactTypeId"),
+                GenderId = dr.GetValue<int?>("GenderId")
             }).ConfigureAwait(false)).ToList();
 
             Assert.AreEqual(1, res.Count);
@@ -115,6 +119,7 @@ namespace DbEx.Test
             Assert.AreEqual("1234", row.Phone);
             Assert.AreEqual(null, row.DateOfBirth);
             Assert.AreEqual(2, row.ContactTypeId);
+            Assert.IsNull(row.GenderId);
         }
     }
 }

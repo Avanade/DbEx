@@ -3,6 +3,8 @@
 using DbEx.Migration.Data;
 using DbUp.Engine;
 using Microsoft.Extensions.Logging;
+using OnRamp.Console;
+using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -43,6 +45,7 @@ namespace DbEx.Migration
                 list.Add(ass.GetName().Name!);
             }
 
+            OutputDirectory = new DirectoryInfo(CodeGenConsoleBase.GetBaseExeDirectory());
             Namespaces = list;
             ParserArgs = new DataParserArgs();
         }
@@ -70,7 +73,7 @@ namespace DbEx.Migration
         /// <summary>
         /// Gets the <see cref="Assembly"/> list to use to probe for assembly resource (in specified sequence).
         /// </summary>
-        protected IReadOnlyList<Assembly> Assemblies { get; }
+        protected List<Assembly> Assemblies { get; }
 
         /// <summary>
         /// Gets the root namespaces for the <see cref="Assemblies"/>.
@@ -83,9 +86,9 @@ namespace DbEx.Migration
         protected List<string> SchemaOrder { get; } = new List<string>();
 
         /// <summary>
-        /// Gets the output <see cref="DirectoryInfo"/> where <see cref="MigrationCommand.Schema"/> objects may be found (these will take precedence over same named embedded resources).
+        /// Gets the output parent <see cref="DirectoryInfo"/> where <see cref="MigrationCommand.Schema"/> and <see cref="CreateScriptAsync(string, IDictionary{string, string?}, string[])"/> artefacts reside.
         /// </summary>
-        protected DirectoryInfo? OutputDirectory { get; set; }
+        protected DirectoryInfo OutputDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the <b>Migrations</b> scripts namespace part name.
@@ -251,7 +254,8 @@ namespace DbEx.Migration
                     var order = name.EndsWith(".pre.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 1 :
                                 name.EndsWith(".post.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 3 : 2;
 
-                    scripts.Add(SqlScript.FromStream(name, ass.GetManifestResourceStream(name), Encoding.Default, new SqlScriptOptions { RunGroupOrder = order, ScriptType = DbUp.Support.ScriptType.RunOnce }));
+                    scripts.Add(SqlScript.FromStream(name, ass.GetManifestResourceStream(name), Encoding.Default,
+                        new SqlScriptOptions { RunGroupOrder = order, ScriptType = order == 2 ? DbUp.Support.ScriptType.RunOnce : DbUp.Support.ScriptType.RunAlways }));
                 }
             }
 
@@ -283,9 +287,7 @@ namespace DbEx.Migration
                 {
                     foreach (var fi in di.GetFiles("*.sql", SearchOption.AllDirectories))
                     {
-                        var dir = fi.DirectoryName[(OutputDirectory!.FullName.Length + 1)..];
-                        var file = fi.Name[..(fi.Name.Length - fi.Extension.Length)];
-                        var rn = $"{dir}.{file}{fi.Extension}".Replace(' ', '_').Replace('-', '_').Replace('\\', '.').Replace('/', '.');
+                        var rn = $"{OutputDirectory.Name}.{SchemaNamespace}.{fi.Name}".Replace(' ', '_').Replace('-', '_').Replace('\\', '.').Replace('/', '.');
                         scripts.Add(new DatabaseMigrationScript(fi, rn));
                     }
                 }
@@ -343,7 +345,7 @@ namespace DbEx.Migration
             Logger.LogInformation($"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*.sql", true))}");
 
             var list = new List<(Assembly Assembly, string ResourceName)>();
-            foreach (var ass in Assemblies.Reverse())
+            foreach (var ass in Assemblies.Reverse<Assembly>())
             {
                 foreach (var rn in ass.GetManifestResourceNames())
                 {
@@ -425,6 +427,68 @@ namespace DbEx.Migration
             }
 
             return list.Count == 0 ? new string[] { "(none)" } : list;
+        }
+
+        /// <summary>
+        /// Creates a new script using the <paramref name="resourceName"/> template within the <see cref="MigrationsNamespace"/> folder.
+        /// </summary>
+        /// <param name="resourceName">The script resource template name; defaults to '<c>default</c>'.</param>
+        /// <param name="parameters">The optional parameters.</param>
+        /// <param name="extensions">The optional file extensions used to probe for resource; defaults to '<c>_sql.hb</c>' and '<c>_sql.hbs</c>'.</param>
+        /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
+        public async Task<bool> CreateScriptAsync(string? resourceName = null, IDictionary<string, string?>? parameters = null, params string[] extensions)
+        {
+            resourceName ??= "default";
+            if (extensions == null || extensions.Length == 0)
+                extensions = new string[] { "_sql.hb", "_sql.hbs" };
+
+            // Find the resource.
+            var sr = StreamLocator.GetResourcesStreamReader(resourceName);
+            foreach (var ext in extensions)
+            {
+                if (sr != null)
+                    break;
+
+                sr = StreamLocator.GetResourcesStreamReader(resourceName + ext);
+            }
+
+            if (sr == null)
+            {
+                Logger.LogError($"The ScriptNew resource '{resourceName}' does not exist.");
+                return false;
+            }
+
+            // Read the resource.
+            using var usr = sr;
+            var txt = await usr.ReadToEndAsync().ConfigureAwait(false);
+
+            // Extract the filename from content if specified.
+            var lines = txt.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+            string fn = "new-script";
+            foreach (var line in lines)
+            {
+                var lt = line.Trim();
+                if (lt.StartsWith("{{! FILENAME:", StringComparison.InvariantCultureIgnoreCase) && lt.EndsWith("}}", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    fn = lt[13..^2].Trim();
+                    break;
+                }
+            }
+
+            // Update the filename.
+            var data = new { Parameters = parameters };
+            fn = $"{DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture)}-{fn.Replace("[", "{{").Replace("]", "}}")}";
+            fn = Path.Combine(OutputDirectory.FullName, MigrationsNamespace, new HandlebarsCodeGenerator(fn).Generate(data).Replace(" ", "-").ToLowerInvariant());
+            var fi = new FileInfo(fn);
+
+            // Generate the script content and write to file system.
+            if (!fi.Directory.Exists)
+                fi.Directory.Create();
+
+            await File.WriteAllTextAsync(fi.FullName, new HandlebarsCodeGenerator(txt).Generate(data)).ConfigureAwait(false);
+
+            Logger.LogWarning($"Script file created: {fi.FullName}");
+            return true;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace DbEx.Test
+﻿namespace DbEx.Test.Console
 {
     public static class RuntimeValues
     {

@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\DbEx\DbEx.csproj" />
-    <ProjectReference Include="..\DbEx.Test.Basic\DbEx.Test.Basic.csproj" />
+    <ProjectReference Include="..\DbEx.Test.Console\DbEx.Test.Console.csproj" />
     <ProjectReference Include="..\DbEx.Test.Empty\DbEx.Test.Empty.csproj" />
   </ItemGroup>
 

@@ -66,6 +66,12 @@ namespace DbEx.Migration
         /// <summary>
         /// Performs <see cref="Reset"/> and <see cref="Data"/>.
         /// </summary>
-        ResetAndData = Reset | Data
+        ResetAndData = Reset | Data,
+
+        /// <summary>
+        /// Creates a new script file using the defined naming convention.
+        /// </summary>
+        /// <remarks>This can not be used with any of the other commands.</remarks>
+        Script = 2048
     }
 }
