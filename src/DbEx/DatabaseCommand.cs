@@ -62,7 +62,7 @@ namespace DbEx
         }
 
         /// <summary>
-        ///  Executes a multi-dataset query command with one or more <see cref="IMultiSetArgs"/>.
+        /// Executes a multi-dataset query command with one or more <see cref="IMultiSetArgs"/>.
         /// </summary>
         /// <param name="multiSetArgs">One or more <see cref="IMultiSetArgs"/>.</param>
         /// <remarks>The number of <see cref="IMultiSetArgs"/> specified must match the number of returned datasets. A null dataset indicates to ignore (skip) a dataset.</remarks>
@@ -150,7 +150,7 @@ namespace DbEx
         });
 
         /// <summary>
-        /// Selects none or more items (from the first result set).
+        /// Selects none or more items from the first result set using a <paramref name="mapper"/>.
         /// </summary>
         /// <typeparam name="T">The item <see cref="Type"/>.</typeparam>
         /// <param name="mapper">The <see cref="IDatabaseMapper{T}"/>.</param>
@@ -158,10 +158,10 @@ namespace DbEx
         public async Task<IEnumerable<T>> SelectAsync<T>(IDatabaseMapper<T> mapper) => (await SelectInternal(mapper, false, false).ConfigureAwait(false)) ?? new List<T>();
 
         /// <summary>
-        /// 
+        /// Selects none or more items from the first result set.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="func"></param>
+        /// <typeparam name="T">The item <see cref="Type"/>.</typeparam>
+        /// <param name="func">The <see cref="DatabaseRecord"/> mapping function.</param>
         /// <returns></returns>
         public async Task<IEnumerable<T>> SelectAsync<T>(Func<DatabaseRecord, T> func)
         {

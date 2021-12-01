@@ -5,9 +5,9 @@ using System;
 namespace DbEx.Schema
 {
     /// <summary>
-    /// Provides Database Type helper functions.
+    /// Provides Database Type mapper/helper functions.
     /// </summary>
-    public static class DbType
+    public static class DbTypeMapper
     {
         /// <summary>
         /// Indicates whether the database type maps to a <see cref="string"/>.

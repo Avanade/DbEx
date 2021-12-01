@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using System;
 using System.Text;
 
 namespace DbEx.Schema
@@ -7,22 +8,35 @@ namespace DbEx.Schema
     /// <summary>
     /// Represents the Database <b>Column</b> schema definition.
     /// </summary>
-    public class DbColumn
+    public class DbColumnSchema
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DbColumnSchema"/> class.
+        /// </summary>
+        /// <param name="dbTable">The owning (parent) <see cref="DbTableSchema"/>.</param>
+        /// <param name="name">The column name.</param>
+        /// <param name="type">The column type.</param>
+        public DbColumnSchema(DbTableSchema dbTable, string name, string type)
+        {
+            DbTable = dbTable ?? throw new ArgumentNullException(nameof(dbTable));
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Type = type ?? throw new ArgumentNullException(nameof(type));
+        }
+
         /// <summary>
         /// Gets the owning (parent) <see cref="DbTable"/>.
         /// </summary>
-        public DbTable? DbTable { get; set; }
+        public DbTableSchema DbTable { get; }
 
         /// <summary>
         /// Gets the column name.
         /// </summary>
-        public string? Name { get; set; }
+        public string Name { get; }
 
         /// <summary>
         /// Gets the SQL Server data type.
         /// </summary>
-        public string? Type { get; set; }
+        public string Type { get; }
 
         /// <summary>
         /// Indicates whether the column is nullable.
@@ -102,7 +116,7 @@ namespace DbEx.Schema
         /// <summary>
         /// Gets the corresponding .NET <see cref="System.Type"/> name.
         /// </summary>
-        public string DotNetType => string.IsNullOrEmpty(Type) ? "string" : DbType.GetDotNetTypeName(Type);
+        public string DotNetType => string.IsNullOrEmpty(Type) ? "string" : DbTypeMapper.GetDotNetTypeName(Type);
 
         /// <summary>
         /// Gets the fully defined SQL type.
@@ -112,7 +126,7 @@ namespace DbEx.Schema
             get
             {
                 var sb = new StringBuilder(Type!.ToUpperInvariant());
-                if (DbType.TypeIsString(Type))
+                if (DbTypeMapper.TypeIsString(Type))
                     sb.Append(Length.HasValue && Length.Value > 0 ? $"({Length.Value})" : "(MAX)");
 
                 sb.Append(Type.ToUpperInvariant() switch
@@ -131,16 +145,13 @@ namespace DbEx.Schema
         }
 
         /// <summary>
-        /// Clones the <see cref="DbColumn"/> creating a new instance.
+        /// Clones the <see cref="DbColumnSchema"/> creating a new instance.
         /// </summary>
         /// <returns></returns>
-        public DbColumn Clone()
+        public DbColumnSchema Clone()
         {
-            return new DbColumn
+            return new DbColumnSchema(DbTable, Name, Type)
             {
-                DbTable = DbTable,
-                Name = Name,
-                Type = Type,
                 IsNullable = IsNullable,
                 Length = Length,
                 Precision = Precision,

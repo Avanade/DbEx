@@ -1,4 +1,4 @@
-﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/OnRamp
+﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 SELECT kcu.TABLE_SCHEMA, kcu.TABLE_NAME, kcu.CONSTRAINT_NAME, tc.CONSTRAINT_TYPE, kcu.COLUMN_NAME, kcu.ORDINAL_POSITION
   FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
