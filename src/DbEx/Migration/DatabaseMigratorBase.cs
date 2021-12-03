@@ -207,6 +207,7 @@ namespace DbEx.Migration
                 var result = await (action ?? throw new ArgumentNullException(nameof(action))).Invoke().ConfigureAwait(false);
                 sw.Stop();
 
+                Logger.LogInformation(string.Empty);
                 Logger.LogInformation($"Complete [{sw.ElapsedMilliseconds}ms{summary?.Invoke() ?? string.Empty}].");
                 return result;
             }
@@ -287,7 +288,7 @@ namespace DbEx.Migration
                 {
                     foreach (var fi in di.GetFiles("*.sql", SearchOption.AllDirectories))
                     {
-                        var rn = $"{OutputDirectory.Name}.{SchemaNamespace}.{fi.Name}".Replace(' ', '_').Replace('-', '_').Replace('\\', '.').Replace('/', '.');
+                        var rn = $"{fi.FullName[(OutputDirectory.Parent.FullName.Length + 1)..]}".Replace(' ', '_').Replace('-', '_').Replace('\\', '.').Replace('/', '.');
                         scripts.Add(new DatabaseMigrationScript(fi, rn));
                     }
                 }

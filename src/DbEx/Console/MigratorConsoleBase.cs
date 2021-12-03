@@ -117,6 +117,13 @@ namespace DbEx.Console
 ";
 
         /// <summary>
+        /// Runs the code generation using the passed <paramref name="migrationCommand"/>.
+        /// </summary>
+        /// <param name="migrationCommand">The <see cref="MigrationCommand"/>.</param>
+        /// <returns><b>Zero</b> indicates success; otherwise, unsuccessful.</returns>
+        public async Task<int> RunAsync(MigrationCommand migrationCommand) => await RunAsync(migrationCommand.ToString()).ConfigureAwait(false);
+
+        /// <summary>
         /// Runs the code generation using the passed <paramref name="args"/> string.
         /// </summary>
         /// <param name="args">The command-line arguments.</param>
