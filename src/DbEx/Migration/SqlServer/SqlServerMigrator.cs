@@ -98,6 +98,7 @@ namespace DbEx.Migration.SqlServer
         /// <inheritdoc/>
         protected override async Task<bool> DatabaseResetAsync()
         {
+            Logger.LogInformation("    Deleting data from all tables (excludes schema 'dbo' and 'cdc').");
             using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DeleteAllAndReset.sql", typeof(IDatabase).Assembly)!;
             var ss = new SqlScript($"{typeof(IDatabase).Namespace}.SqlServer.DeleteAllAndReset.sql", await sr.ReadToEndAsync().ConfigureAwait(false), new SqlScriptOptions { ScriptType = DbUp.Support.ScriptType.RunAlways });
             return (await DeployChangesAsync(new SqlScript[] { ss }).ConfigureAwait(false)).Successful;
@@ -125,7 +126,6 @@ namespace DbEx.Migration.SqlServer
                 Logger.LogInformation($"Result: {rows} rows affected.");
             }
 
-            Logger.LogInformation(string.Empty);
             return true;
         }
 

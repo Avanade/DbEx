@@ -45,7 +45,7 @@ namespace DbEx.Migration
                 list.Add(ass.GetName().Name!);
             }
 
-            OutputDirectory = new DirectoryInfo(CodeGenConsoleBase.GetBaseExeDirectory());
+            OutputDirectory = new DirectoryInfo(CodeGenConsole.GetBaseExeDirectory());
             Namespaces = list;
             ParserArgs = new DataParserArgs();
         }
@@ -204,12 +204,13 @@ namespace DbEx.Migration
             try
             {
                 var sw = Stopwatch.StartNew();
-                var result = await (action ?? throw new ArgumentNullException(nameof(action))).Invoke().ConfigureAwait(false);
-                sw.Stop();
+                if (!await (action ?? throw new ArgumentNullException(nameof(action))).Invoke().ConfigureAwait(false))
+                    return false;
 
+                sw.Stop();
                 Logger.LogInformation(string.Empty);
-                Logger.LogInformation($"Complete [{sw.ElapsedMilliseconds}ms{summary?.Invoke() ?? string.Empty}].");
-                return result;
+                Logger.LogInformation($"Complete. [{sw.ElapsedMilliseconds}ms{summary?.Invoke() ?? string.Empty}]");
+                return true;
             }
             catch (Exception ex)
             {
@@ -346,7 +347,7 @@ namespace DbEx.Migration
             Logger.LogInformation($"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*.sql", true))}");
 
             var list = new List<(Assembly Assembly, string ResourceName)>();
-            foreach (var ass in Assemblies.Reverse<Assembly>())
+            foreach (var ass in Assemblies)
             {
                 foreach (var rn in ass.GetManifestResourceNames())
                 {
@@ -444,13 +445,14 @@ namespace DbEx.Migration
                 extensions = new string[] { "_sql.hb", "_sql.hbs" };
 
             // Find the resource.
-            var sr = StreamLocator.GetResourcesStreamReader(resourceName, Assemblies.ToArray());
+            var ass = Assemblies.Concat(new Assembly[] { typeof(DatabaseMigratorBase).Assembly }).ToArray();
+            var sr = StreamLocator.GetResourcesStreamReader(resourceName, ass);
             foreach (var ext in extensions)
             {
                 if (sr != null)
                     break;
 
-                sr = StreamLocator.GetResourcesStreamReader(resourceName + ext, Assemblies.ToArray());
+                sr = StreamLocator.GetResourcesStreamReader(resourceName + ext, ass);
             }
 
             if (sr == null)

@@ -3,9 +3,9 @@
 using DbEx.Migration;
 using DbEx.Migration.Data;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace DbEx.Console
@@ -15,13 +15,6 @@ namespace DbEx.Console
     /// </summary>
     public class MigratorConsoleArgs : OnRamp.CodeGeneratorDbArgsBase
     {
-        /// <summary>
-        /// Creates a new <see cref="MigratorConsoleArgs"/> using the <typeparamref name="T"/> to infer the <see cref="Type.Assembly"/>.
-        /// </summary>
-        /// <typeparam name="T">The <see cref="Type"/> to automatically infer the <see cref="Type.Assembly"/> to <see cref="AddAssembly(Assembly[])">add</see>.</typeparam>
-        /// <returns>A new <see cref="MigratorConsoleArgs"/>.</returns>
-        public static MigratorConsoleArgs Create<T>() => new MigratorConsoleArgs().AddAssembly(typeof(T).Assembly);
-
         /// <summary>
         /// Gets or sets the <see cref="Migration.MigrationCommand"/>.
         /// </summary>
@@ -40,7 +33,12 @@ namespace DbEx.Console
         /// <returns>The current <see cref="MigratorConsoleArgs"/> instance to support fluent-style method-chaining.</returns>
         public MigratorConsoleArgs AddAssembly(params Assembly[] assemblies)
         {
-            Assemblies.InsertRange(0, assemblies);
+            foreach (var a in assemblies.Distinct().Reverse())
+            {
+                if (!Assemblies.Contains(a))
+                    Assemblies.Insert(0, a);
+            }
+
             return this;
         }
 
@@ -81,8 +79,8 @@ namespace DbEx.Console
         public string? ScriptName { get; set; }
 
         /// <summary>
-        /// Gets or sets the <see cref="MigrationCommand.Script"/> parameters.
+        /// Gets or sets the <see cref="MigrationCommand.Script"/> arguments.
         /// </summary>
-        public IDictionary<string, string?>? ScriptParameters { get; set; }
+        public IDictionary<string, string?>? ScriptArguments { get; set; }
     }
 }

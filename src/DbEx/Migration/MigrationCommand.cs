@@ -54,6 +54,16 @@ namespace DbEx.Migration
         All = Create | Migrate | Schema | Data,
 
         /// <summary>
+        /// Performs <see cref="Migrate"/> and <see cref="Schema"/>.
+        /// </summary>
+        Deploy = Migrate | Schema,
+
+        /// <summary>
+        /// Performs <see cref="Deploy"/> with <see cref="Data"/>.
+        /// </summary>
+        DeployWithData = Deploy | Data,
+
+        /// <summary>
         /// Performs <see cref="Drop"/> and <see cref="All"/>.
         /// </summary>
         DropAndAll = Drop | All,

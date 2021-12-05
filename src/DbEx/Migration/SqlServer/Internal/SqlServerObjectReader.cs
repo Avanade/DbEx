@@ -88,6 +88,10 @@ namespace DbEx.Migration.SqlServer.Internal
             _knownSchemaObjectTypes = knownSchemaObjectTypes;
             _schemaOrder = schemaOrder;
 
+            // Always default dbo first if nothing specified.
+            if (_schemaOrder.Length == 0)
+                _schemaOrder = new string[] { "dbo" };
+
             Parse();
 
             TypeOrder = GetOperationOrder();

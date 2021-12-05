@@ -4,6 +4,7 @@ using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -12,6 +13,7 @@ namespace DbEx.Schema
     /// <summary>
     /// Represents the Database <b>Table</b> schema definition.
     /// </summary>
+    [DebuggerDisplay("{QualifiedName}")]
     public class DbTableSchema
     {
         /// <summary>

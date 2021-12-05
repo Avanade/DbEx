@@ -39,7 +39,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\Alter_sql.hbs" />
+    <None Remove="Resources\CdcDb_sql.hbs" />
+    <None Remove="Resources\Cdc_sql.hbs" />
+    <None Remove="Resources\Create_sql.hbs" />
+    <None Remove="Resources\RefData_sql.hbs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Alter_sql.hbs" />
+    <EmbeddedResource Include="Resources\CdcDb_sql.hbs" />
+    <EmbeddedResource Include="Resources\Cdc_sql.hbs" />
+    <EmbeddedResource Include="Resources\Create_sql.hbs" />
     <EmbeddedResource Include="Resources\Default_sql.hb" />
+    <EmbeddedResource Include="Resources\RefData_sql.hbs" />
     <EmbeddedResource Include="Resources\SelectTableAlwaysGeneratedColumns.sql" />
     <EmbeddedResource Include="Resources\SelectTableAndColumns.sql" />
     <EmbeddedResource Include="Resources\SelectTableForeignKeys.sql" />

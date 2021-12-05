@@ -1,0 +1,11 @@
+﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
+{{! FILENAME:enable-cdc-for-[lookup Parameters 'Param1']-[lookup Parameters 'Param2']-table }}
+{{! PARAM:Param1=Schema }}
+{{! PARAM:Param2=Name }}
+-- Enable Change-Data-Capture (CDC) for table: [{{lookup Parameters 'Param1'}}].[{{lookup Parameters 'Param2'}}]
+
+EXEC sys.sp_cdc_enable_table
+  @source_schema = N'{{lookup Parameters 'Param1'}}',
+  @source_name   = N'{{lookup Parameters 'Param2'}}',
+  @role_name     = null,
+  @supports_net_changes = 0

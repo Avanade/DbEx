@@ -43,7 +43,7 @@ namespace DbEx.Test
             var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Console.Program).Assembly);
 
             m.ParserArgs.Parameters.Add("DefaultName", "Bazza");
-            m.ParserArgs.RefDataColumnDefaults.Add(("SortOrder", (i) => i));
+            m.ParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
 
             var r = await m.MigrateAsync().ConfigureAwait(false);
 

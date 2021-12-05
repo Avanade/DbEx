@@ -57,7 +57,7 @@ namespace DbEx
 
         /// <inheritdoc/>
         /// <remarks>The <paramref name="refDataPredicate"/> where not specified will default to checking whether the <see cref="DbTableSchema"/> has any non-primary key <see cref="string"/>-based <see cref="DbTableSchema.Columns">columns</see> named '<c>Code</c>' and '<c>Text</c>'.</remarks>
-        public virtual async Task<List<DbTableSchema>> SelectSchemaAsync(Func<DbTableSchema, bool>? refDataPredicate = null, string? refDataAlternateSchema = null)
+        public virtual async Task<List<DbTableSchema>> SelectSchemaAsync(Func<DbTableSchema, bool>? refDataPredicate = null)
         {
             var tables = new List<DbTableSchema>();
             DbTableSchema? table = null;
@@ -123,7 +123,10 @@ namespace DbEx
                                select c).Single();
 
                     if (pk.IsPrimaryKey)
+                    {
                         col.IsPrimaryKey = true;
+                        col.IsIdentity = col.DefaultValue != null;
+                    }
                     else
                         col.IsUnique = true;
                 }
@@ -185,20 +188,17 @@ namespace DbEx
                 c.IsComputed = true;
             })).ConfigureAwait(false);
 
-            // Attempt to infer foreign key reference data relationship where not explicitly specified.
-            foreach (var t in tables.Where(x => !x.IsRefData))
+            // Attempt to infer foreign key reference data relationship where not explicitly specified. 
+            foreach (var t in tables)
             {
                 foreach (var c in t.Columns.Where(x => !x.IsPrimaryKey && x.ForeignTable == null))
                 {
                     if (!c.Name.EndsWith("Id", StringComparison.InvariantCultureIgnoreCase))
                         continue;
 
-                    var tn = c.Name[0..^2];
-                    var fk = tables.Where(x => x.Schema == t.Schema && x.Name == tn).SingleOrDefault();
-                    if (fk == null && refDataAlternateSchema != null)
-                        fk = tables.Where(x => x.Schema == refDataAlternateSchema && x.Name == tn).SingleOrDefault();
-
-                    if (fk == null || !fk.IsRefData || fk.PrimaryKeyColumns.Count != 1)
+                    // Find table with same name as column in any schema that is considered reference data and has a single primary key.
+                    var fk = tables.Where(x => x != t && x.Name == c.Name[0..^2] && x.IsRefData && x.PrimaryKeyColumns.Count == 1).FirstOrDefault();
+                    if (fk == null)
                         continue;
 
                     c.ForeignSchema = fk.Schema;
