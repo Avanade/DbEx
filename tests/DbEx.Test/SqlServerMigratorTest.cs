@@ -16,7 +16,7 @@ namespace DbEx.Test
         [Test]
         public async Task A100_MigrateAll_None()
         {
-            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("NoneDb");
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("NoneDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
             var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l);
             var r = await m.MigrateAsync().ConfigureAwait(false);
@@ -27,7 +27,7 @@ namespace DbEx.Test
         [Test]
         public async Task A110_MigrateAll_Empty()
         {
-            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("EmptyDb");
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("EmptyDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
             var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Empty.Test).Assembly);
             var r = await m.MigrateAsync().ConfigureAwait(false);
@@ -38,7 +38,7 @@ namespace DbEx.Test
         [Test]
         public async Task A120_MigrateAll_Console()
         {
-            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("ConsoleDb");
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
             var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Console.Program).Assembly);
 
@@ -125,7 +125,7 @@ namespace DbEx.Test
         [Test]
         public async Task B100_Execute_Console_Success()
         {
-            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("ConsoleDb");
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
             var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Execute, l, typeof(Console.Program).Assembly);
 
@@ -136,7 +136,7 @@ namespace DbEx.Test
         [Test]
         public async Task B100_Execute_Console_Error()
         {
-            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("ConsoleDb");
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
             var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Execute, l, typeof(Console.Program).Assembly);
 

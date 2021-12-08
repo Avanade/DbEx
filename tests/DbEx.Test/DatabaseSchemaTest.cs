@@ -13,7 +13,7 @@ namespace DbEx.Test
         [Test]
         public async Task SelectSchema()
         {
-            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("ConsoleDb");
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
             var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Drop | Migration.MigrationCommand.Create | Migration.MigrationCommand.Migrate | Migration.MigrationCommand.Schema, l, typeof(Console.Program).Assembly);
             var r = await m.MigrateAsync().ConfigureAwait(false);
