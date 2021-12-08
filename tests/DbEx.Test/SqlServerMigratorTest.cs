@@ -2,6 +2,7 @@
 using DbEx.Migration.SqlServer;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 using System;
 using System.Linq;
@@ -38,16 +39,7 @@ namespace DbEx.Test
         [Test]
         public async Task A120_MigrateAll_Console()
         {
-            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Console.Program).Assembly);
-
-            m.ParserArgs.Parameters.Add("DefaultName", "Bazza");
-            m.ParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
-
-            var r = await m.MigrateAsync().ConfigureAwait(false);
-
-            Assert.IsTrue(r);
+            var (cs, l, m) = await CreateConsoleDb().ConfigureAwait(false);
 
             // Check that the contact data was updated as expected.
             var db = new Database<SqlConnection>(() => new SqlConnection(cs));
@@ -122,12 +114,27 @@ namespace DbEx.Test
             Assert.IsNull(row.GenderId);
         }
 
-        [Test]
-        public async Task B100_Execute_Console_Success()
+        private async Task<(string cs, ILogger l, SqlServerMigrator m)> CreateConsoleDb()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Execute, l, typeof(Console.Program).Assembly);
+            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Console.Program).Assembly);
+
+            m.ParserArgs.Parameters.Add("DefaultName", "Bazza");
+            m.ParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
+
+            var r = await m.MigrateAsync().ConfigureAwait(false);
+
+            Assert.IsTrue(r);
+
+            return (cs, l, m);
+        }
+
+        [Test]
+        public async Task B100_Execute_Console_Success()
+        {
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
 
             var r = await m.ExecuteSqlStatementsAsync("SELECT * FROM Test.Contact").ConfigureAwait(false);
             Assert.IsTrue(r);
@@ -136,9 +143,8 @@ namespace DbEx.Test
         [Test]
         public async Task B100_Execute_Console_Error()
         {
-            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Execute, l, typeof(Console.Program).Assembly);
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
 
             var r = await m.ExecuteSqlStatementsAsync("SELECT * FROM Test.Contact", "SELECT BANANAS").ConfigureAwait(false);
             Assert.IsFalse(r);
