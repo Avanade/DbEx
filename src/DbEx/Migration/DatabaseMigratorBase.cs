@@ -35,8 +35,6 @@ namespace DbEx.Migration
             ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
             Command = command;
             Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            LoggerSink = new LoggerSink(logger);
-
             Assemblies = new List<Assembly>(assemblies ?? Array.Empty<Assembly>());
 
             var list = new List<string>();
@@ -64,11 +62,6 @@ namespace DbEx.Migration
         /// Gets the <see cref="ILogger"/>.
         /// </summary>
         protected ILogger Logger { get;  }
-
-        /// <summary>
-        /// Gets the <see cref="Migration.LoggerSink"/>.
-        /// </summary>
-        protected LoggerSink LoggerSink { get; }
 
         /// <summary>
         /// Gets the <see cref="Assembly"/> list to use to probe for assembly resource (in specified sequence).
@@ -234,6 +227,22 @@ namespace DbEx.Migration
         public abstract Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts);
 
         /// <summary>
+        /// Check the <see cref="DatabaseUpgradeResult"/> and report error where not <see cref="DatabaseUpgradeResult.Successful"/>.
+        /// </summary>
+        /// <param name="r">The <see cref="DatabaseUpgradeResult"/>.</param>
+        /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
+        protected bool CheckDatabaseUpgradeResult(DatabaseUpgradeResult r)
+        {
+            if (r.Successful)
+                return true;
+
+            Logger.LogInformation(string.Empty);
+            Logger.LogError($"Error occured executing script: {r.ErrorScript.Name}");
+            Logger.LogError(r.Error, r.Error.Message);
+            return false;
+        }
+
+        /// <summary>
         /// Performs the <see cref="MigrationCommand.Drop"/> command.
         /// </summary>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
@@ -275,7 +284,7 @@ namespace DbEx.Migration
             }
 
             Logger.LogInformation("  Migrate (using DbUp) the embedded resources...");
-            return (await ExecuteScriptsAsync(scripts).ConfigureAwait(false)).Successful;
+            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(scripts).ConfigureAwait(false)));
         }
 
         /// <summary>

@@ -38,7 +38,7 @@ namespace DbEx.Migration.SqlServer
         protected override Task<bool> DatabaseDropAsync()
         {
             Logger.LogInformation("  Drop database (using DbUp)...");
-            DropDatabase.For.SqlDatabase(ConnectionString, LoggerSink);
+            DropDatabase.For.SqlDatabase(ConnectionString, new LoggerSink(Logger));
             return Task.FromResult(true);
         }
 
@@ -46,7 +46,7 @@ namespace DbEx.Migration.SqlServer
         protected override Task<bool> DatabaseCreateAsync()
         {
             Logger.LogInformation("  Create database (using DbUp)...");
-            EnsureDatabase.For.SqlDatabase(ConnectionString, LoggerSink);
+            EnsureDatabase.For.SqlDatabase(ConnectionString, new LoggerSink(Logger));
             return Task.FromResult(true);
         }
 
@@ -92,7 +92,7 @@ namespace DbEx.Migration.SqlServer
                 ss.Add(new SqlScript(sor.ScriptName, sor.GetSql(), new SqlScriptOptions { RunGroupOrder = i++, ScriptType = DbUp.Support.ScriptType.RunAlways }));
             }
 
-            return (await ExecuteScriptsAsync(ss).ConfigureAwait(false)).Successful;
+            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(ss).ConfigureAwait(false));
         }
 
         /// <inheritdoc/>
@@ -101,7 +101,7 @@ namespace DbEx.Migration.SqlServer
             Logger.LogInformation("    Deleting data from all tables (excludes schema 'dbo' and 'cdc').");
             using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DeleteAllAndReset.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             var ss = new SqlScript($"{typeof(IDatabase).Namespace}.SqlServer.DeleteAllAndReset.sql", await sr.ReadToEndAsync().ConfigureAwait(false), new SqlScriptOptions { ScriptType = DbUp.Support.ScriptType.RunAlways });
-            return (await ExecuteScriptsAsync(new SqlScript[] { ss }).ConfigureAwait(false)).Successful;
+            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(new SqlScript[] { ss }).ConfigureAwait(false));
         }
 
         /// <inheritdoc/>
@@ -133,12 +133,12 @@ namespace DbEx.Migration.SqlServer
         protected override IDatabase CreateDatabase(string connectionString) => new Database<SqlConnection>(() => new SqlConnection(connectionString));
 
         /// <inheritdoc/>
-        public override Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts)
-            => Task.FromResult(DbUp.DeployChanges.To
+        public override Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts) => Task.FromResult(
+            DbUp.DeployChanges.To
                 .SqlDatabase(ConnectionString)
                 .WithScripts(scripts)
-                .WithoutTransaction()                                                                                                                                       
-                .LogTo(LoggerSink)
+                .WithoutTransaction()        
+                .LogTo(new LoggerSink(Logger) { SwallowError = true })
                 .Build()
                 .PerformUpgrade());
     }
