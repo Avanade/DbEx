@@ -43,11 +43,12 @@ namespace DbEx.Migration.SqlServer
         }
 
         /// <inheritdoc/>
-        protected override Task<bool> DatabaseCreateAsync()
+        protected override async Task<bool> DatabaseCreateAsync()
         {
             Logger.LogInformation("  Create database (using DbUp)...");
             EnsureDatabase.For.SqlDatabase(ConnectionString, new LoggerSink(Logger));
-            return Task.FromResult(true);
+            await Task.Delay(1000);
+            return true;
         }
 
         /// <inheritdoc/>
