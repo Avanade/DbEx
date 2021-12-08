@@ -284,7 +284,7 @@ namespace DbEx.Migration
             }
 
             Logger.LogInformation("  Migrate (using DbUp) the embedded resources...");
-            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(scripts).ConfigureAwait(false)));
+            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(scripts).ConfigureAwait(false));
         }
 
         /// <summary>
