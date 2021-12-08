@@ -435,7 +435,7 @@ namespace DbEx.Migration
                 list.Add($"{ns}.{suffix}");
             }
 
-            return list.Count == 0 ? new string[] { "(none)" } : list;
+            return list.Count == 0 ? new string[] { "(none)" } : list.ToArray();
         }
 
         /// <summary>
