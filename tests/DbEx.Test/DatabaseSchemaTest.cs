@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 namespace DbEx.Test
 {
     [TestFixture]
+    [NonParallelizable]
     public class DatabaseSchemaTest
     {
         [Test]
