@@ -82,5 +82,10 @@ namespace DbEx.Console
         /// Gets or sets the <see cref="MigrationCommand.Script"/> arguments.
         /// </summary>
         public IDictionary<string, string?>? ScriptArguments { get; set; }
+
+        /// <summary>
+        /// Gets or sets the <see cref="MigrationCommand.Execute"/> statements.
+        /// </summary>
+        public List<string>? ExecuteStatements { get; set; }
     }
 }

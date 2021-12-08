@@ -5,7 +5,8 @@ namespace DbEx.Test.Console
 {
     public class Program 
     {
-        internal static Task<int> Main(string[] args) => new SqlServerMigratorConsole("Data Source=.;Initial Catalog=DbEx.Console;Integrated Security=True")
+        internal static Task<int> Main(string[] args) => SqlServerMigratorConsole
+            .Create<Program>("Data Source=.;Initial Catalog=DbEx.Console;Integrated Security=True")
             .ConsoleArgs(a =>
             {
                 a.DataParserArgs.Parameters.Add("DefaultName", "Bazza");

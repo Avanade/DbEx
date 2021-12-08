@@ -45,12 +45,13 @@ namespace DbEx.Console
 
             // Where only creating a new script, then quickly do it and get out of here!
             if (Args.MigrationCommand.HasFlag(MigrationCommand.Script))
-            {
-                Logger?.LogInformation(string.Empty);
-                return await migrator.CreateScriptAsync(Args.ScriptName, Args.ScriptArguments).ConfigureAwait(false);
-            }
+                return await RunScriptCommand(migrator).ConfigureAwait(false);
 
-            // Prepare 
+            // Where only executing SQL statement, then execute and get out of here!
+            if (Args.MigrationCommand.HasFlag(MigrationCommand.Execute))
+                return await RunExecuteCommand(migrator).ConfigureAwait(false);
+
+            // Perform migration.
             if (Args.DataParserArgs != null)
                 migrator.ParserArgs = Args.DataParserArgs;
 
@@ -62,5 +63,15 @@ namespace DbEx.Console
 
             return true;
         }
+
+        /// <summary>
+        /// Executes the <see cref="MigrationCommand.Script"/> command.
+        /// </summary>
+        private async Task<bool> RunScriptCommand(SqlServerMigrator migrator) => await migrator.CreateScriptAsync(Args.ScriptName, Args.ScriptArguments).ConfigureAwait(false);
+
+        /// <summary>
+        /// Executes the <see cref="MigrationCommand.Execute"/> command.
+        /// </summary>
+        private async Task<bool> RunExecuteCommand(SqlServerMigrator migrator) => await migrator.ExecuteSqlStatementsAsync(Args.ExecuteStatements?.ToArray() ?? Array.Empty<string>()).ConfigureAwait(false);
     }
 }

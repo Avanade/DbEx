@@ -79,7 +79,7 @@ namespace DbEx.Migration.SqlServer
                 ss.Add(new SqlScript(sql, sql, new SqlScriptOptions { RunGroupOrder = i++, ScriptType = DbUp.Support.ScriptType.RunAlways }));
             }
 
-            var r = await DeployChangesAsync(ss).ConfigureAwait(false);
+            var r = await ExecuteScriptsAsync(ss).ConfigureAwait(false);
             if (!r.Successful)
                 return false;
 
@@ -92,16 +92,16 @@ namespace DbEx.Migration.SqlServer
                 ss.Add(new SqlScript(sor.ScriptName, sor.GetSql(), new SqlScriptOptions { RunGroupOrder = i++, ScriptType = DbUp.Support.ScriptType.RunAlways }));
             }
 
-            return (await DeployChangesAsync(ss).ConfigureAwait(false)).Successful;
+            return (await ExecuteScriptsAsync(ss).ConfigureAwait(false)).Successful;
         }
 
         /// <inheritdoc/>
         protected override async Task<bool> DatabaseResetAsync()
         {
             Logger.LogInformation("    Deleting data from all tables (excludes schema 'dbo' and 'cdc').");
-            using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DeleteAllAndReset.sql", typeof(IDatabase).Assembly)!;
+            using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DeleteAllAndReset.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             var ss = new SqlScript($"{typeof(IDatabase).Namespace}.SqlServer.DeleteAllAndReset.sql", await sr.ReadToEndAsync().ConfigureAwait(false), new SqlScriptOptions { ScriptType = DbUp.Support.ScriptType.RunAlways });
-            return (await DeployChangesAsync(new SqlScript[] { ss }).ConfigureAwait(false)).Successful;
+            return (await ExecuteScriptsAsync(new SqlScript[] { ss }).ConfigureAwait(false)).Successful;
         }
 
         /// <inheritdoc/>
@@ -110,7 +110,7 @@ namespace DbEx.Migration.SqlServer
             // Cache the compiled code-gen template.
             if (_codeGen == null)
             {
-                using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.TableInsertOrMerge_sql.hb", typeof(IDatabase).Assembly)!;
+                using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.TableInsertOrMerge_sql.hb", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
                 _codeGen = new HandlebarsCodeGenerator(await sr.ReadToEndAsync().ConfigureAwait(false));
             }
 
@@ -133,7 +133,7 @@ namespace DbEx.Migration.SqlServer
         protected override IDatabase CreateDatabase(string connectionString) => new Database<SqlConnection>(() => new SqlConnection(connectionString));
 
         /// <inheritdoc/>
-        protected override Task<DatabaseUpgradeResult> DeployChangesAsync(IEnumerable<SqlScript> scripts)
+        public override Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts)
             => Task.FromResult(DbUp.DeployChanges.To
                 .SqlDatabase(ConnectionString)
                 .WithScripts(scripts)

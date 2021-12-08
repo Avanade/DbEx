@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace DbEx
@@ -63,7 +64,7 @@ namespace DbEx
             DbTableSchema? table = null;
 
             // Get all the tables and their columns.
-            using var sr = StreamLocator.GetResourcesStreamReader("SelectTableAndColumns.sql", typeof(IDatabase).Assembly)!;
+            using var sr = StreamLocator.GetResourcesStreamReader("SelectTableAndColumns.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             await SqlStatement(await sr.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
             {
                 var dt = new DbTableSchema(dr.GetValue<string>("TABLE_SCHEMA"), dr.GetValue<string>("TABLE_NAME"))
@@ -98,7 +99,7 @@ namespace DbEx
             }
 
             // Configure all the single column primary and unique constraints.
-            using var sr2 = StreamLocator.GetResourcesStreamReader("SelectTablePrimaryKey.sql", typeof(IDatabase).Assembly)!;
+            using var sr2 = StreamLocator.GetResourcesStreamReader("SelectTablePrimaryKey.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             var pks = await SqlStatement(await sr2.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("CONSTRAINT_NAME"),
@@ -133,7 +134,7 @@ namespace DbEx
             }
 
             // Configure all the single column foreign keys.
-            using var sr3 = StreamLocator.GetResourcesStreamReader("SelectTableForeignKeys.sql", typeof(IDatabase).Assembly)!;
+            using var sr3 = StreamLocator.GetResourcesStreamReader("SelectTableForeignKeys.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             var fks = await SqlStatement(await sr3.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("FK_CONSTRAINT_NAME"),
@@ -160,7 +161,7 @@ namespace DbEx
             }
 
             // Select the table identity columns.
-            using var sr4 = StreamLocator.GetResourcesStreamReader("SelectTableIdentityColumns.sql", typeof(IDatabase).Assembly)!;
+            using var sr4 = StreamLocator.GetResourcesStreamReader("SelectTableIdentityColumns.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             await SqlStatement(await sr4.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
             {
                 var t = tables.Single(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
@@ -171,7 +172,7 @@ namespace DbEx
             })).ConfigureAwait(false);
 
             // Select the "always" generated columns.
-            using var sr5 = StreamLocator.GetResourcesStreamReader("SelectTableAlwaysGeneratedColumns.sql", typeof(IDatabase).Assembly)!;
+            using var sr5 = StreamLocator.GetResourcesStreamReader("SelectTableAlwaysGeneratedColumns.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             await SqlStatement(await sr5.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
             {
                 var t = tables.Single(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
@@ -180,7 +181,7 @@ namespace DbEx
             })).ConfigureAwait(false);
 
             // Select the generated columns.
-            using var sr6 = StreamLocator.GetResourcesStreamReader("SelectTableGeneratedColumns.sql", typeof(IDatabase).Assembly)!;
+            using var sr6 = StreamLocator.GetResourcesStreamReader("SelectTableGeneratedColumns.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             await SqlStatement(await sr6.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
             {
                 var t = tables.Single(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));

@@ -1,0 +1,11 @@
+﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
+{{! FILENAME:create-[lookup Parameters 'Param1']-schema }}
+{{! PARAM:Param1=Name }}
+-- Create schema: [{{lookup Parameters 'Param1'}}]
+
+BEGIN TRANSACTION
+
+CREATE SCHEMA [{{lookup Parameters 'Param1'}}]
+    AUTHORIZATION [dbo];
+
+COMMIT TRANSACTION

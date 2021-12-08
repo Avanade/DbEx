@@ -28,7 +28,7 @@ namespace DbEx.Console
     {
         private const string EntryAssemblyOnlyOptionName = "EO";
         private CommandArgument<MigrationCommand>? _commandArg;
-        private CommandArgument? _scriptArgs;
+        private CommandArgument? _additionalArgs;
         private readonly Dictionary<string, CommandOption?> _options = new();
 
         /// <summary>
@@ -107,7 +107,7 @@ namespace DbEx.Console
             _options.Add(nameof(MigratorConsoleArgs.OutputDirectory), app.Option("-o|--output", "Output directory path.", CommandOptionType.MultipleValue).Accepts(v => v.ExistingDirectory("Output directory path does not exist.")));
             _options.Add(nameof(MigratorConsoleArgs.Assemblies), app.Option("-a|--assembly", "Assembly containing embedded resources (multiple can be specified in probing order).", CommandOptionType.MultipleValue));
             _options.Add(EntryAssemblyOnlyOptionName, app.Option("-eo|--entry-assembly-only", "Use the entry assembly only (ignore all other assemblies).", CommandOptionType.NoValue));
-            _scriptArgs = app.Argument("script-args", "Script arguments (first being the script name).", multipleValues: true);
+            _additionalArgs = app.Argument("args", "Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each a SQL statement to invoke).", multipleValues: true);
 
             OnBeforeExecute(app);
 
@@ -136,17 +136,32 @@ namespace DbEx.Console
                     Args.AddAssembly(Assembly.GetEntryAssembly()!);
                 });
 
-                if (_scriptArgs.Values.Count > 0 && !Args.MigrationCommand.HasFlag(MigrationCommand.Script))
-                    return new ValidationResult($"Additional arguments can only be specified when the command is '{nameof(MigrationCommand.Script)}'.", new string[] { "script-args" });
+                if (_additionalArgs.Values.Count > 0 && !(Args.MigrationCommand.HasFlag(MigrationCommand.Script) || Args.MigrationCommand.HasFlag(MigrationCommand.Execute)))
+                    return new ValidationResult($"Additional arguments can only be specified when the command is '{nameof(MigrationCommand.Script)}' or '{nameof(MigrationCommand.Execute)}'.", new string[] { "args" });
 
-                for (int i = 0; i < _scriptArgs.Values.Count; i++)
+                if (Args.MigrationCommand.HasFlag(MigrationCommand.Script))
                 {
-                    if (i == 0)
-                        Args.ScriptName = _scriptArgs.Values[i];
-                    else
+                    for (int i = 0; i < _additionalArgs.Values.Count; i++)
                     {
-                        Args.ScriptArguments ??= new Dictionary<string, string?>();
-                        Args.ScriptArguments.Add($"Param{i}", _scriptArgs.Values[i]);
+                        if (i == 0)
+                            Args.ScriptName = _additionalArgs.Values[i];
+                        else
+                        {
+                            Args.ScriptArguments ??= new Dictionary<string, string?>();
+                            Args.ScriptArguments.Add($"Param{i}", _additionalArgs.Values[i]);
+                        }
+                    }
+                }
+
+                if (Args.MigrationCommand.HasFlag(MigrationCommand.Execute))
+                {
+                    for (int i = 0; i < _additionalArgs.Values.Count; i++)
+                    {
+                        if (string.IsNullOrEmpty(_additionalArgs.Values[i]))
+                            continue;
+
+                        Args.ExecuteStatements ??= new List<string>();
+                        Args.ExecuteStatements.Add(_additionalArgs.Values[i]!);
                     }
                 }
 

@@ -121,5 +121,27 @@ namespace DbEx.Test
             Assert.AreEqual(2, row.ContactTypeId);
             Assert.IsNull(row.GenderId);
         }
+
+        [Test]
+        public async Task B100_Execute_Console_Success()
+        {
+            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("ConsoleDb");
+            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Execute, l, typeof(Console.Program).Assembly);
+
+            var r = await m.ExecuteSqlStatementsAsync("SELECT * FROM Test.Contact").ConfigureAwait(false);
+            Assert.IsTrue(r);
+        }
+
+        [Test]
+        public async Task B100_Execute_Console_Error()
+        {
+            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("ConsoleDb");
+            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Execute, l, typeof(Console.Program).Assembly);
+
+            var r = await m.ExecuteSqlStatementsAsync("SELECT * FROM Test.Contact", "SELECT BANANAS").ConfigureAwait(false);
+            Assert.IsFalse(r);
+        }
     }
 }
