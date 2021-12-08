@@ -74,7 +74,7 @@
 
   <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="4.5.0" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="3.0.1" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="4.0.0" />
     <PackageReference Include="OnRamp" Version="1.0.3" />
   </ItemGroup>
 
