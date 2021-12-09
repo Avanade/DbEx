@@ -16,9 +16,13 @@ namespace DbEx.Test
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Drop | Migration.MigrationCommand.Create | Migration.MigrationCommand.Migrate | Migration.MigrationCommand.Schema, l, typeof(Console.Program).Assembly);
+            //var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Drop | Migration.MigrationCommand.Create | Migration.MigrationCommand.Migrate | Migration.MigrationCommand.Schema, l, typeof(Console.Program).Assembly);
+            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Drop | Migration.MigrationCommand.Create | Migration.MigrationCommand.Migrate, l, typeof(Console.Program).Assembly);
             var r = await m.MigrateAsync().ConfigureAwait(false);
             Assert.IsTrue(r);
+
+            if (r)
+                return;
 
             using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
             var tables = await db.SelectSchemaAsync().ConfigureAwait(false);
