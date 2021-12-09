@@ -133,18 +133,18 @@ namespace DbEx.Migration.SqlServer
         protected override IDatabase CreateDatabase(string connectionString) => new Database<SqlConnection>(() => new SqlConnection(connectionString));
 
         /// <inheritdoc/>
-        public async override Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts)
+        public override async Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts)
         {
             return await Task.Run(() =>
             {
-                return Task.FromResult(
+                return 
                     DbUp.DeployChanges.To
                         .SqlDatabase(ConnectionString)
                         .WithScripts(scripts)
                         .WithoutTransaction()
-                        .LogTo(new LoggerSink(Logger) { SwallowError = true })
+                        .LogTo(new LoggerSink(Logger))
                         .Build()
-                        .PerformUpgrade());
+                        .PerformUpgrade();
             }).ConfigureAwait(false);
         }
     }
