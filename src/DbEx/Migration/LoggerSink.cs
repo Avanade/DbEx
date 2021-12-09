@@ -25,7 +25,7 @@ namespace DbEx.Migration
         /// <summary>
         /// Writes/logs an error message.
         /// </summary>
-        public void WriteError(string format, params object[] args) => Logger.LogError($"    {format}", args);
+        public void WriteError(string format, params object[] args) { }
 
         /// <summary>
         /// Writes/logs an informational message.
