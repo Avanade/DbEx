@@ -43,12 +43,11 @@ namespace DbEx.Migration.SqlServer
         }
 
         /// <inheritdoc/>
-        protected override async Task<bool> DatabaseCreateAsync()
+        protected override Task<bool> DatabaseCreateAsync()
         {
             Logger.LogInformation("  Create database (using DbUp)...");
             EnsureDatabase.For.SqlDatabase(ConnectionString, new LoggerSink(Logger));
-            await Task.Delay(5000);
-            return true;
+            return Task.FromResult(true);
         }
 
         /// <inheritdoc/>
@@ -134,13 +133,29 @@ namespace DbEx.Migration.SqlServer
         protected override IDatabase CreateDatabase(string connectionString) => new Database<SqlConnection>(() => new SqlConnection(connectionString));
 
         /// <inheritdoc/>
-        public override Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts) => Task.FromResult(
-            DbUp.DeployChanges.To
-                .SqlDatabase(ConnectionString)
-                .WithScripts(scripts)
-                .WithoutTransaction()        
-                .LogTo(new LoggerSink(Logger) { SwallowError = true })
-                .Build()
-                .PerformUpgrade());
+        public override Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts)
+        {
+            for (int i = 0; ; i++)
+            {
+                try
+                {
+                    return Task.FromResult(
+                    DbUp.DeployChanges.To
+                        .SqlDatabase(ConnectionString)
+                        .WithScripts(scripts)
+                        .WithoutTransaction()
+                        .LogTo(new LoggerSink(Logger) { SwallowError = true })
+                        .Build()
+                        .PerformUpgrade());
+                }
+                catch (System.Exception ex)
+                {
+                    if (i > 2)
+                        throw;
+
+                    Logger.LogWarning($"Exception; will try again: {ex.Message}");
+                }
+            }
+        }
     }
 }
