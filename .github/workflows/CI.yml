@@ -31,7 +31,7 @@ jobs:
     - name: Start SqlServer
       run: docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=yourStrong(!)Password" --name sqlserver -p 1433:1433 -d mcr.microsoft.com/mssql/server:2019-latest
       
-    - name: Sleep time...
+    - name: Sleep (allow SqlServer to complete startup)
       run: sleep 10
 
     - name: Set EnvVar for Test
@@ -42,4 +42,3 @@ jobs:
         
     - name: Test
       run: dotnet test --no-build --verbosity normal
-      #run: dotnet test --no-build --verbosity normal --filter A120
