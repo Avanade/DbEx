@@ -386,7 +386,7 @@ namespace DbEx.Migration
 
             // Infer database schema.
             Logger.LogInformation("  Querying database to infer table(s)/column(s) schema...");
-            var db = CreateDatabase(ConnectionString) ?? throw new InvalidOperationException($"An {nameof(IDatabase)} instance must be returned from the {nameof(CreateDatabase)} method.");
+            using var db = CreateDatabase(ConnectionString) ?? throw new InvalidOperationException($"An {nameof(IDatabase)} instance must be returned from the {nameof(CreateDatabase)} method.");
             var pargs = ParserArgs ?? new DataParserArgs();
             var dbTables = await db.SelectSchemaAsync(pargs.RefDataPredicate).ConfigureAwait(false);
 
