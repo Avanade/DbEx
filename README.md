@@ -7,8 +7,8 @@
 ## Introduction
 
 _DbEx_ provides database extensions for both:
-- [ADO.NET](#ADO.NET) database access; and
-- [DbUp-based](#DbUp-based) database migrations.
+- [DbUp-based](#DbUp-based) database migrations; and
+- [ADO.NET](#ADO.NET) database access.
 
 <br/>
 
@@ -17,42 +17,6 @@ _DbEx_ provides database extensions for both:
 [![CI](https://github.com/Avanade/DbEx/workflows/CI/badge.svg)](https://github.com/Avanade/DbEx/actions?query=workflow%3ACI) [![NuGet version](https://badge.fury.io/nu/DbEx.svg)](https://badge.fury.io/nu/DbEx)
 
 The included [change log](CHANGELOG.md) details all key changes per published version.
-
-<br/>
-
-## ADO.NET 
-
-To simplify generic access to an [ADO.NET](https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/) enabled database the following are provided.
-
-Class | Description
--|-
-[`Database`](./src/DbEx/Database.cs) | Enables database provider agnostic access to invoke a `StoredProcedure` or `SqlStatement`.
-[`DatabaseParameterCollection`](./src/DbEx/DatabaseParameterCollection.cs) | Encapsulates the underlying [`DbParameterCollection`](https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbparametercollection) to simplify.
-[`DatabaseCommand`](./src/DbEx/DatabaseCommand.cs) | Encapsulates the underlying [`DbCommand`](https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbcommand) to simplify.
-[`IMultiSetArgs`](./src/DbEx/IMultiSetArgs.cs) | Provides a simplified means to manage queries which return one or more result sets using a [`DbDataReader`](https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbdatareader). See also [`MultiSetSingleArgs`](./src/DbEx/MultiSetSingleArgsT.cs) and [`MultiSetCollArgs`](./src/DbEx/MultiSetCollArgsT.cs)
-[`DatabaseRecord`](./src/DbEx/DatabaseRecord.cs) | Encapsulates the underlying [`DbDataReader`](https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbdatareader) to simplify column value access for a given record.
-[`IDatabaseMapper`](./src/DbEx/IDatabaseMapper.cs) | Provides a standardized approach for mapping between a [`DatabaseRecord`](./src/DbEx/DatabaseRecord.cs) and a corresponding .NET object.
-
-The [`DatabaseCommand`](./src/DbEx/DatabaseCommand.cs) provides the following key methods to access data.
-
-Method | Description
--|-
-`NonQueryAsync` | Executes a non-query command.
-`ScalarAsync` | Executes the query and returns the first column of the first row in the result set returned by the query.
-`SelectAsync` | Selects none or more items from the first result set.
-`SelectMultiSetAsync` | Executes a multi-dataset query command with one or more [`IMultiSetArgs`](./src/DbEx/IMultiSetArgs.cs).
-`SelectSingleAsync` | Selects a single item.
-`SelectSingleOrDefaultAsync` | Selects a single item or default.
-`SelectFirstAsync` | Selects first item.
-`SelectFirstOrDefaultAsync` | Selects first item or default.
-
-<br/>
-
-### Infer database schema
-
-Within a code-generation, or other context, the database schema may need to be inferred to understand the basic schema for all tables and their corresponding columns.
-
-The [`Database`](./src/DbEx/Database.cs) class provides a `SelectSchemaAsync` method to return a [`DbTableSchema`](./src/DbEx/Schema/DbTableSchema.cs) list, including the respective columns for each table (see [`DbColumnSchema`](./src/DbEx/Schema/DbColumnSchema.cs)).
 
 <br/>
 
@@ -76,6 +40,19 @@ Command | Description
 [`Schema`](#Schema) | There are a number of database schema objects that can be managed outside of the above migrations, that are dropped and (re-)applied to the database using their native `Create` statement.
 `Reset` | Resets the database by deleting all existing data (excludes `dbo` and `cdc` schema).
 [`Data`](#Data) | There is data, for example *Reference Data* that needs to be applied to a database. This provides a simpler configuration than specifying the required SQL statements directly. This is _also_ useful for setting up Master and Transaction data for the likes of testing scenarios.
+
+Additional commands available are:
+
+Command | Description
+-|-
+`All` | Performs _all_ the primary commands as follows; `Create`, `Migrate`, `Schema` and `Data`.
+`Deploy` | Performs `Migrate` and `Schema`.
+`DeployWithData` | Performs `Deploy` and `Data`.
+`DropAndAll` | Performs `Drop` and `All`.
+`ResetAndAll` | Performs `Reset` and `All` (designed primarily for testing).
+`ResetAndData` | Performs `Reset` and `Data` (designed primarily for testing).
+`Execute` | Executes the SQL statement(s) passed as additional arguments.
+`Script` | Creates a new [`migration`](#Migrate) script file using the defined naming convention.
 
 <br/>
 
@@ -174,6 +151,124 @@ Demo:
     - { FirstName: Wendy, Username: ^(System.Security.Principal.WindowsIdentity.GetCurrent().Name,System.Security.Principal.Windows), Birthday: ^(DateTimeNow) }
     - { FirstName: Wendy, Username: ^(Beef.ExecutionContext.EnvironmentUsername,Beef.Core), Birthday: ^(DateTime.UtcNow) }
 ```
+
+<br/>
+
+### Console application
+
+[`DbEx`](./src/DbEx/Console/MigratorConsoleBase.cs) has been optimized so that a new console application can reference and inherit the underlying capabilities.
+
+Where executing directly the default command-line options are as follows.
+
+```
+Xxx Database Tool.
+
+Usage: Xxx [options] <command> <args>
+
+Arguments:
+  command                    Database migration command.
+                             Allowed values are: None, Drop, Create, Migrate, Schema, Deploy, Reset, Data, DeployWithData, All, DropAndAll, ResetAndData, ResetAndAll, Execute, Script.
+  args                       Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each a SQL statement to invoke).
+
+Options:
+  -?|-h|--help               Show help information.
+  -cs|--connection-string    Database connection string.
+  -cv|--connection-varname   Database connection string environment variable name.
+  -so|--schema-order         Database schema name (multiple can be specified in priority order).
+  -o|--output                Output directory path.
+  -a|--assembly              Assembly containing embedded resources (multiple can be specified in probing order).
+  -eo|--entry-assembly-only  Use the entry assembly only (ignore all other assemblies).
+```
+
+The [`DbEx.Test.Console`](./tests/DbEx.Test.Console) demonstrates how this can be leveraged. The command-line arguments need to be passed through to support the standard options. Additional methods exist to specify defaults or change behaviour as required. An example [`Program.cs`](./tests/DbEx.Test.Console/Program.cs) is as follows.
+
+```
+using DbEx.Console;
+using System.Threading.Tasks;
+
+namespace DbEx.Test.Console
+{
+    public class Program 
+    {
+        internal static Task<int> Main(string[] args) => SqlServerMigratorConsole
+            .Create<Program>("Data Source=.;Initial Catalog=DbEx.Console;Integrated Security=True")
+            .RunAsync(args);
+    }
+}
+```
+
+<br/>
+
+#### Script command
+
+To simplify the process for the developer _DbEx_ enables the creation of new migration script files into the `Migrations` folder. This will name the script file correctly and output the basic SQL statements to perform the selected function. The date and time stamp will use [DateTime.UtcNow](https://docs.microsoft.com/en-us/dotnet/api/system.datetime.utcnow) as this should avoid conflicts where being co-developed across time zones. 
+
+This requires the usage of the `Script` command, plus zero or more optional arguments where the first is the sub-command (these are will depend on the script being created). The optional arguments must appear in the order listed; where not specified it will default within the script file.
+
+Sub-command | Argument(s) | Description
+-|-|-
+[N/A](./src/DbEx/Resources/Default_sql.hbs) | N/A | Creates a new empty skeleton script file.
+[`Schema`](./src/DbEx/Resources/Schema_sql.hbs) | `Schema` and `Table` | Creates a new table create script file for the named schema and table.
+[`Create`](./src/DbEx/Resources/Create_sql.hbs) | `Schema` and `Table` | Creates a new table create script file for the named schema and table.
+[`RefData`](./src/DbEx/Resources/RefData_sql.hbs) | `Schema` and `Table` | Creates a new reference data table create script file for the named schema and table.
+[`Alter`](./src/DbEx/Resources/Alter_sql.hbs) | `Schema` and `Table` | Creates a new table alter script file for the named schema and table.
+[`CdcDb`](./src/DbEx/Resources/CdcDb_sql.hbs) | N/A | Creates a new `sys.sp_cdc_enable_db` script file for the database.
+[`Cdc`](./src/DbEx/Resources/Cdc_sql.hbs) | `Schema` and `Table` | Creates a new `sys.sp_cdc_enable_table` script file for the named schema and table.
+
+Examples as follows.
+
+```
+dotnet run scriptnew
+dotnet run scriptnew create Foo Bar
+dotnet run scriptnew refdata Foo Gender
+dotnet run scriptnew alter Foo Bar
+dotnet run scriptnew cdcdb
+dotnet run scriptnew cdc Foo Bar
+```
+
+#### Execute command
+
+The execute command allows one or more SQL Statements to be executed directly against the database. This is intended for enabling commands to be executed only. No response other than success or failure will be acknowledged; as such this is not intended for performing queries.
+
+Examples as follows.
+
+dotnet run execute "create schema [Xyz] authorization [dbo]"
+
+<br/>
+
+## ADO.NET 
+
+To simplify generic access to an [ADO.NET](https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/) enabled database the following are provided.
+
+Class | Description
+-|-
+[`Database`](./src/DbEx/Database.cs) | Enables database provider agnostic access to invoke a `StoredProcedure` or `SqlStatement`.
+[`DatabaseParameterCollection`](./src/DbEx/DatabaseParameterCollection.cs) | Encapsulates the underlying [`DbParameterCollection`](https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbparametercollection) to simplify.
+[`DatabaseCommand`](./src/DbEx/DatabaseCommand.cs) | Encapsulates the underlying [`DbCommand`](https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbcommand) to simplify.
+[`IMultiSetArgs`](./src/DbEx/IMultiSetArgs.cs) | Provides a simplified means to manage queries which return one or more result sets using a [`DbDataReader`](https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbdatareader). See also [`MultiSetSingleArgs`](./src/DbEx/MultiSetSingleArgsT.cs) and [`MultiSetCollArgs`](./src/DbEx/MultiSetCollArgsT.cs)
+[`DatabaseRecord`](./src/DbEx/DatabaseRecord.cs) | Encapsulates the underlying [`DbDataReader`](https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbdatareader) to simplify column value access for a given record.
+[`IDatabaseMapper`](./src/DbEx/IDatabaseMapper.cs) | Provides a standardized approach for mapping between a [`DatabaseRecord`](./src/DbEx/DatabaseRecord.cs) and a corresponding .NET object.
+
+The [`DatabaseCommand`](./src/DbEx/DatabaseCommand.cs) provides the following key methods to access data.
+
+Method | Description
+-|-
+`NonQueryAsync` | Executes a non-query command.
+`ScalarAsync` | Executes the query and returns the first column of the first row in the result set returned by the query.
+`SelectAsync` | Selects none or more items from the first result set.
+`SelectMultiSetAsync` | Executes a multi-dataset query command with one or more [`IMultiSetArgs`](./src/DbEx/IMultiSetArgs.cs).
+`SelectSingleAsync` | Selects a single item.
+`SelectSingleOrDefaultAsync` | Selects a single item or default.
+`SelectFirstAsync` | Selects first item.
+`SelectFirstOrDefaultAsync` | Selects first item or default.
+
+<br/>
+
+### Infer database schema
+
+Within a code-generation, or other context, the database schema may need to be inferred to understand the basic schema for all tables and their corresponding columns.
+
+The [`Database`](./src/DbEx/Database.cs) class provides a `SelectSchemaAsync` method to return a [`DbTableSchema`](./src/DbEx/Schema/DbTableSchema.cs) list, including the respective columns for each table (see [`DbColumnSchema`](./src/DbEx/Schema/DbColumnSchema.cs)).
 
 <br/>
 

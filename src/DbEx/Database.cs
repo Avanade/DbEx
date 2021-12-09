@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace DbEx
@@ -57,13 +58,13 @@ namespace DbEx
 
         /// <inheritdoc/>
         /// <remarks>The <paramref name="refDataPredicate"/> where not specified will default to checking whether the <see cref="DbTableSchema"/> has any non-primary key <see cref="string"/>-based <see cref="DbTableSchema.Columns">columns</see> named '<c>Code</c>' and '<c>Text</c>'.</remarks>
-        public virtual async Task<List<DbTableSchema>> SelectSchemaAsync(Func<DbTableSchema, bool>? refDataPredicate = null, string? refDataAlternateSchema = null)
+        public virtual async Task<List<DbTableSchema>> SelectSchemaAsync(Func<DbTableSchema, bool>? refDataPredicate = null)
         {
             var tables = new List<DbTableSchema>();
             DbTableSchema? table = null;
 
             // Get all the tables and their columns.
-            using var sr = StreamLocator.GetResourcesStreamReader("SelectTableAndColumns.sql", typeof(IDatabase).Assembly)!;
+            using var sr = StreamLocator.GetResourcesStreamReader("SelectTableAndColumns.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             await SqlStatement(await sr.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
             {
                 var dt = new DbTableSchema(dr.GetValue<string>("TABLE_SCHEMA"), dr.GetValue<string>("TABLE_NAME"))
@@ -98,7 +99,7 @@ namespace DbEx
             }
 
             // Configure all the single column primary and unique constraints.
-            using var sr2 = StreamLocator.GetResourcesStreamReader("SelectTablePrimaryKey.sql", typeof(IDatabase).Assembly)!;
+            using var sr2 = StreamLocator.GetResourcesStreamReader("SelectTablePrimaryKey.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             var pks = await SqlStatement(await sr2.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("CONSTRAINT_NAME"),
@@ -123,14 +124,17 @@ namespace DbEx
                                select c).Single();
 
                     if (pk.IsPrimaryKey)
+                    {
                         col.IsPrimaryKey = true;
+                        col.IsIdentity = col.DefaultValue != null;
+                    }
                     else
                         col.IsUnique = true;
                 }
             }
 
             // Configure all the single column foreign keys.
-            using var sr3 = StreamLocator.GetResourcesStreamReader("SelectTableForeignKeys.sql", typeof(IDatabase).Assembly)!;
+            using var sr3 = StreamLocator.GetResourcesStreamReader("SelectTableForeignKeys.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             var fks = await SqlStatement(await sr3.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("FK_CONSTRAINT_NAME"),
@@ -157,7 +161,7 @@ namespace DbEx
             }
 
             // Select the table identity columns.
-            using var sr4 = StreamLocator.GetResourcesStreamReader("SelectTableIdentityColumns.sql", typeof(IDatabase).Assembly)!;
+            using var sr4 = StreamLocator.GetResourcesStreamReader("SelectTableIdentityColumns.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             await SqlStatement(await sr4.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
             {
                 var t = tables.Single(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
@@ -168,7 +172,7 @@ namespace DbEx
             })).ConfigureAwait(false);
 
             // Select the "always" generated columns.
-            using var sr5 = StreamLocator.GetResourcesStreamReader("SelectTableAlwaysGeneratedColumns.sql", typeof(IDatabase).Assembly)!;
+            using var sr5 = StreamLocator.GetResourcesStreamReader("SelectTableAlwaysGeneratedColumns.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             await SqlStatement(await sr5.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
             {
                 var t = tables.Single(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
@@ -177,7 +181,7 @@ namespace DbEx
             })).ConfigureAwait(false);
 
             // Select the generated columns.
-            using var sr6 = StreamLocator.GetResourcesStreamReader("SelectTableGeneratedColumns.sql", typeof(IDatabase).Assembly)!;
+            using var sr6 = StreamLocator.GetResourcesStreamReader("SelectTableGeneratedColumns.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             await SqlStatement(await sr6.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
             {
                 var t = tables.Single(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
@@ -185,20 +189,17 @@ namespace DbEx
                 c.IsComputed = true;
             })).ConfigureAwait(false);
 
-            // Attempt to infer foreign key reference data relationship where not explicitly specified.
-            foreach (var t in tables.Where(x => !x.IsRefData))
+            // Attempt to infer foreign key reference data relationship where not explicitly specified. 
+            foreach (var t in tables)
             {
                 foreach (var c in t.Columns.Where(x => !x.IsPrimaryKey && x.ForeignTable == null))
                 {
                     if (!c.Name.EndsWith("Id", StringComparison.InvariantCultureIgnoreCase))
                         continue;
 
-                    var tn = c.Name[0..^2];
-                    var fk = tables.Where(x => x.Schema == t.Schema && x.Name == tn).SingleOrDefault();
-                    if (fk == null && refDataAlternateSchema != null)
-                        fk = tables.Where(x => x.Schema == refDataAlternateSchema && x.Name == tn).SingleOrDefault();
-
-                    if (fk == null || !fk.IsRefData || fk.PrimaryKeyColumns.Count != 1)
+                    // Find table with same name as column in any schema that is considered reference data and has a single primary key.
+                    var fk = tables.Where(x => x != t && x.Name == c.Name[0..^2] && x.IsRefData && x.PrimaryKeyColumns.Count == 1).FirstOrDefault();
+                    if (fk == null)
                         continue;
 
                     c.ForeignSchema = fk.Schema;

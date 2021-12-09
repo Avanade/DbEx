@@ -1,0 +1,8 @@
+﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
+{{! FILENAME:enable-cdc-for-database }}
+-- Enable Change-Data-Capture (CDC) for the database.
+
+DECLARE @user NVARCHAR(256) = SUSER_NAME()
+EXEC sp_changedbowner 'sa'
+EXEC sys.sp_cdc_enable_db
+EXEC sp_changedbowner @user

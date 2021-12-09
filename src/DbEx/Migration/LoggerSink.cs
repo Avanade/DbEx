@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using DbUp.Engine;
 using DbUp.Engine.Output;
 using Microsoft.Extensions.Logging;
 using System;
@@ -25,7 +26,8 @@ namespace DbEx.Migration
         /// <summary>
         /// Writes/logs an error message.
         /// </summary>
-        public void WriteError(string format, params object[] args) => Logger.LogError($"    {format}", args);
+        /// <remarks>Error will not be logged here (i.e. swallowed) as will be handled via corresponding <see cref="DatabaseUpgradeResult"/>.</remarks>
+        public void WriteError(string format, params object[] args) { }
 
         /// <summary>
         /// Writes/logs an informational message.

@@ -2,6 +2,7 @@
 using DbEx.Migration.SqlServer;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 using System;
 using System.Linq;
@@ -16,7 +17,7 @@ namespace DbEx.Test
         [Test]
         public async Task A100_MigrateAll_None()
         {
-            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("NoneDb");
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("NoneDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
             var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l);
             var r = await m.MigrateAsync().ConfigureAwait(false);
@@ -27,7 +28,7 @@ namespace DbEx.Test
         [Test]
         public async Task A110_MigrateAll_Empty()
         {
-            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("EmptyDb");
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("EmptyDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
             var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Empty.Test).Assembly);
             var r = await m.MigrateAsync().ConfigureAwait(false);
@@ -38,19 +39,10 @@ namespace DbEx.Test
         [Test]
         public async Task A120_MigrateAll_Console()
         {
-            var cs = UnitTest.GetConfig("DbEx").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Console.Program).Assembly);
-
-            m.ParserArgs.Parameters.Add("DefaultName", "Bazza");
-            m.ParserArgs.RefDataColumnDefaults.Add(("SortOrder", (i) => i));
-
-            var r = await m.MigrateAsync().ConfigureAwait(false);
-
-            Assert.IsTrue(r);
+            var (cs, l, m) = await CreateConsoleDb().ConfigureAwait(false);
 
             // Check that the contact data was updated as expected.
-            var db = new Database<SqlConnection>(() => new SqlConnection(cs));
+            using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
             var res = (await db.SqlStatement("SELECT * FROM [Test].[Contact]").SelectAsync(dr => new
             {
                 ContactId = dr.GetValue<int>("ContactId"),
@@ -120,6 +112,42 @@ namespace DbEx.Test
             Assert.AreEqual(null, row.DateOfBirth);
             Assert.AreEqual(2, row.ContactTypeId);
             Assert.IsNull(row.GenderId);
+        }
+
+        private async Task<(string cs, ILogger l, SqlServerMigrator m)> CreateConsoleDb()
+        {
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
+            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Console.Program).Assembly);
+
+            m.ParserArgs.Parameters.Add("DefaultName", "Bazza");
+            m.ParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
+
+            var r = await m.MigrateAsync().ConfigureAwait(false);
+
+            Assert.IsTrue(r);
+
+            return (cs, l, m);
+        }
+
+        [Test]
+        public async Task B100_Execute_Console_Success()
+        {
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
+
+            var r = await m.ExecuteSqlStatementsAsync("SELECT * FROM Test.Contact").ConfigureAwait(false);
+            Assert.IsTrue(r);
+        }
+
+        [Test]
+        public async Task B100_Execute_Console_Error()
+        {
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
+
+            var r = await m.ExecuteSqlStatementsAsync("SELECT * FROM Test.Contact", "SELECT BANANAS").ConfigureAwait(false);
+            Assert.IsFalse(r);
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 using System;
+using System.Diagnostics;
 using System.Text;
 
 namespace DbEx.Schema
@@ -8,6 +9,7 @@ namespace DbEx.Schema
     /// <summary>
     /// Represents the Database <b>Column</b> schema definition.
     /// </summary>
+    [DebuggerDisplay("{Name} {SqlType} ({DotNetType})")]
     public class DbColumnSchema
     {
         /// <summary>
@@ -150,24 +152,32 @@ namespace DbEx.Schema
         /// <returns></returns>
         public DbColumnSchema Clone()
         {
-            return new DbColumnSchema(DbTable, Name, Type)
-            {
-                IsNullable = IsNullable,
-                Length = Length,
-                Precision = Precision,
-                Scale = Scale,
-                IsIdentity = IsIdentity,
-                IdentityIncrement = IdentityIncrement,
-                IdentitySeed = IdentitySeed,
-                IsComputed = IsComputed,
-                DefaultValue = DefaultValue,
-                IsPrimaryKey = IsPrimaryKey,
-                IsUnique = IsUnique,
-                ForeignTable = ForeignTable,
-                ForeignSchema = ForeignSchema,
-                ForeignColumn = ForeignColumn,
-                IsForeignRefData = IsForeignRefData
-            };
+            var c = new DbColumnSchema(DbTable, Name, Type);
+            c.CopyFrom(this);
+            return c;
+        }
+
+        /// <summary>
+        /// Copy all properties (excluding <see cref="DbTable"/>, <see cref="Name"/> and <see cref="Type"/>) from specified <paramref name="column"/>.
+        /// </summary>
+        /// <param name="column">The <see cref="DbColumnSchema"/> to copy from.</param>
+        public void CopyFrom(DbColumnSchema column)
+        {
+            IsNullable = (column ?? throw new ArgumentNullException(nameof(column))).IsNullable;
+            Length = column.Length;
+            Precision = column.Precision;
+            Scale = column.Scale;
+            IsIdentity = column.IsIdentity;
+            IdentityIncrement = column.IdentityIncrement;
+            IdentitySeed = column.IdentitySeed;
+            IsComputed = column.IsComputed;
+            DefaultValue = column.DefaultValue;
+            IsPrimaryKey = column.IsPrimaryKey;
+            IsUnique = column.IsUnique;
+            ForeignTable = column.ForeignTable;
+            ForeignSchema = column.ForeignSchema;
+            ForeignColumn = column.ForeignColumn;
+            IsForeignRefData = column.IsForeignRefData;
         }
     }
 }

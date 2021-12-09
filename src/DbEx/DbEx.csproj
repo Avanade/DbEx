@@ -39,7 +39,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Default_sql.hb" />
+    <None Remove="Resources\Alter_sql.hbs" />
+    <None Remove="Resources\CdcDb_sql.hbs" />
+    <None Remove="Resources\Cdc_sql.hbs" />
+    <None Remove="Resources\Create_sql.hbs" />
+    <None Remove="Resources\RefData_sql.hbs" />
+    <None Remove="Resources\Schema_sql.hbs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Schema_sql.hbs" />
+    <EmbeddedResource Include="Resources\Alter_sql.hbs" />
+    <EmbeddedResource Include="Resources\CdcDb_sql.hbs" />
+    <EmbeddedResource Include="Resources\Cdc_sql.hbs" />
+    <EmbeddedResource Include="Resources\Create_sql.hbs" />
+    <EmbeddedResource Include="Resources\Default_sql.hbs" />
+    <EmbeddedResource Include="Resources\RefData_sql.hbs" />
     <EmbeddedResource Include="Resources\SelectTableAlwaysGeneratedColumns.sql" />
     <EmbeddedResource Include="Resources\SelectTableAndColumns.sql" />
     <EmbeddedResource Include="Resources\SelectTableForeignKeys.sql" />
@@ -59,8 +74,8 @@
 
   <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="4.5.0" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="3.0.1" />
-    <PackageReference Include="OnRamp" Version="1.0.2" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="4.0.0" />
+    <PackageReference Include="OnRamp" Version="1.0.3" />
   </ItemGroup>
 
 </Project>

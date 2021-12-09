@@ -28,48 +28,14 @@ namespace DbEx.Console
     {
         private const string EntryAssemblyOnlyOptionName = "EO";
         private CommandArgument<MigrationCommand>? _commandArg;
-        private CommandArgument? _scriptArgs;
+        private CommandArgument? _additionalArgs;
         private readonly Dictionary<string, CommandOption?> _options = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MigratorConsoleBase"/> class.
         /// </summary>
-        /// <param name="name">The application/command name.</param>
-        /// <param name="text">The application/command short text.</param>
-        /// <param name="description">The application/command description; will default to <paramref name="text"/> when not specified.</param>
-        /// <param name="version">The application/command version number.</param>
         /// <param name="args">The default <see cref="MigratorConsoleArgs"/> that will be overridden/updated by the command-line argument values.</param>
-        protected MigratorConsoleBase(string name, string text, string? description = null, string? version = null, MigratorConsoleArgs? args = null)
-        {
-            Args = args ?? new MigratorConsoleArgs();
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            Text = text ?? throw new ArgumentNullException(nameof(text));
-            Description = description ?? Text;
-            Version = version;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MigratorConsoleBase"/> class defaulting <see cref="Name"/> (with <see cref="AssemblyName.Name"/>), <see cref="Text"/> (with <see cref="AssemblyProductAttribute.Product"/>),
-        /// <see cref="Description"/> (with <see cref="AssemblyDescriptionAttribute.Description"/>), and <see cref="Version"/> (with <see cref="AssemblyName.Version"/>) from the <paramref name="assembly"/> where not expressly provided.
-        /// </summary>
-        /// <param name="args">The default <see cref="MigratorConsoleArgs"/> that will be overridden/updated by the command-line argument values.</param>
-        /// <param name="assembly">The <see cref="Assembly"/> to infer properties where not expressly provided.</param>
-        /// <param name="name">The application/command name; defaults to <see cref="AssemblyName.Name"/>.</param>
-        /// <param name="text">The application/command short text.</param>
-        /// <param name="description">The application/command description; defaults to <paramref name="text"/> when not specified.</param>
-        /// <param name="version">The application/command version number.</param>
-        protected MigratorConsoleBase(Assembly assembly, MigratorConsoleArgs? args = null, string? name = null, string? text = null, string? description = null, string? version = null)
-        {
-            if (assembly == null)
-                throw new ArgumentNullException(nameof(assembly));
-
-            Args = args ?? new MigratorConsoleArgs();
-            var an = assembly.GetName();
-            Name = name ?? an?.Name ?? throw new ArgumentException("Unable to infer name.", nameof(name));
-            Text = text ?? assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? throw new ArgumentException("Unable to infer text.", nameof(text));
-            Version = version ?? (assembly ?? throw new ArgumentNullException(nameof(assembly))).GetName()?.Version?.ToString(3);
-            Description = description ?? assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? Text;
-        }
+        protected MigratorConsoleBase(MigratorConsoleArgs? args = null) => Args = args ?? new MigratorConsoleArgs();
 
         /// <summary>
         /// Gets the <see cref="MigratorConsoleArgs"/>.
@@ -79,22 +45,12 @@ namespace DbEx.Console
         /// <summary>
         /// Gets the application/command name.
         /// </summary>
-        public string Name { get; }
+        public virtual string AppName => (Assembly.GetEntryAssembly() ?? Assembly.GetCallingAssembly()).GetName()?.Name ?? "UNKNOWN";
 
         /// <summary>
-        /// Gets the application/command short text.
+        /// Gets the application/command title. 
         /// </summary>
-        public string Text { get; }
-
-        /// <summary>
-        /// Gets the application/command description.
-        /// </summary>
-        public string? Description { get; }
-
-        /// <summary>
-        /// Gets the application/command version.
-        /// </summary>
-        public string? Version { get; }
+        public virtual string AppTitle => $"{AppName} Database Tool.";
 
         /// <summary>
         /// Gets the <see cref="Args"/> <see cref="MigratorConsoleArgs.Logger"/>.
@@ -110,18 +66,25 @@ namespace DbEx.Console
         /// Gets or sets the masthead text used by <see cref="OnWriteMasthead"/>.
         /// </summary>
         /// <remarks>Defaults to 'OnRamp Code-Gen Tool' formatted using <see href="https://www.patorjk.com/software/taag/#p=display&amp;f=Calvin%20S&amp;t=DbEx%20Database%20Tool"/>.</remarks>
-        public string? MastheadText { get; set; } = @"
+        public string? MastheadText { get; protected set; } = @"
 ╔╦╗┌┐ ╔═╗─┐ ┬  ╔╦╗┌─┐┌┬┐┌─┐┌┐ ┌─┐┌─┐┌─┐  ╔╦╗┌─┐┌─┐┬  
  ║║├┴┐║╣ ┌┴┬┘   ║║├─┤ │ ├─┤├┴┐├─┤└─┐├┤    ║ │ ││ ││  
 ═╩╝└─┘╚═╝┴ └─  ═╩╝┴ ┴ ┴ ┴ ┴└─┘┴ ┴└─┘└─┘   ╩ └─┘└─┘┴─┘
 ";
 
         /// <summary>
+        /// Runs the code generation using the passed <paramref name="migrationCommand"/>.
+        /// </summary>
+        /// <param name="migrationCommand">The <see cref="MigrationCommand"/>.</param>
+        /// <returns><b>Zero</b> indicates success; otherwise, unsuccessful.</returns>
+        public async Task<int> RunAsync(MigrationCommand migrationCommand) => await RunAsync(migrationCommand.ToString()).ConfigureAwait(false);
+
+        /// <summary>
         /// Runs the code generation using the passed <paramref name="args"/> string.
         /// </summary>
         /// <param name="args">The command-line arguments.</param>
         /// <returns><b>Zero</b> indicates success; otherwise, unsuccessful.</returns>
-        public async Task<int> RunAsync(string? args = null) => await RunAsync(CodeGenConsoleBase.SplitArgumentsIntoArray(args)).ConfigureAwait(false);
+        public async Task<int> RunAsync(string? args = null) => await RunAsync(CodeGenConsole.SplitArgumentsIntoArray(args)).ConfigureAwait(false);
 
         /// <summary>
         /// Runs the code generation using the passed <paramref name="args"/> array.
@@ -134,7 +97,7 @@ namespace DbEx.Console
             HandlebarsHelpers.Logger ??= Args.Logger;
 
             // Set up the app.
-            using var app = new CommandLineApplication(PhysicalConsole.Singleton) { Name = Name, Description = Description };
+            using var app = new CommandLineApplication(PhysicalConsole.Singleton) { Name = AppName, Description = AppTitle };
             app.HelpOption();
 
             _commandArg = app.Argument<MigrationCommand>("command", "Database migration command.").IsRequired();
@@ -144,7 +107,7 @@ namespace DbEx.Console
             _options.Add(nameof(MigratorConsoleArgs.OutputDirectory), app.Option("-o|--output", "Output directory path.", CommandOptionType.MultipleValue).Accepts(v => v.ExistingDirectory("Output directory path does not exist.")));
             _options.Add(nameof(MigratorConsoleArgs.Assemblies), app.Option("-a|--assembly", "Assembly containing embedded resources (multiple can be specified in probing order).", CommandOptionType.MultipleValue));
             _options.Add(EntryAssemblyOnlyOptionName, app.Option("-eo|--entry-assembly-only", "Use the entry assembly only (ignore all other assemblies).", CommandOptionType.NoValue));
-            _scriptArgs = app.Argument("script-args", "Arguments for the Script command (first being the script name).", multipleValues: true);
+            _additionalArgs = app.Argument("args", "Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each a SQL statement to invoke).", multipleValues: true);
 
             OnBeforeExecute(app);
 
@@ -173,14 +136,32 @@ namespace DbEx.Console
                     Args.AddAssembly(Assembly.GetEntryAssembly()!);
                 });
 
-                for (int i = 0; i < _scriptArgs.Values.Count; i++)
+                if (_additionalArgs.Values.Count > 0 && !(Args.MigrationCommand.HasFlag(MigrationCommand.Script) || Args.MigrationCommand.HasFlag(MigrationCommand.Execute)))
+                    return new ValidationResult($"Additional arguments can only be specified when the command is '{nameof(MigrationCommand.Script)}' or '{nameof(MigrationCommand.Execute)}'.", new string[] { "args" });
+
+                if (Args.MigrationCommand.HasFlag(MigrationCommand.Script))
                 {
-                    if (i == 0)
-                        Args.ScriptName = _scriptArgs.Values[i];
-                    else
+                    for (int i = 0; i < _additionalArgs.Values.Count; i++)
                     {
-                        Args.ScriptParameters ??= new Dictionary<string, string?>();
-                        Args.ScriptParameters.Add($"Param{i}", _scriptArgs.Values[i]);
+                        if (i == 0)
+                            Args.ScriptName = _additionalArgs.Values[i];
+                        else
+                        {
+                            Args.ScriptArguments ??= new Dictionary<string, string?>();
+                            Args.ScriptArguments.Add($"Param{i}", _additionalArgs.Values[i]);
+                        }
+                    }
+                }
+
+                if (Args.MigrationCommand.HasFlag(MigrationCommand.Execute))
+                {
+                    for (int i = 0; i < _additionalArgs.Values.Count; i++)
+                    {
+                        if (string.IsNullOrEmpty(_additionalArgs.Values[i]))
+                            continue;
+
+                        Args.ExecuteStatements ??= new List<string>();
+                        Args.ExecuteStatements.Add(_additionalArgs.Values[i]!);
                     }
                 }
 
@@ -329,10 +310,10 @@ namespace DbEx.Console
         /// <summary>
         /// Invoked to write the header information to the <see cref="Logger"/>.
         /// </summary>
-        /// <remarks>Writes the <see cref="Text"/> and <see cref="Version"/>.</remarks>
+        /// <remarks>Writes the <see cref="AppTitle"/>.</remarks>
         protected virtual void OnWriteHeader()
         {
-            Logger?.LogInformation($"{Text}{(Version == null ? "" : $" [v{Version}]")}");
+            Logger?.LogInformation(AppTitle);
             Logger?.LogInformation(string.Empty);
         }
 
@@ -368,7 +349,7 @@ namespace DbEx.Console
         protected virtual void OnWriteFooter(long elapsedMilliseconds)
         {
             Logger?.LogInformation(string.Empty);
-            Logger?.LogInformation($"{Name} Complete. [{elapsedMilliseconds}ms]");
+            Logger?.LogInformation($"{AppName} Complete. [{elapsedMilliseconds}ms]");
             Logger?.LogInformation(string.Empty);
         }
     }

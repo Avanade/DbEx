@@ -77,10 +77,10 @@ namespace DbEx.Migration.Data
         public Func<DbTableSchema, bool>? RefDataPredicate { get; set; }
 
         /// <summary>
-        /// Gets or sets the list of reference data column defaults.
+        /// Gets or sets the reference data column defaults dictionary.
         /// </summary>
         /// <remarks>The list should contain the column name and function that returns the default value (the input to the function is the corresponding row count as specified).</remarks>
-        public List<(string Name, Func<int, object?> Value)>? RefDataColumnDefaults { get; } = new List<(string Name, Func<int, object?> Value)>();
+        public Dictionary<string, Func<int, object?>> RefDataColumnDefaults { get; } = new Dictionary<string, Func<int, object?>>();
 
         /// <summary>
         /// Gets or sets the <see cref="DateTime"/> format.
@@ -91,6 +91,6 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Gets the runtime parameters.
         /// </summary>
-        public IDictionary<string, object?> Parameters { get; } = new Dictionary<string, object?>();
+        public Dictionary<string, object?> Parameters { get; } = new Dictionary<string, object?>();
     }
 }

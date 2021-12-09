@@ -10,7 +10,7 @@ namespace DbEx.Test.Console
             .ConsoleArgs(a =>
             {
                 a.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
-                a.DataParserArgs.RefDataColumnDefaults.Add(("SortOrder", (i) => i));
+                a.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
             })
             .RunAsync(args);
     }

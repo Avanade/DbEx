@@ -54,6 +54,16 @@ namespace DbEx.Migration
         All = Create | Migrate | Schema | Data,
 
         /// <summary>
+        /// Performs <see cref="Migrate"/> and <see cref="Schema"/>.
+        /// </summary>
+        Deploy = Migrate | Schema,
+
+        /// <summary>
+        /// Performs <see cref="Deploy"/> with <see cref="Data"/>.
+        /// </summary>
+        DeployWithData = Deploy | Data,
+
+        /// <summary>
         /// Performs <see cref="Drop"/> and <see cref="All"/>.
         /// </summary>
         DropAndAll = Drop | All,
@@ -69,7 +79,13 @@ namespace DbEx.Migration
         ResetAndData = Reset | Data,
 
         /// <summary>
-        /// Creates a new script file using the defined naming convention.
+        /// Executes the SQL statement(s) passed as additional arguments.
+        /// </summary>
+        /// <remarks>This can not be used with any of the other commands.</remarks>
+        Execute = 1024,
+
+        /// <summary>
+        /// Creates a new <see cref="Migrate">migration</see> script file using the defined naming convention.
         /// </summary>
         /// <remarks>This can not be used with any of the other commands.</remarks>
         Script = 2048

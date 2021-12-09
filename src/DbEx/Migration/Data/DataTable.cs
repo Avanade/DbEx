@@ -171,7 +171,7 @@ namespace DbEx.Migration.Data
                 {
                     foreach (var rdd in Args.RefDataColumnDefaults)
                     {
-                        await AddColumnWhereNotSpecifiedAsync(row, rdd.Name, () => Task.FromResult(rdd.Value(i + 1))).ConfigureAwait(false);
+                        await AddColumnWhereNotSpecifiedAsync(row, rdd.Key, () => Task.FromResult(rdd.Value(i + 1))).ConfigureAwait(false);
                     }
                 }
 
