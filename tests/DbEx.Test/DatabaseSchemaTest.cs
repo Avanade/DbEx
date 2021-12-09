@@ -276,5 +276,8 @@ namespace DbEx.Test
             Assert.IsNull(col.ForeignColumn);
             Assert.IsNull(col.DefaultValue);
         }
+
+        [Test]
+        public async Task SelectSchema2() => await SelectSchema().ConfigureAwait(false);
     }
 }
