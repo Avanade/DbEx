@@ -148,7 +148,7 @@ namespace DbEx.Migration.SqlServer
                 if (dur.Successful || dur.ErrorScript != null || i > 2)
                     return dur;
 
-                Logger.LogWarning($"    DBUP initialization failed; maybe transient error, will try again: {dur.Error}");
+                Logger.LogWarning($"    DBUP initialization failed; possible transient error, will try again: {dur.Error.Message}");
                 await Task.Delay(1000).ConfigureAwait(false);
             }
         }
