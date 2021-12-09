@@ -135,17 +135,22 @@ namespace DbEx.Migration.SqlServer
         /// <inheritdoc/>
         public override async Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts)
         {
-            return await Task.Run(() =>
+            for (int i = 0; true; i++)
             {
-                return 
-                    DbUp.DeployChanges.To
-                        .SqlDatabase(ConnectionString)
-                        .WithScripts(scripts)
-                        .WithoutTransaction()
-                        .LogTo(new LoggerSink(Logger))
-                        .Build()
-                        .PerformUpgrade();
-            }).ConfigureAwait(false);
+                var dur = DbUp.DeployChanges.To
+                    .SqlDatabase(ConnectionString)
+                    .WithScripts(scripts)
+                    .WithoutTransaction()
+                    .LogTo(new LoggerSink(Logger))
+                    .Build()
+                    .PerformUpgrade();
+
+                if (dur.Successful || dur.ErrorScript != null || i > 2)
+                    return dur;
+
+                Logger.LogWarning($"    DBUP initialization failed; maybe transient error, will try again: {dur.Error}");
+                await Task.Delay(1000).ConfigureAwait(false);
+            }
         }
     }
 }
