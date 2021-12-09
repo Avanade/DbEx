@@ -47,7 +47,7 @@ namespace DbEx.Migration.SqlServer
         {
             Logger.LogInformation("  Create database (using DbUp)...");
             EnsureDatabase.For.SqlDatabase(ConnectionString, new LoggerSink(Logger));
-            await Task.Delay(1000);
+            await Task.Delay(5000);
             return true;
         }
 
