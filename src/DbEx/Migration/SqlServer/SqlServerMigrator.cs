@@ -34,6 +34,11 @@ namespace DbEx.Migration.SqlServer
         /// <inheritdoc/>
         protected override string[] KnownSchemaObjectTypes => new string[] { "TYPE", "FUNCTION", "VIEW", "PROCEDURE", "PROC" };
 
+        /// <summary>
+        /// Gets or sets the maximum retries for <see cref="ExecuteScriptsAsync"/> in case of transient database errors on database initialization.
+        /// </summary>
+        public int MaxRetries { get; set; } = 5;
+
         /// <inheritdoc/>
         protected override Task<bool> DatabaseDropAsync()
         {
@@ -145,11 +150,11 @@ namespace DbEx.Migration.SqlServer
                     .Build()
                     .PerformUpgrade();
 
-                if (dur.Successful || dur.ErrorScript != null || i > 2)
+                if (dur.Successful || dur.ErrorScript != null || i >= MaxRetries)
                     return dur;
 
-                Logger.LogWarning($"    DBUP initialization failed; possible transient error, will try again: {dur.Error.Message}");
-                await Task.Delay(1000).ConfigureAwait(false);
+                Logger.LogWarning($"    Possible transient error (will try again in 500ms): {dur.Error.Message}");
+                await Task.Delay(500).ConfigureAwait(false);
             }
         }
     }

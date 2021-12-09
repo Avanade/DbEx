@@ -39,15 +39,7 @@ namespace DbEx.Test
         [Test]
         public async Task A120_MigrateAll_Console()
         {
-            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Console.Program).Assembly);
-
-            m.ParserArgs.Parameters.Add("DefaultName", "Bazza");
-            m.ParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
-
-            var r = await m.MigrateAsync().ConfigureAwait(false);
-            Assert.IsTrue(r);
+            var (cs, l, m) = await CreateConsoleDb().ConfigureAwait(false);
 
             // Check that the contact data was updated as expected.
             using var db = new Database<SqlConnection>(() => new SqlConnection(cs));

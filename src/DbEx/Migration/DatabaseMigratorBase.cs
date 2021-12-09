@@ -238,9 +238,10 @@ namespace DbEx.Migration
 
             Logger.LogInformation(string.Empty);
             if (r.ErrorScript?.Name != null)
-                Logger.LogError($"Error occured executing script: {r.ErrorScript.Name}");
+                Logger.LogError($"Error occured executing script '{r.ErrorScript.Name}': {r.Error.Message}");
+            else
+                Logger.LogError($"Unexpected error occured: {r.Error?.Message}");
 
-            Logger.LogError(r.Error, r.Error?.Message);
             return false;
         }
 
