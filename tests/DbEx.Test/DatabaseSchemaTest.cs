@@ -18,8 +18,9 @@ namespace DbEx.Test
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
             var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Drop | Migration.MigrationCommand.Create | Migration.MigrationCommand.Migrate | Migration.MigrationCommand.Schema, l, typeof(Console.Program).Assembly);
             var r = await m.MigrateAsync().ConfigureAwait(false);
+            Assert.IsTrue(r);
 
-            var db = new Database<SqlConnection>(() => new SqlConnection(cs));
+            using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
             var tables = await db.SelectSchemaAsync().ConfigureAwait(false);
             Assert.IsNotNull(tables);
 
