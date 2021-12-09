@@ -41,4 +41,5 @@ jobs:
         echo "DbEx_ConnectionStrings__ConsoleDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Console;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
         
     - name: Test
-      run: dotnet test --no-build --verbosity normal --filter A120
+      run: dotnet test --no-build --verbosity normal
+      #run: dotnet test --no-build --verbosity normal --filter A120
