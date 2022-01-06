@@ -28,6 +28,18 @@ Traditionally, a [Data-tier Application (DAC)](https://docs.microsoft.com/en-us/
 
 <br/>
 
+## Getting started
+The easiest way to get started is to clone the repository and execute `DbEx.Test.Console` project, that will create a datanase with data.
+
+```bash
+DbEx.Test.Console git:(main)> export cs="Data Source=localhost, 1433;Initial Catalog=DbEx.Console;User id=sa;Password=Xxxxxx@123;TrustServerCertificate=true"
+DbEx.Test.Console git:(main)> dotnet run -- -cv cs all
+```
+
+Next, create your own console app, follow the structure of `DbEx.Test.Console` project and add your SQL scripts.
+
+Currently the easiest way of generating scripts from existing database, is to use **Generate Scripts** feature of SQL Server Management Studio.
+
 ### Commands (functions)
 
 The _DbEx_ [`DatabaseMigratorBase`](./src/DbEx/Migration/DatabaseMigratorBase.cs) provides the base database provider agnostic capability, with the [`SqlServerMigrator`](./src/DbEx/Migration/SqlServer/SqlServerMigrator.cs) providing the specific Microsoft SQL Server implementation, that automates the functionality as specified by the [`MigrationCommand`](./src/DbEx/Migration/MigrationCommand.cs). One or more commands can be specified, and they will be executed in the order listed.
