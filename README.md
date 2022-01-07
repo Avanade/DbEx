@@ -36,7 +36,7 @@ DbEx.Test.Console git:(main)> export cs="Data Source=localhost, 1433;Initial Cat
 DbEx.Test.Console git:(main)> dotnet run -- -cv cs all
 ```
 
-Next, create your own console app, follow the structure of `DbEx.Test.Console` project and add your SQL scripts.
+Next, create your own console app, follow the structure of `DbEx.Test.Console` project, add reference to https://www.nuget.org/packages/DbEx and your SQL scripts.
 
 Currently the easiest way of generating scripts from existing database, is to use **Generate Scripts** feature of SQL Server Management Studio.
 
