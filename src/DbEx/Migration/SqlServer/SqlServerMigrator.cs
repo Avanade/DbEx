@@ -4,6 +4,7 @@ using DbEx.Migration.Data;
 using DbEx.Migration.SqlServer.Internal;
 using DbUp;
 using DbUp.Engine;
+using DbUp.Engine.Output;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using OnRamp.Utility;
@@ -146,7 +147,7 @@ namespace DbEx.Migration.SqlServer
                     .SqlDatabase(ConnectionString)
                     .WithScripts(scripts)
                     .WithoutTransaction()
-                    .LogTo(includeExecutionLogging ? new LoggerSink(Logger) : new NullSink())
+                    .LogTo(includeExecutionLogging ? (IUpgradeLog)new LoggerSink(Logger) : (IUpgradeLog)new NullSink())
                     .Build()
                     .PerformUpgrade();
 
