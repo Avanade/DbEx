@@ -1,0 +1,1 @@
+﻿INSERT INTO [Test].[Contact] ([ContactId], [ContactTypeId], [GenderId], [Name], [DateOfBirth]) VALUES (3, (SELECT TOP 1 [ContactTypeId] FROM [Test].[ContactType] WHERE [Code] = 'E'), (SELECT TOP 1 [GenderId] FROM [Test].[Gender] WHERE [Code] = 'M'), 'Barry', '2001-10-22T00:00:00.0000000')

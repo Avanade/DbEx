@@ -11,7 +11,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DbEx.Migration
@@ -223,8 +222,9 @@ namespace DbEx.Migration
         /// Execute the <paramref name="scripts"/>.
         /// </summary>
         /// <param name="scripts">The <see cref="SqlScript"/> list.</param>
+        /// <param name="includeExecutionLogging">Indicates whether to include detailed execution logging.</param>
         /// <returns>The <see cref="DatabaseUpgradeResult"/>.</returns>
-        public abstract Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts);
+        public abstract Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts, bool includeExecutionLogging);
 
         /// <summary>
         /// Check the <see cref="DatabaseUpgradeResult"/> and report error where not <see cref="DatabaseUpgradeResult.Successful"/>.
@@ -269,7 +269,7 @@ namespace DbEx.Migration
             var scripts = new List<SqlScript>();
             foreach (var ass in Assemblies)
             {
-                foreach (var name in ass.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture))))
+                foreach (var name in ass.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture))).OrderBy(x => x))
                 {
                     // Determine run order and add script to list.
                     var order = name.EndsWith(".pre.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 1 :
@@ -287,7 +287,7 @@ namespace DbEx.Migration
             }
 
             Logger.LogInformation("  Migrate (using DbUp) the embedded resources...");
-            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(scripts).ConfigureAwait(false));
+            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(scripts, true).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -318,7 +318,7 @@ namespace DbEx.Migration
             Logger.LogInformation($"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{SchemaNamespace}.*.sql"))}");
             foreach (var ass in Assemblies)
             {
-                foreach (var rn in ass.GetManifestResourceNames())
+                foreach (var rn in ass.GetManifestResourceNames().OrderBy(x => x))
                 {
                     // Filter on schema namespace prefix and suffix of '.sql'.
                     if (!(Namespaces.Any(x => rn.StartsWith($"{x}.{SchemaNamespace}.", StringComparison.InvariantCulture) && rn.EndsWith(".sql", StringComparison.InvariantCultureIgnoreCase))))
@@ -363,15 +363,15 @@ namespace DbEx.Migration
         /// </summary>
         private async Task<bool> DatabaseDataAsync()
         {
-            Logger.LogInformation($"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*.sql", true))}");
+            Logger.LogInformation($"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*.[sql|yaml]", true))}");
 
             var list = new List<(Assembly Assembly, string ResourceName)>();
             foreach (var ass in Assemblies)
             {
-                foreach (var rn in ass.GetManifestResourceNames())
+                foreach (var rn in ass.GetManifestResourceNames().OrderBy(x => x))
                 {
                     // Filter on schema namespace prefix and suffix of '.sql'.
-                    if (!Namespaces.Any(x => rn.StartsWith($"{x}.{DataNamespace}.", StringComparison.InvariantCulture) && (rn.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".yml", StringComparison.InvariantCultureIgnoreCase))))
+                    if (!Namespaces.Any(x => rn.StartsWith($"{x}.{DataNamespace}.", StringComparison.InvariantCulture) && (rn.EndsWith(".sql", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".yml", StringComparison.InvariantCultureIgnoreCase))))
                         continue;
 
                     list.Add((ass, rn));
@@ -395,21 +395,37 @@ namespace DbEx.Migration
             var parser = new DataParser(dbTables, pargs);
             foreach (var item in list)
             {
-                try
+                using var sr = new StreamReader(item.Assembly.GetManifestResourceStream(item.ResourceName)!);
+
+                if (item.ResourceName.EndsWith(".sql", StringComparison.InvariantCultureIgnoreCase))
                 {
+                    // Execute the SQL script directly.
                     Logger.LogInformation(string.Empty);
-                    Logger.LogInformation($"** Parsing and executing: {item.ResourceName}");
-                    using var sr = new StreamReader(item.Assembly.GetManifestResourceStream(item.ResourceName)!);
+                    Logger.LogInformation($"** Executing: {item.ResourceName}");
 
-                    var tables = await parser.ParseYamlAsync(sr);
-
-                    if (!await DatabaseDataAsync(db, tables).ConfigureAwait(false))
+                    var ss = new SqlScript(item.ResourceName, await sr.ReadToEndAsync().ConfigureAwait(false), new SqlScriptOptions { ScriptType = DbUp.Support.ScriptType.RunAlways });
+                    var success = CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(new SqlScript[] { ss }, false).ConfigureAwait(false));
+                    if (!success)
                         return false;
                 }
-                catch (DataParserException dpex)
+                else
                 {
-                    Logger.LogError(dpex.Message);
-                    return false;
+                    // Handle the YAML - parse and execute.
+                    try
+                    {
+                        Logger.LogInformation(string.Empty);
+                        Logger.LogInformation($"** Parsing and executing: {item.ResourceName}");
+
+                        var tables = await parser.ParseYamlAsync(sr);
+
+                        if (!await DatabaseDataAsync(db, tables).ConfigureAwait(false))
+                            return false;
+                    }
+                    catch (DataParserException dpex)
+                    {
+                        Logger.LogError(dpex.Message);
+                        return false;
+                    }
                 }
             }
 
@@ -530,7 +546,7 @@ namespace DbEx.Migration
         }
 
         /// <summary>
-        /// Executes the raw SQL statements by creating the equivalent <see cref="SqlScript"/> and invoking <see cref="ExecuteScriptsAsync(IEnumerable{SqlScript})"/>.
+        /// Executes the raw SQL statements by creating the equivalent <see cref="SqlScript"/> and invoking <see cref="ExecuteScriptsAsync(IEnumerable{SqlScript}, bool)"/>.
         /// </summary>
         /// <param name="statements"></param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
@@ -557,16 +573,20 @@ namespace DbEx.Migration
             var scripts = new List<SqlScript>();
             for (int i = 0; i < statements.Length; i++)
             {
-                scripts.Add(new SqlScript($"{sn}{i + 1:000}.sql", statements[i]));
+                if (File.Exists(statements[i]))
+                    scripts.Add(new SqlScript(statements[i], await File.ReadAllTextAsync(statements[i]).ConfigureAwait(false)));
+                else
+                    scripts.Add(new SqlScript($"{sn}{i + 1:000}.sql", statements[i]));
             }
 
-            var dur = await ExecuteScriptsAsync(scripts).ConfigureAwait(false);
+            var dur = await ExecuteScriptsAsync(scripts, false).ConfigureAwait(false);
             if (dur.Successful)
                 Logger.LogInformation($"  All scripts executed successfully.");
             else
             {
                 Logger.LogInformation(string.Empty);
-                Logger.LogError($"The following SQL statement failed with: {dur.Error.Message}");
+                Logger.LogError($"The SQL statement failed with: {dur.Error.Message}");
+                Logger.LogWarning($"Script '{dur.ErrorScript.Name}' contents:");
                 Logger.LogWarning(dur.ErrorScript.Contents);
             }
 
