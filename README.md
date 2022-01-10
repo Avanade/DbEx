@@ -29,16 +29,19 @@ Traditionally, a [Data-tier Application (DAC)](https://docs.microsoft.com/en-us/
 <br/>
 
 ## Getting started
-The easiest way to get started is to clone the repository and execute `DbEx.Test.Console` project, that will create a datanase with data.
 
-```bash
+The easiest way to get started is to clone the repository and execute `DbEx.Test.Console` project, this will create a database with data.
+
+``` bash
 DbEx.Test.Console git:(main)> export cs="Data Source=localhost, 1433;Initial Catalog=DbEx.Console;User id=sa;Password=Xxxxxx@123;TrustServerCertificate=true"
 DbEx.Test.Console git:(main)> dotnet run -- -cv cs all
 ```
 
 Next, create your own console app, follow the structure of `DbEx.Test.Console` project, add reference to https://www.nuget.org/packages/DbEx and your SQL scripts.
 
-Currently the easiest way of generating scripts from existing database, is to use **Generate Scripts** feature of SQL Server Management Studio.
+Currently, the easiest way of generating scripts from an existing database, is to use the `Generate Scripts` feature of SQL Server Management Studio and copy its output.
+
+<br/>
 
 ### Commands (functions)
 
