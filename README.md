@@ -39,7 +39,7 @@ DbEx.Test.Console git:(main)> dotnet run -- -cv cs all
 
 Next, create your own console app, follow the structure of `DbEx.Test.Console` project, add reference to https://www.nuget.org/packages/DbEx and your SQL scripts.
 
-Currently, the easiest way of generating scripts from an existing database, is to use the `Generate Scripts` feature of SQL Server Management Studio and copy its output.
+Currently, the easiest way of generating scripts from an existing database, is to use the `Generate Scripts` feature of _SQL Server Management Studio_ and copy its output.
 
 <br/>
 
@@ -54,7 +54,7 @@ Command | Description
 [`Migrate`](#Migrate) | Being the upgrading of a database overtime using order-based migration scripts; the tool leverages the philosophy and NuGet packages of [DbUp](https://dbup.readthedocs.io/en/latest/philosophy-behind-dbup/) to enable.
 [`Schema`](#Schema) | There are a number of database schema objects that can be managed outside of the above migrations, that are dropped and (re-)applied to the database using their native `Create` statement.
 `Reset` | Resets the database by deleting all existing data (excludes `dbo` and `cdc` schema).
-[`Data`](#Data) | There is data, for example *Reference Data* that needs to be applied to a database. This provides a simpler configuration than specifying the required SQL statements directly. This is _also_ useful for setting up Master and Transaction data for the likes of testing scenarios.
+[`Data`](#Data) | There is data, for example *Reference Data* that needs to be applied to a database. This provides a simpler configuration than specifying the required SQL statements directly (which is also supported). This is _also_ useful for setting up Master and Transaction data for the likes of testing scenarios.
 
 Additional commands available are:
 
@@ -109,6 +109,8 @@ The data specified follows a basic indenting/levelling rule to enable:
 1. **Schema** - specifies Schema name.
 2. **Table** - specifies the Table name within the Schema; this will be validated to ensure it exists within the database as the underlying table schema (columns) will be inferred. The underyling rows will be [inserted](https://docs.microsoft.com/en-us/sql/t-sql/statements/insert-transact-sql) by default; or alternatively by prefixing with a `$` character a [merge](https://docs.microsoft.com/en-us/sql/t-sql/statements/merge-transact-sql) operation will be performed instead.
 3. **Rows** - each row specifies the column name and the corresponding values (except for reference data described below). The tooling will parse each column value according to the underying SQL type.
+
+Finally, SQL script files can also be provided in addition to YAML where explicit SQL is to be executed.
 
 <br/>
 
@@ -212,6 +214,16 @@ namespace DbEx.Test.Console
 }
 ```
 
+_Tip:_ To ensure all files are included as embedded resources add the following to the .NET project:
+
+``` xml
+<ItemGroup>
+  <EmbeddedResource Include="Schema\**\*" />
+  <EmbeddedResource Include="Migrations\**\*" />
+  <EmbeddedResource Include="Data\**\*" />
+</ItemGroup>
+```
+
 <br/>
 
 #### Script command
@@ -233,21 +245,25 @@ Sub-command | Argument(s) | Description
 Examples as follows.
 
 ```
-dotnet run scriptnew
-dotnet run scriptnew create Foo Bar
-dotnet run scriptnew refdata Foo Gender
-dotnet run scriptnew alter Foo Bar
-dotnet run scriptnew cdcdb
-dotnet run scriptnew cdc Foo Bar
+dotnet run script
+dotent run script schema Foo
+dotnet run script create Foo Bar
+dotnet run script refdata Foo Gender
+dotnet run script alter Foo Bar
+dotnet run script cdcdb
+dotnet run script cdc Foo Bar
 ```
 
 #### Execute command
 
-The execute command allows one or more SQL Statements to be executed directly against the database. This is intended for enabling commands to be executed only. No response other than success or failure will be acknowledged; as such this is not intended for performing queries.
+The execute command allows one or more SQL Statements, and/or Script files, to be executed directly against the database. This is intended for enabling commands to be executed only. No response other than success or failure will be acknowledged; as such this is not intended for performing queries.
 
 Examples as follows.
 
+```
 dotnet run execute "create schema [Xyz] authorization [dbo]"
+dotnet run execute ./schema/createscehma.sql
+```
 
 <br/>
 
@@ -284,6 +300,14 @@ Method | Description
 Within a code-generation, or other context, the database schema may need to be inferred to understand the basic schema for all tables and their corresponding columns.
 
 The [`Database`](./src/DbEx/Database.cs) class provides a `SelectSchemaAsync` method to return a [`DbTableSchema`](./src/DbEx/Schema/DbTableSchema.cs) list, including the respective columns for each table (see [`DbColumnSchema`](./src/DbEx/Schema/DbColumnSchema.cs)).
+
+<br/>
+
+## Other repos
+
+These other _Avanade_ repositories leverage _DbEx_:
+- [NTangle](https://github.com/Avanade/NTangle) - Change Data Capture (CDC) code generation tool and runtime.
+- [Beef](https://github.com/Avanade/Beef) - Business Entity Execution Framework to enable industralisation of API development.
 
 <br/>
 

@@ -53,7 +53,7 @@ namespace DbEx.Test
                 GenderId = dr.GetValue<int?>("GenderId")
             }).ConfigureAwait(false)).ToList();
 
-            Assert.AreEqual(2, res.Count);
+            Assert.AreEqual(3, res.Count);
 
             var row = res[0];
             Assert.AreEqual(1, row.ContactId);
@@ -71,6 +71,14 @@ namespace DbEx.Test
             Assert.AreEqual(2, row.ContactTypeId);
             Assert.IsNull(row.GenderId);
 
+            row = res[2];
+            Assert.AreEqual(3, row.ContactId);
+            Assert.AreEqual("Barry", row.Name);
+            Assert.AreEqual(null, row.Phone);
+            Assert.AreEqual(new DateTime(2001, 10, 22), row.DateOfBirth);
+            Assert.AreEqual(1, row.ContactTypeId);
+            Assert.AreEqual(2, row.GenderId);
+
             // Check that the person data was updated as expected - converted and auto-assigned id, plus createdby and createddate columns, and finally runtime variable.
             var res2 = (await db.SqlStatement("SELECT * FROM [Test].[Person]").SelectAsync(dr => new
             {
@@ -80,7 +88,7 @@ namespace DbEx.Test
                 CreatedDate = dr.GetValue<DateTime>("CreatedDate"),
             }).ConfigureAwait(false)).ToList();
 
-            Assert.AreEqual(2, res.Count);
+            Assert.AreEqual(3, res.Count);
             var row2 = res2[0];
             Assert.AreEqual(88.ToGuid(), row2.PersonId);
             Assert.AreEqual("RUNTIME", row2.Name);

@@ -84,7 +84,7 @@ namespace DbEx.Migration.SqlServer
                 ss.Add(new SqlScript(sql, sql, new SqlScriptOptions { RunGroupOrder = i++, ScriptType = DbUp.Support.ScriptType.RunAlways }));
             }
 
-            var r = await ExecuteScriptsAsync(ss).ConfigureAwait(false);
+            var r = await ExecuteScriptsAsync(ss, true).ConfigureAwait(false);
             if (!r.Successful)
                 return false;
 
@@ -97,7 +97,7 @@ namespace DbEx.Migration.SqlServer
                 ss.Add(new SqlScript(sor.ScriptName, sor.GetSql(), new SqlScriptOptions { RunGroupOrder = i++, ScriptType = DbUp.Support.ScriptType.RunAlways }));
             }
 
-            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(ss).ConfigureAwait(false));
+            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(ss, true).ConfigureAwait(false));
         }
 
         /// <inheritdoc/>
@@ -106,7 +106,7 @@ namespace DbEx.Migration.SqlServer
             Logger.LogInformation("    Deleting data from all tables (excludes schema 'dbo' and 'cdc').");
             using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DeleteAllAndReset.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
             var ss = new SqlScript($"{typeof(IDatabase).Namespace}.SqlServer.DeleteAllAndReset.sql", await sr.ReadToEndAsync().ConfigureAwait(false), new SqlScriptOptions { ScriptType = DbUp.Support.ScriptType.RunAlways });
-            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(new SqlScript[] { ss }).ConfigureAwait(false));
+            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(new SqlScript[] { ss }, false).ConfigureAwait(false));
         }
 
         /// <inheritdoc/>
@@ -138,7 +138,7 @@ namespace DbEx.Migration.SqlServer
         protected override IDatabase CreateDatabase(string connectionString) => new Database<SqlConnection>(() => new SqlConnection(connectionString));
 
         /// <inheritdoc/>
-        public override async Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts)
+        public override async Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts, bool includeExecutionLogging)
         {
             for (int i = 0; true; i++)
             {
@@ -146,7 +146,7 @@ namespace DbEx.Migration.SqlServer
                     .SqlDatabase(ConnectionString)
                     .WithScripts(scripts)
                     .WithoutTransaction()
-                    .LogTo(new LoggerSink(Logger))
+                    .LogTo(includeExecutionLogging ? new LoggerSink(Logger) : new NullSink())
                     .Build()
                     .PerformUpgrade();
 
