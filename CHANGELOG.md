@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v1.0.3
+- *Enhancement:* Changed the project to be .NET Standard 2.1 versus targeting specific framework version. This has had the side-effect of losing the ability to execute directly from the command-line. Given this should typically be inherited and then executed, this functionality loss is considered a minor inconvenience.
+
 ## v1.0.2
 - *Fixed:* [Issue 7](https://github.com/Avanade/DbEx/issues/7) fixed. Documentation corrected and support for SQL files for both `Data` and `Execute` commands added.
 
