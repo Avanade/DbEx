@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>DbEx</RootNamespace>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>DbEx Developers</Authors>
     <Company>Avanade</Company>
@@ -74,8 +74,8 @@
 
   <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="4.5.0" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="4.0.0" />
-    <PackageReference Include="OnRamp" Version="1.0.3" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="4.1.0" />
+    <PackageReference Include="OnRamp" Version="1.0.5" />
   </ItemGroup>
 
 </Project>
