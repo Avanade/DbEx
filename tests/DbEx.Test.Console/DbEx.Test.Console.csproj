@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\DbEx\DbEx.csproj" />
+    <ProjectReference Include="..\DbEx.Test.OutboxConsole\DbEx.Test.OutboxConsole.csproj" />
   </ItemGroup>
 
 </Project>

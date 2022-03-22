@@ -303,6 +303,25 @@ The [`Database`](./src/DbEx/Database.cs) class provides a `SelectSchemaAsync` me
 
 <br/>
 
+## SQL Server Event Outbox
+
+To enable a consistent implemenation (and re-use) an implementation of the [Event Outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html) specifically for SQL Server based around the [`EventSendData`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx/Events/EventSendData.cs) as enabled by [_CoreEx_](https://github.com/Avanade/CoreEx) is provided.
+
+The code-generation is enabled by [_OnRamp_](https://github.com/Avanade/onramp) leveraging the following [templates](https://github.com/Avanade/onramp#templates). The [`DbEx.Test.OutboxConsole`](./tests/DbEx.Test.OutboxConsole) demonstrates usage.
+
+Template | Description | Example
+-|-|-
+[`SchemaEventOutbox_sql.hbs`](./src/DbEx/Templates/SqlServer/SchemaEventOutbox_sql.hbs) | Outbox database schema. | See [example](./tests/DbEx.Test.OutboxConsole/Migrations/100-create-outbox-schema.sql).
+[`TableEventOutbox_sql.hbs`](./src/DbEx/Templates/SqlServer/TableEventOutbox_sql.hbs) | Event outbox table. | See [example](./tests/DbEx.Test.OutboxConsole/Migrations/101-create-outbox-eventoutbox-table.sql).
+[`TableEventOutboxData_sql.hbs`](./src/DbEx/Templates/SqlServer/TableEventOutboxData_sql.hbs) | Event outbox table. | See [example](./tests/DbEx.Test.OutboxConsole/Migrations/102-create-outbox-eventoutboxdata-table.sql).
+[`UdtEventOutbox_sql.hbs`](./src/DbEx/Templates/SqlServer/UdtEventOutbox_sql.hbs) | Event outbox user-defined table type. | See [example](./tests/DbEx.Test.OutboxConsole/Schema/Outbox/Types/User-Defined%20Table%20Types/Generated/udtEventOutboxList.sql).
+[`SpEventOutboxEnqueue_sql.hbs`](./src/DbEx/Templates/SqlServer/SpEventOutboxEnqueue_sql.hbs) | Event outbox enqueue stored procedure. | See [example](./tests/DbEx.Test.OutboxConsole/Schema/Outbox/Stored%20Procedures/Generated/spEventOutboxEnqueue.sql).
+[`SpEventOutboxDequeue_sql.hbs`](./src/DbEx/Templates/SqlServer/SpEventOutboxDequeue_sql.hbs) | Event outbox dequeue stored procedure. | See [example](./tests/DbEx.Test.OutboxConsole/Schema/Outbox/Stored%20Procedures/Generated/spEventOutboxDequeue.sql).
+[`EventOutboxEnqueue_cs.hbs`](./src/DbEx/Templates/SqlServer/EventOutboxEnqueue_cs.hbs) | Event outbox enqueue (.NET C#); inherits capabilities from [`EventOutboxEnqueueBase`](./src/DbEx/SqlServer/EventOutboxEnqueueBase.cs). | See [example](./tests/DbEx.Test.OutboxConsole/Generated/EventOutboxEnqueue.cs).
+[`EventOutboxEnqueue_cs.hbs`](./src/DbEx/Templates/SqlServer/EventOutboxDequeue_cs.hbs) | Event outbox dequeue (.NET C#); inherits capabilities from [`EventOutboxDequeueBase`](./src/DbEx/SqlServer/EventOutboxDequeueBase.cs). | See [example](./tests/DbEx.Test.OutboxConsole/Generated/EventOutboxDequeue.cs).
+
+<br/>
+
 ## Other repos
 
 These other _Avanade_ repositories leverage _DbEx_:

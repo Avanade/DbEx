@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v1.0.4
+- *Enhancement:* Integrated `EventOutbox` code-generation (both database and C#) into _DbEx_ to enable re-use and consistency.
+
 ## v1.0.3
 - *Enhancement:* Changed the project to be .NET Standard 2.1 versus targeting specific framework version. This has had the side-effect of losing the ability to execute directly from the command-line. Given this should typically be inherited and then executed, this functionality loss is considered a minor inconvenience.
 

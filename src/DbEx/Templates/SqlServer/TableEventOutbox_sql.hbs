@@ -1,0 +1,15 @@
+﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/NTangle }}
+CREATE TABLE [{{OutboxSchema}}].[{{OutboxTable}}] (
+{{#unless Root.IsGenOnce}}
+  /*
+   * This is automatically generated; any changes will be lost.
+   */
+
+{{/unless}}
+  [{{OutboxTable}}Id] BIGINT IDENTITY (1, 1) NOT NULL PRIMARY KEY NONCLUSTERED ([{{OutboxTable}}Id] ASC),
+  [PartitionKey] NVARCHAR(127) NULL,
+  [Destination] NVARCHAR(127) NULL,
+  [EnqueuedDate] DATETIME2 NOT NULL,
+  [DequeuedDate] DATETIME2 NULL,
+  CONSTRAINT [IX_{{OutboxSchema}}_{{OutboxTable}}_DequeuedDate] UNIQUE CLUSTERED ([PartitionKey], [Destination], [DequeuedDate], [{{OutboxTable}}Id])
+);
