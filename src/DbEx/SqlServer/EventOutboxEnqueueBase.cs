@@ -45,8 +45,14 @@ namespace DbEx.SqlServer
         /// <summary>
         /// Gets or sets the default partition key.
         /// </summary>
-        /// <remarks>Defaults to '<c>default</c>'. This will ensure that there is always a value recorded in the database.</remarks>
-        public string DefaultPartitionKey { get; set; } = "default";
+        /// <remarks>Defaults to '<c>$default</c>'. This will ensure that there is always a value recorded in the database.</remarks>
+        public string DefaultPartitionKey { get; set; } = "$default";
+
+        /// <summary>
+        /// Gets or sets the default destination name.
+        /// </summary>
+        /// <remarks>Defaults to '<c>$default</c>'. This will ensure that there is always a value recorded in the database.</remarks>
+        public string DefaultDestination { get; set; } = "$default";
 
         /// <inheritdoc/>
         public TableValuedParameter CreateTableValuedParameter(IEnumerable<EventSendData> list)
@@ -70,7 +76,8 @@ namespace DbEx.SqlServer
             foreach (var item in list)
             {
                 var attributes = item.Attributes == null || item.Attributes.Count == 0 ? new BinaryData(Array.Empty<byte>()) : JsonSerializer.Default.SerializeToBinaryData(item.Attributes);
-                tvp.AddRow(item.Id, item.Destination, item.Subject, item.Action, item.Type, item.Source, item.Timestamp, item.CorrelationId, item.TenantId, 
+                tvp.AddRow(item.Id, item.Destination ?? DefaultDestination ?? throw new InvalidOperationException($"The {nameof(DefaultDestination)} must have a non-null value."),
+                    item.Subject, item.Action, item.Type, item.Source, item.Timestamp, item.CorrelationId, item.TenantId, 
                     item.PartitionKey ?? DefaultPartitionKey ?? throw new InvalidOperationException($"The {nameof(DefaultPartitionKey)} must have a non-null value."),
                     item.ETag, attributes.ToArray(), item.Data?.ToArray());
             }

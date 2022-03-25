@@ -58,6 +58,18 @@ namespace DbEx.SqlServer
         public virtual string EventIdColumnName => "EventId";
 
         /// <summary>
+        /// Gets or sets the default partition key.
+        /// </summary>
+        /// <remarks>Defaults to '<c>$default</c>'. This will ensure that value is nullified when reading from the database.</remarks>
+        public string DefaultPartitionKey { get; set; } = "$default";
+
+        /// <summary>
+        /// Gets or sets the default destination name.
+        /// </summary>
+        /// <remarks>Defaults to '<c>$default</c>'. This will ensure that value is nullified when reading from the database.</remarks>
+        public string DefaultDestination { get; set; } = "$default";
+
+        /// <summary>
         /// Performs the dequeue of the events (up to <paramref name="maxDequeueSize"/>) from the database outbox and then sends (via <see cref="EventSender"/>).
         /// </summary>
         /// <param name="maxDequeueSize">The maximum dequeue size. Defaults to 50.</param>
@@ -120,11 +132,13 @@ namespace DbEx.SqlServer
             var source = record.GetValue<string?>(nameof(EventSendData.Source));
             var attributes = record.GetValue<byte[]>(nameof(EventSendData.Attributes));
             var data = record.GetValue<byte[]>(nameof(EventSendData.Data));
+            var destination = record.GetValue<string?>(nameof(EventSendData.Destination));
+            var partitionKey = record.GetValue<string?>(nameof(EventSendData.PartitionKey));
 
             return new()
             {
                 Id = record.GetValue<string?>(EventIdColumnName),
-                Destination = record.GetValue<string?>(nameof(EventSendData.Destination)),
+                Destination = destination == DefaultDestination ? null : destination,
                 Subject = record.GetValue<string?>(nameof(EventSendData.Subject)),
                 Action = record.GetValue<string?>(nameof(EventSendData.Action)),
                 Type = record.GetValue<string?>(nameof(EventSendData.Type)),
@@ -132,7 +146,7 @@ namespace DbEx.SqlServer
                 Timestamp = record.GetValue<DateTimeOffset>(nameof(EventSendData.Timestamp)),
                 CorrelationId = record.GetValue<string?>(nameof(EventSendData.CorrelationId)),
                 TenantId = record.GetValue<string?>(nameof(EventSendData.TenantId)),
-                PartitionKey = record.GetValue<string?>(nameof(EventSendData.PartitionKey)),
+                PartitionKey = partitionKey == DefaultPartitionKey ? null : partitionKey,
                 ETag = record.GetValue<string?>(nameof(EventSendData.ETag)),
                 Attributes = attributes == null || attributes.Length == 0 ? null : JsonSerializer.Default.Deserialize<Dictionary<string, string>>(new BinaryData(attributes)),
                 Data = data == null || data.Length == 0 ? null : new BinaryData(data)

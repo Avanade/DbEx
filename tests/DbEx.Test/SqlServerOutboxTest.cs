@@ -104,13 +104,13 @@ namespace DbEx.Test
             Assert.AreEqual("1", events[0].Id);
             Assert.AreEqual("2", events[1].Id);
             Assert.AreEqual("3", events[2].Id);
-            ims.Clear();
+            ims.Reset();
 
             Assert.AreEqual(1, await eod.DequeueAndSendAsync(3, null, null));
             events = ims.GetEvents();
             Assert.AreEqual(1, events.Length);
             Assert.AreEqual("4", events[0].Id);
-            ims.Clear();
+            ims.Reset();
 
             Assert.AreEqual(0, await eod.DequeueAndSendAsync(3, null, null));
             events = ims.GetEvents();
@@ -139,30 +139,30 @@ namespace DbEx.Test
             await eod.DequeueAndSendAsync(10, "bananas", "queue");
             var events = ims.GetEvents();
             Assert.AreEqual(0, events.Length);
-            ims.Clear();
+            ims.Reset();
 
             await eod.DequeueAndSendAsync(10, "apples", "topic");
             events = ims.GetEvents();
             Assert.AreEqual(0, events.Length);
-            ims.Clear();
+            ims.Reset();
 
             await eod.DequeueAndSendAsync(10, "apples", "queue");
             events = ims.GetEvents();
             Assert.AreEqual(1, events.Length);
             Assert.AreEqual("4", events[0].Id);
-            ims.Clear();
+            ims.Reset();
 
             await eod.DequeueAndSendAsync(10, "apples", null);
             events = ims.GetEvents();
             Assert.AreEqual(1, events.Length);
             Assert.AreEqual("2", events[0].Id);
-            ims.Clear();
+            ims.Reset();
 
             await eod.DequeueAndSendAsync(10, null, "queue");
             events = ims.GetEvents();
             Assert.AreEqual(1, events.Length);
             Assert.AreEqual("3", events[0].Id);
-            ims.Clear();
+            ims.Reset();
 
             await eod.DequeueAndSendAsync(10, null, null);
             events = ims.GetEvents();

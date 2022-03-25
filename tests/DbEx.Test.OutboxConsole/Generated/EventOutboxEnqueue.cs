@@ -5,6 +5,7 @@
 #nullable enable
 #pragma warning disable
 
+using DbEx;
 using DbEx.SqlServer;
 using System.Collections.Generic;
 using System.Data;
