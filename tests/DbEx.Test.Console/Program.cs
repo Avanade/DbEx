@@ -11,6 +11,7 @@ namespace DbEx.Test.Console
             {
                 a.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
                 a.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
+                a.AddAssembly(typeof(DbEx.Test.OutboxConsole.Program).Assembly);
             })
             .RunAsync(args);
     }

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>DbEx</RootNamespace>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>DbEx Developers</Authors>
     <Company>Avanade</Company>
@@ -45,6 +45,14 @@
     <None Remove="Resources\Create_sql.hbs" />
     <None Remove="Resources\RefData_sql.hbs" />
     <None Remove="Resources\Schema_sql.hbs" />
+    <None Remove="Templates\EventOutboxDequeue_cs.hbs" />
+    <None Remove="Templates\EventOutboxEnqueue_cs.hbs" />
+    <None Remove="Templates\SqlServer\SchemaEventOutbox_sql.hbs" />
+    <None Remove="Templates\SqlServer\SpEventOutboxDequeue_sql.hbs" />
+    <None Remove="Templates\SqlServer\SpEventOutboxEnqueue_sql.hbs" />
+    <None Remove="Templates\SqlServer\TableEventOutboxData_sql.hbs" />
+    <None Remove="Templates\SqlServer\TableEventOutbox_sql.hbs" />
+    <None Remove="Templates\SqlServer\UdtEventOutbox_sql.hbs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -63,6 +71,14 @@
     <EmbeddedResource Include="Resources\SelectTablePrimaryKey.sql" />
     <EmbeddedResource Include="Resources\SqlServer\DeleteAllAndReset.sql" />
     <EmbeddedResource Include="Resources\SqlServer\TableInsertOrMerge_sql.hb" />
+    <EmbeddedResource Include="Templates\SqlServer\EventOutboxDequeue_cs.hbs" />
+    <EmbeddedResource Include="Templates\SqlServer\EventOutboxEnqueue_cs.hbs" />
+    <EmbeddedResource Include="Templates\SqlServer\SchemaEventOutbox_sql.hbs" />
+    <EmbeddedResource Include="Templates\SqlServer\SpEventOutboxDequeue_sql.hbs" />
+    <EmbeddedResource Include="Templates\SqlServer\SpEventOutboxEnqueue_sql.hbs" />
+    <EmbeddedResource Include="Templates\SqlServer\TableEventOutboxData_sql.hbs" />
+    <EmbeddedResource Include="Templates\SqlServer\TableEventOutbox_sql.hbs" />
+    <EmbeddedResource Include="Templates\SqlServer\UdtEventOutbox_sql.hbs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -73,6 +89,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CoreEx" Version="1.0.2" />
     <PackageReference Include="dbup-sqlserver" Version="4.5.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="4.1.0" />
     <PackageReference Include="OnRamp" Version="1.0.5" />

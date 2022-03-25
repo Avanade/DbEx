@@ -1,0 +1,110 @@
+﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/NTangle }}
+CREATE PROCEDURE [{{OutboxSchema}}].[sp{{OutboxTable}}Enqueue]
+  @EventList AS [{{OutboxSchema}}].[udt{{OutboxTable}}List] READONLY
+AS
+BEGIN
+  /*
+   * This is automatically generated; any changes will be lost.
+   */
+
+  SET NOCOUNT ON;
+
+  BEGIN TRY
+    -- Wrap in a transaction.
+    BEGIN TRANSACTION
+
+    -- Working variables.
+    DECLARE @{{camel OutboxTable}}Id BIGINT,
+            @enqueuedDate DATETIME
+
+    SET @enqueuedDate = SYSUTCDATETIME()
+
+    -- Enqueued outbox resultant identifier.
+    DECLARE @enqueuedId TABLE([{{OutboxTable}}Id] BIGINT)
+
+    -- Cursor output variables.
+    DECLARE @eventId NVARCHAR(127),
+            @destination NVARCHAR(127),
+            @subject NVARCHAR(511),
+            @action NVARCHAR(255),
+            @type NVARCHAR(1023),
+            @source NVARCHAR(1023),
+            @timestamp DATETIMEOFFSET,
+            @correlationId NVARCHAR(127),
+            @tenantId NVARCHAR(127),
+            @partitionKey NVARCHAR(127),
+            @etag NVARCHAR(127),
+            @attributes VARBINARY(MAX),
+            @data VARBINARY(MAX)
+
+    -- Declare, open, and fetch first event from cursor.
+    DECLARE c CURSOR FORWARD_ONLY
+      FOR SELECT [EventId], [Destination], [Subject], [Action], [Type], [Source], [Timestamp], [CorrelationId], [TenantId], [PartitionKey], [ETag], [Attributes], [Data] FROM @EventList
+
+    OPEN c
+    FETCH NEXT FROM c INTO @eventId, @destination, @subject, @action, @type, @source, @timestamp, @correlationId, @tenantId, @partitionKey, @etag, @attributes, @data
+
+    -- Iterate the event(s).
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        -- Enqueue event into outbox
+        INSERT INTO [{{OutboxSchema}}].[{{OutboxTable}}] ([EnqueuedDate], [PartitionKey], [Destination])
+          OUTPUT inserted.{{OutboxTable}}Id INTO @enqueuedId
+          VALUES (@enqueuedDate, @partitionKey, @destination)
+
+        SELECT @{{camel OutboxTable}}Id = [{{OutboxTable}}Id] FROM @enqueuedId
+
+        -- Insert corresponding event data.
+        INSERT INTO [{{OutboxSchema}}].[{{OutboxTable}}Data] (
+          [{{OutboxTable}}DataId],
+          [EventId],
+          [Destination],
+          [Subject],
+          [Action],
+          [Type],
+          [Source],
+          [Timestamp],
+          [CorrelationId],
+          [TenantId],
+          [PartitionKey],
+          [ETag],
+          [Attributes],
+          [Data]
+        )
+        VALUES (
+          @{{camel OutboxTable}}Id,
+          @eventId,
+          @destination,
+          @subject,
+          @action,
+          @type,
+          @source,
+          @timestamp,
+          @correlationId,
+          @tenantId,
+          @partitionKey,
+          @etag,
+          @attributes,
+          @data
+        )
+
+        -- Fetch the next event from the cursor.
+        FETCH NEXT FROM c INTO @eventId, @destination, @subject, @action, @type, @source, @timestamp, @correlationId, @tenantId, @partitionKey, @etag, @attributes, @data
+    END
+
+    -- Close the cursor.
+    CLOSE c
+    DEALLOCATE c
+
+    -- Commit the transaction.
+    COMMIT TRANSACTION
+    RETURN 0
+  END TRY
+  BEGIN CATCH
+    -- Rollback transaction and rethrow error.
+    IF @@TRANCOUNT > 0
+      ROLLBACK TRANSACTION;
+
+    THROW;
+  END CATCH
+END
