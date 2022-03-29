@@ -58,8 +58,8 @@ namespace DbEx.Console
             if (!await migrator.MigrateAsync().ConfigureAwait(false))
                 return false;
 
-            Logger?.LogInformation(string.Empty);
-            Logger?.LogInformation(new string('-', 80));
+            Logger?.LogInformation("{Content}", string.Empty);
+            Logger?.LogInformation("{Content}", new string('-', 80));
 
             return true;
         }

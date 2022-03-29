@@ -322,6 +322,14 @@ Template | Description | Example
 
 <br/>
 
+### Event Outbox Enqueue
+
+The [`EventOutboxDequeueBase`](./src/DbEx/SqlServer/EventOutboxEnqueueBase.cs) provides the base [`IEventSender`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx/Events/IEventSender.cs) send/enqueue capabilities.
+
+By default the events are first sent/enqueued to the datatbase outbox, then a secondary out-of-process dequeues and sends. This can however introduce unwanted latency depending on the frequency in which the secondary process performs the dequeue and send, as this is essentially a polling-based operation. To improve (minimize) latency, the primary `IEventSender` can be specified using the `SetPrimaryEventSender` method. This will then be used to send the events immediately, and where successful, they will be audited in the database as dequeued event(s); versus on error (as a backup), where they will be enqueued for the out-of-process dequeue and send (as per default).
+
+<br/>
+
 ## Other repos
 
 These other _Avanade_ repositories leverage _DbEx_:

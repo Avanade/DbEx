@@ -187,8 +187,8 @@ namespace DbEx.Console
             }
             catch (CommandParsingException cpex)
             {
-                Args.Logger?.LogError(cpex.Message);
-                Args.Logger?.LogError(string.Empty);
+                Args.Logger?.LogError("{Content}", cpex.Message);
+                Args.Logger?.LogError("{Content}", string.Empty);
                 return 1;
             }
         }
@@ -281,11 +281,11 @@ namespace DbEx.Console
             {
                 if (gcex.Message != null)
                 {
-                    Args.Logger?.LogError(gcex.Message);
+                    Args.Logger?.LogError("{Content}", gcex.Message);
                     if (gcex.InnerException != null)
-                        Args.Logger?.LogError(gcex.InnerException.Message);
+                        Args.Logger?.LogError("{Content}", gcex.InnerException.Message);
 
-                    Args.Logger?.LogError(string.Empty);
+                    Args.Logger?.LogError("{Content}", string.Empty);
                 }
 
                 return 2;
@@ -304,7 +304,7 @@ namespace DbEx.Console
         protected virtual void OnWriteMasthead()
         {
             if (MastheadText != null)
-                Logger?.LogInformation(MastheadText);
+                Logger?.LogInformation("{Content}", MastheadText);
         }
 
         /// <summary>
@@ -313,8 +313,8 @@ namespace DbEx.Console
         /// <remarks>Writes the <see cref="AppTitle"/>.</remarks>
         protected virtual void OnWriteHeader()
         {
-            Logger?.LogInformation(AppTitle);
-            Logger?.LogInformation(string.Empty);
+            Logger?.LogInformation("{Content}", AppTitle);
+            Logger?.LogInformation("{Content}", string.Empty);
         }
 
         /// <summary>
@@ -332,13 +332,13 @@ namespace DbEx.Console
             if (args == null || args.Logger == null)
                 return;
 
-            args.Logger.LogInformation($"Command = {args.MigrationCommand}");
-            args.Logger.LogInformation($"SchemaOrder = {string.Join(", ", args.SchemaOrder.ToArray())}");
-            args.Logger.LogInformation($"OutDir = {args.OutputDirectory?.FullName}");
-            args.Logger.LogInformation($"Assemblies{(args.Assemblies.Count == 0 ? " = none" : ":")}");
+            args.Logger.LogInformation("{Content}", $"Command = {args.MigrationCommand}");
+            args.Logger.LogInformation("{Content}", $"SchemaOrder = {string.Join(", ", args.SchemaOrder.ToArray())}");
+            args.Logger.LogInformation("{Content}", $"OutDir = {args.OutputDirectory?.FullName}");
+            args.Logger.LogInformation("{Content}", $"Assemblies{(args.Assemblies.Count == 0 ? " = none" : ":")}");
             foreach (var a in args.Assemblies)
             {
-                args.Logger.LogInformation($"  {a.FullName}");
+                args.Logger.LogInformation("{Content}", $"  {a.FullName}");
             }
         }
 
@@ -348,9 +348,9 @@ namespace DbEx.Console
         /// <param name="elapsedMilliseconds">The elapsed execution time in milliseconds.</param>
         protected virtual void OnWriteFooter(long elapsedMilliseconds)
         {
-            Logger?.LogInformation(string.Empty);
-            Logger?.LogInformation($"{AppName} Complete. [{elapsedMilliseconds}ms]");
-            Logger?.LogInformation(string.Empty);
+            Logger?.LogInformation("{Content}", string.Empty);
+            Logger?.LogInformation("{Content}", $"{AppName} Complete. [{elapsedMilliseconds}ms]");
+            Logger?.LogInformation("{Content}", string.Empty);
         }
     }
 }

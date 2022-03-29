@@ -34,28 +34,28 @@ namespace DbEx.SqlServer
         /// <summary>
         /// Gets the <see cref="IDatabase"/>.
         /// </summary>
-        public IDatabase Database { get; }
+        protected IDatabase Database { get; }
 
         /// <summary>
         /// Gets the <see cref="IEventSender"/>.
         /// </summary>
-        public IEventSender EventSender { get; }
+        protected IEventSender EventSender { get; }
 
         /// <summary>
         /// Gets the <see cref="ILogger"/>.
         /// </summary>
-        public ILogger Logger { get; }
+        protected ILogger Logger { get; }
 
         /// <summary>
         /// Gets the event outbox <i>dequeue</i> stored procedure name.
         /// </summary>
-        public abstract string DequeueStoredProcedure { get; }
+        protected abstract string DequeueStoredProcedure { get; }
 
         /// <summary>
         /// Gets the column name for the <see cref="EventDataBase.Id"/> property within the event outbox table.
         /// </summary>
         /// <remarks>Defaults to '<c>EventId</c>'.</remarks>
-        public virtual string EventIdColumnName => "EventId";
+        protected virtual string EventIdColumnName => "EventId";
 
         /// <summary>
         /// Gets or sets the default partition key.

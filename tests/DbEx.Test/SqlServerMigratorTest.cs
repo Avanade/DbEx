@@ -122,7 +122,7 @@ namespace DbEx.Test
             Assert.IsNull(row.GenderId);
         }
 
-        private async Task<(string cs, ILogger l, SqlServerMigrator m)> CreateConsoleDb()
+        private static async Task<(string cs, ILogger l, SqlServerMigrator m)> CreateConsoleDb()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();

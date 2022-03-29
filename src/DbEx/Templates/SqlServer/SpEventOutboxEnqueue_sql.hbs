@@ -1,5 +1,6 @@
 ﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/NTangle }}
 CREATE PROCEDURE [{{OutboxSchema}}].[sp{{OutboxTable}}Enqueue]
+  @SetEventsAsDequeued AS BIT = 0,
   @EventList AS [{{OutboxSchema}}].[udt{{OutboxTable}}List] READONLY
 AS
 BEGIN
@@ -15,9 +16,14 @@ BEGIN
 
     -- Working variables.
     DECLARE @{{camel OutboxTable}}Id BIGINT,
-            @enqueuedDate DATETIME
+            @enqueuedDate DATETIME,
+            @dequeuedDate DATETIME
 
     SET @enqueuedDate = SYSUTCDATETIME()
+    IF (@SetEventsAsDequeued = 1)
+    BEGIN
+      SET @dequeuedDate = @enqueuedDate
+    END
 
     -- Enqueued outbox resultant identifier.
     DECLARE @enqueuedId TABLE([{{OutboxTable}}Id] BIGINT)
@@ -48,9 +54,9 @@ BEGIN
     WHILE @@FETCH_STATUS = 0
     BEGIN
         -- Enqueue event into outbox
-        INSERT INTO [{{OutboxSchema}}].[{{OutboxTable}}] ([EnqueuedDate], [PartitionKey], [Destination])
+        INSERT INTO [{{OutboxSchema}}].[{{OutboxTable}}] ([EnqueuedDate], [PartitionKey], [Destination], [DequeuedDate])
           OUTPUT inserted.{{OutboxTable}}Id INTO @enqueuedId
-          VALUES (@enqueuedDate, @partitionKey, @destination)
+          VALUES (@enqueuedDate, @partitionKey, @destination, @dequeuedDate)
 
         SELECT @{{camel OutboxTable}}Id = [{{OutboxTable}}Id] FROM @enqueuedId
 
