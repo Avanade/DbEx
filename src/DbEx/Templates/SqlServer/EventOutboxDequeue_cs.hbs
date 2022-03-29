@@ -29,7 +29,7 @@ namespace {{NamespaceOutbox}}.Data
         public EventOutboxDequeue(IDatabase database, IEventSender eventSender, ILogger<EventOutboxDequeue> logger) : base(database, eventSender, logger) { }
 
         /// <inheritdoc/>
-        public override string DequeueStoredProcedure => "[{{OutboxSchema}}].[{{OutboxDequeueStoredProcedure}}]";
+        protected override string DequeueStoredProcedure => "[{{OutboxSchema}}].[{{OutboxDequeueStoredProcedure}}]";
     }
 }
 

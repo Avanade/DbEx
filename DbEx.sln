@@ -27,7 +27,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbEx.Test.Console", "tests\DbEx.Test.Console\DbEx.Test.Console.csproj", "{117B6E86-2C88-446E-AC3A-AE1A2E84E2D8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbEx.Test.OutboxConsole", "tests\DbEx.Test.OutboxConsole\DbEx.Test.OutboxConsole.csproj", "{959DD5E1-530A-42BA-82B8-F17A657AC351}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbEx.Test.OutboxConsole", "tests\DbEx.Test.OutboxConsole\DbEx.Test.OutboxConsole.csproj", "{959DD5E1-530A-42BA-82B8-F17A657AC351}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

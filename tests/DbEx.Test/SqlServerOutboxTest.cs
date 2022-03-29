@@ -48,7 +48,7 @@ namespace DbEx.Test
                 Attributes = new Dictionary<string, string> { { "key", "value" } }
             };
 
-            var eoe = new EventOutboxEnqueue(db);
+            var eoe = new EventOutboxEnqueue(db, UnitTest.GetLogger<EventOutboxEnqueue>());
             await eoe.SendAsync(esd).ConfigureAwait(false);
 
             var ims = new InMemorySender();
@@ -88,7 +88,7 @@ namespace DbEx.Test
             using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
 
-            var eoe = new EventOutboxEnqueue(db);
+            var eoe = new EventOutboxEnqueue(db, UnitTest.GetLogger<EventOutboxEnqueue>());
             await eoe.SendAsync(
                 new EventSendData { Id = "1", PartitionKey = null, Destination = null },
                 new EventSendData { Id = "2", PartitionKey = "apples", Destination = null },
@@ -126,7 +126,7 @@ namespace DbEx.Test
             using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
 
-            var eoe = new EventOutboxEnqueue(db);
+            var eoe = new EventOutboxEnqueue(db, UnitTest.GetLogger<EventOutboxEnqueue>());
             await eoe.SendAsync(
                 new EventSendData { Id = "1", PartitionKey = null, Destination = null },
                 new EventSendData { Id = "2", PartitionKey = "apples", Destination = null },
@@ -168,6 +168,61 @@ namespace DbEx.Test
             events = ims.GetEvents();
             Assert.AreEqual(1, events.Length);
             Assert.AreEqual("1", events[0].Id);
+        }
+
+        [Test]
+        public async Task B100_EnqueueDequeue_PrimarySender_Success()
+        {
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
+            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+
+            using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
+            await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
+
+            var eoe = new EventOutboxEnqueue(db, UnitTest.GetLogger<EventOutboxEnqueue>());
+            var pims = new InMemorySender();
+            eoe.SetPrimaryEventSender(pims);
+            await eoe.SendAsync(new EventSendData { Id = "1", PartitionKey = null, Destination = null }).ConfigureAwait(false);
+
+            var events = pims.GetEvents();
+            Assert.AreEqual(1, events.Length);
+            Assert.AreEqual("1", events[0].Id);
+
+            var ims = new InMemorySender();
+            var eod = new EventOutboxDequeue(db, ims, UnitTest.GetLogger<EventOutboxDequeue>());
+
+            // Should have updated as dequeued already; therefore, nothing to dequeue.
+            Assert.AreEqual(0, await eod.DequeueAndSendAsync(10, null, null));
+            events = ims.GetEvents();
+            Assert.AreEqual(0, events.Length);
+        }
+
+        [Test]
+        public async Task B110_EnqueueDequeue_PrimarySender_Error()
+        {
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
+            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+
+            using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
+            await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
+
+            var eoe = new EventOutboxEnqueue(db, UnitTest.GetLogger<EventOutboxEnqueue>());
+            eoe.SetPrimaryEventSender(new TestSender());
+            await eoe.SendAsync(new EventSendData { Id = "1", PartitionKey = null, Destination = null }).ConfigureAwait(false);
+
+            var ims = new InMemorySender();
+            var eod = new EventOutboxDequeue(db, ims, UnitTest.GetLogger<EventOutboxDequeue>());
+
+            // Should have updated as enqueued; therefore, need to be dequeued.
+            Assert.AreEqual(1, await eod.DequeueAndSendAsync(10, null, null));
+            var events = ims.GetEvents();
+            Assert.AreEqual(1, events.Length);
+            Assert.AreEqual("1", events[0].Id);
+        }
+
+        private class TestSender : IEventSender
+        {
+            public Task SendAsync(params EventSendData[] events) => throw new NotImplementedException();
         }
     }
 }
