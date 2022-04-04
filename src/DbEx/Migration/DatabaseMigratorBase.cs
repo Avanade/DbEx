@@ -195,10 +195,10 @@ namespace DbEx.Migration
         /// <remarks>This will also catch any unhandled exceptions and log accordingly.</remarks>
         protected async Task<bool> CommandExecuteAsync(string title, Func<Task<bool>> action, Func<string>? summary = null)
         {
-            Logger.LogInformation(string.Empty);
-            Logger.LogInformation(new string('-', 80));
-            Logger.LogInformation(string.Empty);
-            Logger.LogInformation(title ?? throw new ArgumentNullException(nameof(title)));
+            Logger.LogInformation("{Content}", string.Empty);
+            Logger.LogInformation("{Content}", new string('-', 80));
+            Logger.LogInformation("{Content}", string.Empty);
+            Logger.LogInformation("{Content}", title ?? throw new ArgumentNullException(nameof(title)));
 
             try
             {
@@ -207,13 +207,13 @@ namespace DbEx.Migration
                     return false;
 
                 sw.Stop();
-                Logger.LogInformation(string.Empty);
-                Logger.LogInformation($"Complete. [{sw.ElapsedMilliseconds}ms{summary?.Invoke() ?? string.Empty}]");
+                Logger.LogInformation("{Content}", string.Empty);
+                Logger.LogInformation("{Content}", $"Complete. [{sw.ElapsedMilliseconds}ms{summary?.Invoke() ?? string.Empty}]");
                 return true;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, ex.Message);
+                Logger.LogError(ex, "{Content}", ex.Message);
                 return false;
             }
         }
@@ -236,11 +236,11 @@ namespace DbEx.Migration
             if (r.Successful)
                 return true;
 
-            Logger.LogInformation(string.Empty);
+            Logger.LogInformation("{Content}", string.Empty);
             if (r.ErrorScript?.Name != null)
-                Logger.LogError($"Error occured executing script '{r.ErrorScript.Name}': {r.Error.Message}");
+                Logger.LogError("{Content}", $"Error occured executing script '{r.ErrorScript.Name}': {r.Error.Message}");
             else
-                Logger.LogError($"Unexpected error occured: {r.Error?.Message}");
+                Logger.LogError("{Content}", $"Unexpected error occured: {r.Error?.Message}");
 
             return false;
         }
@@ -264,7 +264,7 @@ namespace DbEx.Migration
         /// </summary>
         private async Task<bool> DatabaseMigrateAsync()
         {
-            Logger.LogInformation($"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.sql"))}");
+            Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.sql"))}");
 
             var scripts = new List<SqlScript>();
             foreach (var ass in Assemblies)
@@ -282,11 +282,11 @@ namespace DbEx.Migration
 
             if (scripts.Count == 0)
             {
-                Logger.LogInformation(NothingFoundText);
+                Logger.LogInformation("{Content}", NothingFoundText);
                 return true;
             }
 
-            Logger.LogInformation("  Migrate (using DbUp) the embedded resources...");
+            Logger.LogInformation("{Content}", "  Migrate (using DbUp) the embedded resources...");
             return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(scripts, true).ConfigureAwait(false));
         }
 
@@ -302,7 +302,7 @@ namespace DbEx.Migration
             if (OutputDirectory != null)
             {
                 var di = new DirectoryInfo(Path.Combine(OutputDirectory.FullName, SchemaNamespace));
-                Logger.LogInformation($"  Probing for files (recursively): {Path.Combine(di.FullName, "*", "*.sql")}");
+                Logger.LogInformation("{Content}", $"  Probing for files (recursively): {Path.Combine(di.FullName, "*", "*.sql")}");
 
                 if (di.Exists)
                 {
@@ -315,7 +315,7 @@ namespace DbEx.Migration
             }
 
             // Get all the resources from the assemblies.
-            Logger.LogInformation($"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{SchemaNamespace}.*.sql"))}");
+            Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{SchemaNamespace}.*.sql"))}");
             foreach (var ass in Assemblies)
             {
                 foreach (var rn in ass.GetManifestResourceNames().OrderBy(x => x))
@@ -363,10 +363,10 @@ namespace DbEx.Migration
         /// </summary>
         private async Task<bool> DatabaseDataAsync()
         {
-            Logger.LogInformation($"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*.[sql|yaml]", true))}");
+            Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*.[sql|yaml]", true))}");
 
             var list = new List<(Assembly Assembly, string ResourceName)>();
-            foreach (var ass in Assemblies)
+            foreach (var ass in Assemblies.Reverse<Assembly>()) // Reverse order as assumed data builds on earlier (e.g. master needs ref data).
             {
                 foreach (var rn in ass.GetManifestResourceNames().OrderBy(x => x))
                 {
@@ -381,7 +381,7 @@ namespace DbEx.Migration
             // Make sure there is work to be done.
             if (list.Count == 0)
             {
-                Logger.LogInformation(NothingFoundText);
+                Logger.LogInformation("{Content}", NothingFoundText);
                 return true;
             }
 
@@ -400,8 +400,8 @@ namespace DbEx.Migration
                 if (item.ResourceName.EndsWith(".sql", StringComparison.InvariantCultureIgnoreCase))
                 {
                     // Execute the SQL script directly.
-                    Logger.LogInformation(string.Empty);
-                    Logger.LogInformation($"** Executing: {item.ResourceName}");
+                    Logger.LogInformation("{Content}", string.Empty);
+                    Logger.LogInformation("{Content}", $"** Executing: {item.ResourceName}");
 
                     var ss = new SqlScript(item.ResourceName, await sr.ReadToEndAsync().ConfigureAwait(false), new SqlScriptOptions { ScriptType = DbUp.Support.ScriptType.RunAlways });
                     var success = CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(new SqlScript[] { ss }, false).ConfigureAwait(false));
@@ -413,8 +413,8 @@ namespace DbEx.Migration
                     // Handle the YAML - parse and execute.
                     try
                     {
-                        Logger.LogInformation(string.Empty);
-                        Logger.LogInformation($"** Parsing and executing: {item.ResourceName}");
+                        Logger.LogInformation("{Content}", string.Empty);
+                        Logger.LogInformation("{Content}", $"** Parsing and executing: {item.ResourceName}");
 
                         var tables = await parser.ParseYamlAsync(sr);
 
@@ -423,7 +423,7 @@ namespace DbEx.Migration
                     }
                     catch (DataParserException dpex)
                     {
-                        Logger.LogError(dpex.Message);
+                        Logger.LogError("{Content}", dpex.Message);
                         return false;
                     }
                 }
@@ -498,7 +498,7 @@ namespace DbEx.Migration
 
             if (sr == null)
             {
-                Logger.LogError($"The Script resource '{resourceName}' does not exist.");
+                Logger.LogError("{Content}", $"The Script resource '{resourceName}' does not exist.");
                 return false;
             }
 
@@ -541,7 +541,7 @@ namespace DbEx.Migration
 
             await File.WriteAllTextAsync(fi.FullName, new HandlebarsCodeGenerator(txt).Generate(data)).ConfigureAwait(false);
 
-            Logger.LogWarning($"Script file created: {fi.FullName}");
+            Logger.LogWarning("{Content}", $"Script file created: {fi.FullName}");
             return true;
         }
 
@@ -584,10 +584,10 @@ namespace DbEx.Migration
                 Logger.LogInformation($"  All scripts executed successfully.");
             else
             {
-                Logger.LogInformation(string.Empty);
-                Logger.LogError($"The SQL statement failed with: {dur.Error.Message}");
-                Logger.LogWarning($"Script '{dur.ErrorScript.Name}' contents:");
-                Logger.LogWarning(dur.ErrorScript.Contents);
+                Logger.LogInformation("{Content}", string.Empty);
+                Logger.LogError("{Content}", $"The SQL statement failed with: {dur.Error.Message}");
+                Logger.LogWarning("{Content}", $"Script '{dur.ErrorScript.Name}' contents:");
+                Logger.LogWarning("{Content}", dur.ErrorScript.Contents);
             }
 
             return dur.Successful;
