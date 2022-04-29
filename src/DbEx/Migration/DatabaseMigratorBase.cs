@@ -366,7 +366,7 @@ namespace DbEx.Migration
             Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*.[sql|yaml]", true))}");
 
             var list = new List<(Assembly Assembly, string ResourceName)>();
-            foreach (var ass in Assemblies.Reverse<Assembly>()) // Reverse order as assumed data builds on earlier (e.g. master needs ref data).
+            foreach (var ass in Assemblies)
             {
                 foreach (var rn in ass.GetManifestResourceNames().OrderBy(x => x))
                 {
