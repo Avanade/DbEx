@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v1.0.8
+- *Fixed:* Updated to `CoreEx` version `1.0.3`.
+
 ## v1.0.7
 - *Fixed:* Previous version v1.0.6 fix was incorrect; Data import order should not have been reversed. This preivous change has been corrected. 
 
