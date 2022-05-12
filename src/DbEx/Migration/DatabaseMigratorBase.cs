@@ -208,7 +208,7 @@ namespace DbEx.Migration
 
                 sw.Stop();
                 Logger.LogInformation("{Content}", string.Empty);
-                Logger.LogInformation("{Content}", $"Complete. [{sw.ElapsedMilliseconds}ms{summary?.Invoke() ?? string.Empty}]");
+                Logger.LogInformation("{Content}", $"Complete. [{sw.Elapsed.TotalMilliseconds}ms{summary?.Invoke() ?? string.Empty}]");
                 return true;
             }
             catch (Exception ex)

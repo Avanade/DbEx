@@ -14,7 +14,7 @@ using System.Transactions;
 namespace DbEx.SqlServer
 {
     /// <summary>
-    /// Provides the base <see cref="EventSendData"/> <see cref="IDatabase">database</see> <i>outbox dequeue</i> and corresponding <see cref="IEventSender.SendAsync(EventSendData[])"/>.
+    /// Provides the base <see cref="EventSendData"/> <see cref="IDatabase">database</see> <i>outbox dequeue</i> and corresponding <see cref="IEventSender.SendAsync(IEnumerable{EventSendData}, CancellationToken)"/>.
     /// </summary>
     public abstract class EventOutboxDequeueBase : IDatabaseMapper<EventSendData>
     {
@@ -105,13 +105,13 @@ namespace DbEx.SqlServer
                     return 0;
                 }
 
-                Logger.LogInformation("{EventCount} event(s) were dequeued. [Elapsed={Elapsed}ms]", events.Count(), sw.ElapsedMilliseconds);
+                Logger.LogInformation("{EventCount} event(s) were dequeued. [Elapsed={Elapsed}ms]", events.Count(), sw.Elapsed.TotalMilliseconds);
 
                 // Send the events.
                 sw = Stopwatch.StartNew();
-                await EventSender.SendAsync(events.ToArray()).ConfigureAwait(false);
+                await EventSender.SendAsync(events.ToArray(), cancellationToken).ConfigureAwait(false);
                 sw.Stop();
-                Logger.LogInformation("{EventCount} event(s) were sent successfully. [Sender={Sender}, Elapsed={Elapsed}ms]", events.Count(), EventSender.GetType().Name, sw.ElapsedMilliseconds);
+                Logger.LogInformation("{EventCount} event(s) were sent successfully. [Sender={Sender}, Elapsed={Elapsed}ms]", events.Count(), EventSender.GetType().Name, sw.Elapsed.TotalMilliseconds);
 
                 // Commit the transaction.
                 txn.Complete();

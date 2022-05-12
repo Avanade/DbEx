@@ -22,7 +22,7 @@ namespace DbEx.Console
     /// </summary>
     /// <remarks>The standard console command-line arguments/options can be controlled via the constructor using the <see cref="SupportedOptions"/> flags. Additional capabilities can be added by inherting and overridding the
     /// <see cref="OnBeforeExecute(CommandLineApplication)"/>, <see cref="OnValidation(ValidationContext)"/> and <see cref="OnMigrateAsync"/>. Changes to the console output can be achieved by overridding
-    /// <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(MigratorConsoleArgs)"/> and <see cref="OnWriteFooter(long)"/>.
+    /// <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(MigratorConsoleArgs)"/> and <see cref="OnWriteFooter(double)"/>.
     /// <para>The underlying command line parsing is provided by <see href="https://natemcmaster.github.io/CommandLineUtils/"/>.</para></remarks>
     public abstract class MigratorConsoleBase
     {
@@ -58,7 +58,7 @@ namespace DbEx.Console
         protected ILogger? Logger => Args.Logger;
 
         /// <summary>
-        /// Indicates whether to bypass standard execution of <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(MigratorConsoleArgs)"/> and <see cref="OnWriteFooter(long)"/>.
+        /// Indicates whether to bypass standard execution of <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(MigratorConsoleArgs)"/> and <see cref="OnWriteFooter(double)"/>.
         /// </summary>
         protected bool BypassOnWrites { get; set; }
 
@@ -273,7 +273,7 @@ namespace DbEx.Console
                 // Write footer and exit successfully.
                 sw.Stop();
                 if (!BypassOnWrites)
-                    OnWriteFooter(sw.ElapsedMilliseconds);
+                    OnWriteFooter(sw.Elapsed.TotalMilliseconds);
 
                 return 0;
             }
@@ -345,11 +345,11 @@ namespace DbEx.Console
         /// <summary>
         /// Invoked to write the footer information to the <see cref="Logger"/>.
         /// </summary>
-        /// <param name="elapsedMilliseconds">The elapsed execution time in milliseconds.</param>
-        protected virtual void OnWriteFooter(long elapsedMilliseconds)
+        /// <param name="totalMilliseconds">The elapsed execution time in milliseconds.</param>
+        protected virtual void OnWriteFooter(double totalMilliseconds)
         {
             Logger?.LogInformation("{Content}", string.Empty);
-            Logger?.LogInformation("{Content}", $"{AppName} Complete. [{elapsedMilliseconds}ms]");
+            Logger?.LogInformation("{Content}", $"{AppName} Complete. [{totalMilliseconds}ms]");
             Logger?.LogInformation("{Content}", string.Empty);
         }
     }
