@@ -2,11 +2,15 @@
 
 Represents the **NuGet** versions.
 
+## v1.0.9
+- *Enhancement:* Updated the `EventOoutboxEnqueueBase` to handle new `EventSendException` and enqueue each individual message as either sent or unsent within the outbox.
+- *Fixed:* Updated to `CoreEx` version `1.0.5`.
+
 ## v1.0.8
 - *Fixed:* Updated to `CoreEx` version `1.0.3`.
 
 ## v1.0.7
-- *Fixed:* Previous version v1.0.6 fix was incorrect; Data import order should not have been reversed. This preivous change has been corrected. 
+- *Fixed:* Previous version `1.0.6` fix was incorrect; Data import order should not have been reversed. This previous change has been corrected. 
 
 ## v1.0.6
 - *Fixed:* [Issue 12](https://github.com/Avanade/DbEx/issues/12) fixed. Data import order has been reversed.

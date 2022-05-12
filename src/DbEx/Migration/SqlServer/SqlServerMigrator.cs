@@ -68,7 +68,7 @@ namespace DbEx.Migration.SqlServer
                 var sor = SqlServerObjectReader.Read(script.Name, sr, KnownSchemaObjectTypes, SchemaOrder.ToArray());
                 if (!sor.IsValid)
                 {
-                    Logger.LogError($"SQL script '{script.Name}' is not valid: {sor.ErrorMessage}");
+                    Logger.LogError("{Message}", $"SQL script '{script.Name}' is not valid: {sor.ErrorMessage}");
                     return false;
                 }
 
@@ -122,14 +122,14 @@ namespace DbEx.Migration.SqlServer
 
             foreach (var table in dataTables)
             {
-                Logger.LogInformation(string.Empty);
-                Logger.LogInformation($"---- Executing {table.Schema}.{table.Name} SQL:");
+                Logger.LogInformation("");
+                Logger.LogInformation("{Message}", $"---- Executing {table.Schema}.{table.Name} SQL:");
 
                 var sql = _codeGen.Generate(table);
-                Logger.LogInformation(sql);
+                Logger.LogInformation("{Message}", sql);
 
                 var rows = await database.SqlStatement(sql).ScalarAsync<int>().ConfigureAwait(false);
-                Logger.LogInformation($"Result: {rows} rows affected.");
+                Logger.LogInformation("{Message}", $"Result: {rows} rows affected.");
             }
 
             return true;
@@ -154,7 +154,7 @@ namespace DbEx.Migration.SqlServer
                 if (dur.Successful || dur.ErrorScript != null || i >= MaxRetries)
                     return dur;
 
-                Logger.LogWarning($"    Possible transient error (will try again in 500ms): {dur.Error.Message}");
+                Logger.LogWarning("{Message}", $"    Possible transient error (will try again in 500ms): {dur.Error.Message}");
                 await Task.Delay(500).ConfigureAwait(false);
             }
         }
