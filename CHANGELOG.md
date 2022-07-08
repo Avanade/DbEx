@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v1.0.10
+- *Enhancement:* Removed generic database functionality as this has been ported to `CoreEx.Database`. `DbEx` is now focused on tooling only.
+
 ## v1.0.9
 - *Enhancement:* Updated the `EventOoutboxEnqueueBase` to handle new `EventSendException` and enqueue each individual message as either sent or unsent within the outbox.
 - *Fixed:* Updated to `CoreEx` version `1.0.5`.
