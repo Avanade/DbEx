@@ -1,14 +1,16 @@
-﻿using NUnit.Framework;
+﻿using CoreEx.Database;
+using CoreEx.Database.SqlServer;
+using CoreEx.Events;
+using DbEx.Migration.SqlServer;
+using DbEx.Test.OutboxConsole.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
-using System.Threading.Tasks;
-using DbEx.Test.OutboxConsole.Data;
-using CoreEx.Events;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using DbEx.Migration.SqlServer;
-using System.Threading;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DbEx.Test
 {
@@ -32,7 +34,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
 
-            using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
+            using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
 
             var esd = new EventSendData
@@ -89,7 +91,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
 
-            using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
+            using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
 
             var eoe = new EventOutboxEnqueue(db, UnitTest.GetLogger<EventOutboxEnqueue>());
@@ -129,7 +131,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
 
-            using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
+            using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
 
             var eoe = new EventOutboxEnqueue(db, UnitTest.GetLogger<EventOutboxEnqueue>());
@@ -184,7 +186,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
 
-            using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
+            using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
 
             var eoe = new EventOutboxEnqueue(db, UnitTest.GetLogger<EventOutboxEnqueue>());
@@ -211,7 +213,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
 
-            using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
+            using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
 
             var eoe = new EventOutboxEnqueue(db, UnitTest.GetLogger<EventOutboxEnqueue>());
@@ -234,7 +236,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigratorTest>();
 
-            using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
+            using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
 
             var eoe = new EventOutboxEnqueue(db, UnitTest.GetLogger<EventOutboxEnqueue>());

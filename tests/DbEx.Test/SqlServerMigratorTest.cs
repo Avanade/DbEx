@@ -1,4 +1,6 @@
-﻿using DbEx.Migration.Data;
+﻿using CoreEx.Database;
+using CoreEx.Database.SqlServer;
+using DbEx.Migration.Data;
 using DbEx.Migration.SqlServer;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -42,8 +44,8 @@ namespace DbEx.Test
             var (cs, l, m) = await CreateConsoleDb().ConfigureAwait(false);
 
             // Check that the contact data was updated as expected.
-            using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
-            var res = (await db.SqlStatement("SELECT * FROM [Test].[Contact]").SelectAsync(dr => new
+            using var db = new SqlServerDatabase(() => new SqlConnection(cs));
+            var res = (await db.SqlStatement("SELECT * FROM [Test].[Contact]").SelectQueryAsync(dr => new
             {
                 ContactId = dr.GetValue<int>("ContactId"),
                 Name = dr.GetValue<string>("Name"),
@@ -80,7 +82,7 @@ namespace DbEx.Test
             Assert.AreEqual(2, row.GenderId);
 
             // Check that the person data was updated as expected - converted and auto-assigned id, plus createdby and createddate columns, and finally runtime variable.
-            var res2 = (await db.SqlStatement("SELECT * FROM [Test].[Person]").SelectAsync(dr => new
+            var res2 = (await db.SqlStatement("SELECT * FROM [Test].[Person]").SelectQueryAsync(dr => new
             {
                 PersonId = dr.GetValue<Guid>("PersonId"),
                 Name = dr.GetValue<string>("Name"),
@@ -102,7 +104,7 @@ namespace DbEx.Test
             Assert.AreEqual(m.ParserArgs.DateTimeNow, row2.CreatedDate);
 
             // Check that the stored procedure script was migrated and works!
-            res = (await db.StoredProcedure("[Test].[spGetContact]", p => p.Param("@ContactId", 2)).SelectAsync(dr => new
+            res = (await db.StoredProcedure("[Test].[spGetContact]").Param("@ContactId", 2).SelectQueryAsync(dr => new
             {
                 ContactId = dr.GetValue<int>("ContactId"),
                 Name = dr.GetValue<string>("Name"),

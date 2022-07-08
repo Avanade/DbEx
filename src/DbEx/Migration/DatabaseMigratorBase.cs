@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx.Database;
 using DbEx.Migration.Data;
 using DbUp.Engine;
 using Microsoft.Extensions.Logging;
