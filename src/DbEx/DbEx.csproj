@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>DbEx</RootNamespace>
-    <Version>1.0.9</Version>
+    <Version>1.0.10</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>DbEx Developers</Authors>
     <Company>Avanade</Company>
@@ -89,8 +89,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx" Version="1.0.5" />
-    <PackageReference Include="dbup-sqlserver" Version="4.5.0" />
+    <PackageReference Include="CoreEx.Database" Version="1.0.6" />
+    <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="4.1.0" />
     <PackageReference Include="OnRamp" Version="1.0.5" />
   </ItemGroup>

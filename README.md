@@ -267,39 +267,11 @@ dotnet run execute ./schema/createscehma.sql
 
 <br/>
 
-## ADO.NET 
-
-To simplify generic access to an [ADO.NET](https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/) enabled database the following are provided.
-
-Class | Description
--|-
-[`Database`](./src/DbEx/Database.cs) | Enables database provider agnostic access to invoke a `StoredProcedure` or `SqlStatement`.
-[`DatabaseParameterCollection`](./src/DbEx/DatabaseParameterCollection.cs) | Encapsulates the underlying [`DbParameterCollection`](https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbparametercollection) to simplify.
-[`DatabaseCommand`](./src/DbEx/DatabaseCommand.cs) | Encapsulates the underlying [`DbCommand`](https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbcommand) to simplify.
-[`IMultiSetArgs`](./src/DbEx/IMultiSetArgs.cs) | Provides a simplified means to manage queries which return one or more result sets using a [`DbDataReader`](https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbdatareader). See also [`MultiSetSingleArgs`](./src/DbEx/MultiSetSingleArgsT.cs) and [`MultiSetCollArgs`](./src/DbEx/MultiSetCollArgsT.cs)
-[`DatabaseRecord`](./src/DbEx/DatabaseRecord.cs) | Encapsulates the underlying [`DbDataReader`](https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbdatareader) to simplify column value access for a given record.
-[`IDatabaseMapper`](./src/DbEx/IDatabaseMapper.cs) | Provides a standardized approach for mapping between a [`DatabaseRecord`](./src/DbEx/DatabaseRecord.cs) and a corresponding .NET object.
-
-The [`DatabaseCommand`](./src/DbEx/DatabaseCommand.cs) provides the following key methods to access data.
-
-Method | Description
--|-
-`NonQueryAsync` | Executes a non-query command.
-`ScalarAsync` | Executes the query and returns the first column of the first row in the result set returned by the query.
-`SelectAsync` | Selects none or more items from the first result set.
-`SelectMultiSetAsync` | Executes a multi-dataset query command with one or more [`IMultiSetArgs`](./src/DbEx/IMultiSetArgs.cs).
-`SelectSingleAsync` | Selects a single item.
-`SelectSingleOrDefaultAsync` | Selects a single item or default.
-`SelectFirstAsync` | Selects first item.
-`SelectFirstOrDefaultAsync` | Selects first item or default.
-
-<br/>
-
-### Infer database schema
+## Infer database schema
 
 Within a code-generation, or other context, the database schema may need to be inferred to understand the basic schema for all tables and their corresponding columns.
 
-The [`Database`](./src/DbEx/Database.cs) class provides a `SelectSchemaAsync` method to return a [`DbTableSchema`](./src/DbEx/Schema/DbTableSchema.cs) list, including the respective columns for each table (see [`DbColumnSchema`](./src/DbEx/Schema/DbColumnSchema.cs)).
+The [`Database`](./src/DbEx/DatabaseExtensions.cs) class provides a `SelectSchemaAsync` method to return a [`DbTableSchema`](./src/DbEx/Schema/DbTableSchema.cs) list, including the respective columns for each table (see [`DbColumnSchema`](./src/DbEx/Schema/DbColumnSchema.cs)).
 
 <br/>
 
@@ -317,14 +289,14 @@ Template | Description | Example
 [`UdtEventOutbox_sql.hbs`](./src/DbEx/Templates/SqlServer/UdtEventOutbox_sql.hbs) | Event outbox user-defined table type. | See [example](./tests/DbEx.Test.OutboxConsole/Schema/Outbox/Types/User-Defined%20Table%20Types/Generated/udtEventOutboxList.sql).
 [`SpEventOutboxEnqueue_sql.hbs`](./src/DbEx/Templates/SqlServer/SpEventOutboxEnqueue_sql.hbs) | Event outbox enqueue stored procedure. | See [example](./tests/DbEx.Test.OutboxConsole/Schema/Outbox/Stored%20Procedures/Generated/spEventOutboxEnqueue.sql).
 [`SpEventOutboxDequeue_sql.hbs`](./src/DbEx/Templates/SqlServer/SpEventOutboxDequeue_sql.hbs) | Event outbox dequeue stored procedure. | See [example](./tests/DbEx.Test.OutboxConsole/Schema/Outbox/Stored%20Procedures/Generated/spEventOutboxDequeue.sql).
-[`EventOutboxEnqueue_cs.hbs`](./src/DbEx/Templates/SqlServer/EventOutboxEnqueue_cs.hbs) | Event outbox enqueue (.NET C#); inherits capabilities from [`EventOutboxEnqueueBase`](./src/DbEx/SqlServer/EventOutboxEnqueueBase.cs). | See [example](./tests/DbEx.Test.OutboxConsole/Generated/EventOutboxEnqueue.cs).
-[`EventOutboxEnqueue_cs.hbs`](./src/DbEx/Templates/SqlServer/EventOutboxDequeue_cs.hbs) | Event outbox dequeue (.NET C#); inherits capabilities from [`EventOutboxDequeueBase`](./src/DbEx/SqlServer/EventOutboxDequeueBase.cs). | See [example](./tests/DbEx.Test.OutboxConsole/Generated/EventOutboxDequeue.cs).
+[`EventOutboxEnqueue_cs.hbs`](./src/DbEx/Templates/SqlServer/EventOutboxEnqueue_cs.hbs) | Event outbox enqueue (.NET C#); inherits capabilities from [`EventOutboxEnqueueBase`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx.Database/SqlServer/EventOutboxEnqueueBase.cs). | See [example](./tests/DbEx.Test.OutboxConsole/Generated/EventOutboxEnqueue.cs).
+[`EventOutboxEnqueue_cs.hbs`](./src/DbEx/Templates/SqlServer/EventOutboxDequeue_cs.hbs) | Event outbox dequeue (.NET C#); inherits capabilities from [`EventOutboxDequeueBase`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx.Database/SqlServer/EventOutboxDequeueBase.cs). | See [example](./tests/DbEx.Test.OutboxConsole/Generated/EventOutboxDequeue.cs).
 
 <br/>
 
 ### Event Outbox Enqueue
 
-The [`EventOutboxDequeueBase`](./src/DbEx/SqlServer/EventOutboxEnqueueBase.cs) provides the base [`IEventSender`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx/Events/IEventSender.cs) send/enqueue capabilities.
+The [`EventOutboxDequeueBase`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx.Database/SqlServer/EventOutboxEnqueueBase.cs) provides the base [`IEventSender`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx/Events/IEventSender.cs) send/enqueue capabilities.
 
 By default the events are first sent/enqueued to the datatbase outbox, then a secondary out-of-process dequeues and sends. This can however introduce unwanted latency depending on the frequency in which the secondary process performs the dequeue and send, as this is essentially a polling-based operation. To improve (minimize) latency, the primary `IEventSender` can be specified using the `SetPrimaryEventSender` method. This will then be used to send the events immediately, and where successful, they will be audited in the database as dequeued event(s); versus on error (as a backup), where they will be enqueued for the out-of-process dequeue and send (as per default).
 

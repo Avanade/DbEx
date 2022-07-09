@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx.Database;
+using CoreEx.Database.SqlServer;
 using DbEx.Migration.Data;
 using DbEx.Migration.SqlServer.Internal;
 using DbUp;
@@ -116,7 +118,7 @@ namespace DbEx.Migration.SqlServer
             // Cache the compiled code-gen template.
             if (_codeGen == null)
             {
-                using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.TableInsertOrMerge_sql.hb", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
+                using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.TableInsertOrMerge_sql.hb", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
                 _codeGen = new HandlebarsCodeGenerator(await sr.ReadToEndAsync().ConfigureAwait(false));
             }
 
@@ -136,7 +138,7 @@ namespace DbEx.Migration.SqlServer
         }
 
         /// <inheritdoc/>
-        protected override IDatabase CreateDatabase(string connectionString) => new Database<SqlConnection>(() => new SqlConnection(connectionString));
+        protected override IDatabase CreateDatabase(string connectionString) => new SqlServerDatabase(() => new SqlConnection(connectionString));
 
         /// <inheritdoc/>
         public override async Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts, bool includeExecutionLogging)

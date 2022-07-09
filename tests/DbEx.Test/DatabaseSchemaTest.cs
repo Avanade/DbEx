@@ -1,4 +1,5 @@
-﻿using DbEx.Migration.SqlServer;
+﻿using CoreEx.Database.SqlServer;
+using DbEx.Migration.SqlServer;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
@@ -20,7 +21,7 @@ namespace DbEx.Test
             var r = await m.MigrateAsync().ConfigureAwait(false);
             Assert.IsTrue(r);
 
-            using var db = new Database<SqlConnection>(() => new SqlConnection(cs));
+            using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             var tables = await db.SelectSchemaAsync().ConfigureAwait(false);
             Assert.IsNotNull(tables);
 

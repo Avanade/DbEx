@@ -1,11 +1,12 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx.Database;
+using CoreEx.Entities;
+using CoreEx.Mapping;
 using DbEx.Schema;
 using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -13,63 +14,29 @@ using System.Threading.Tasks;
 namespace DbEx
 {
     /// <summary>
-    /// Provides the common/base database access functionality.
+    /// <see cref="IDatabase"/> extensions.
     /// </summary>
-    /// <typeparam name="TConnection">The <see cref="DbConnection"/> <see cref="Type"/>.</typeparam>
-    public class Database<TConnection> : IDatabase, IDisposable where TConnection : DbConnection
+    public static class DatabaseExtensions
     {
-        private readonly Func<TConnection> _dbConnCreate;
-        private TConnection? _dbConn;
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="Database{TConn}"/> class.
+        /// Selects all the table and column schema details from the database.
         /// </summary>
-        /// <param name="create">The function to create the <typeparamref name="TConnection"/> <see cref="DbConnection"/>.</param>
-        public Database(Func<TConnection> create) => _dbConnCreate = create ?? throw new ArgumentNullException(nameof(create));
-
-        /// <summary>
-        /// Gets the <typeparamref name="TConnection"/> <see cref="DbConnection"/>.
-        /// </summary>
-        /// <remarks>The connection is created and opened on first use, and closed on <see cref="IDisposable.Dispose()"/>.</remarks>
-        public async Task<TConnection> GetConnectionAsync()
-        {
-            if (_dbConn == null)
-            {
-                _dbConn = _dbConnCreate() ?? throw new InvalidOperationException($"The create function must create a valid {nameof(TConnection)} instance.");
-                await _dbConn.OpenAsync().ConfigureAwait(false);
-            }
-
-            return _dbConn;
-        }
-
-        /// <inheritdoc/>
-        async Task<DbConnection> IDatabase.GetConnectionAsync() => await GetConnectionAsync().ConfigureAwait(false);
-
-        /// <inheritdoc/>
-        public DatabaseCommand StoredProcedure(string storedProcedure, Action<DatabaseParameterCollection>? parameters = null)
-            => new(this, CommandType.StoredProcedure, storedProcedure ?? throw new ArgumentNullException(nameof(storedProcedure)), parameters);
-
-        /// <inheritdoc/>
-        public DatabaseCommand SqlStatement(string sqlStatement, Action<DatabaseParameterCollection>? parameters = null)
-            => new(this, CommandType.Text, sqlStatement ?? throw new ArgumentNullException(nameof(sqlStatement)), parameters);
-
-        /// <inheritdoc/>
-        public virtual void OnDbException(DbException dbex) { }
-
-        /// <inheritdoc/>
+        /// <param name="database">The <see cref="IDatabase"/>.</param>
+        /// <param name="refDataPredicate">The reference data predicate used to determine whether a <see cref="DbTableSchema"/> is considered a reference data table (sets <see cref="DbTableSchema.IsRefData"/>).</param>
+        /// <returns>A list of all the table and column schema details.</returns>
         /// <remarks>The <paramref name="refDataPredicate"/> where not specified will default to checking whether the <see cref="DbTableSchema"/> has any non-primary key <see cref="string"/>-based <see cref="DbTableSchema.Columns">columns</see> named '<c>Code</c>' and '<c>Text</c>'.</remarks>
-        public virtual async Task<List<DbTableSchema>> SelectSchemaAsync(Func<DbTableSchema, bool>? refDataPredicate = null)
+        public static async Task<List<DbTableSchema>> SelectSchemaAsync(this IDatabase database, Func<DbTableSchema, bool>? refDataPredicate = null)
         {
             var tables = new List<DbTableSchema>();
             DbTableSchema? table = null;
 
             // Get all the tables and their columns.
-            using var sr = StreamLocator.GetResourcesStreamReader("SelectTableAndColumns.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
-            await SqlStatement(await sr.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
+            using var sr = StreamLocator.GetResourcesStreamReader("SelectTableAndColumns.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
+            await database.SqlStatement(await sr.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr =>
             {
                 var dt = new DbTableSchema(dr.GetValue<string>("TABLE_SCHEMA"), dr.GetValue<string>("TABLE_NAME"))
-                { 
-                    IsAView = dr.GetValue<string>("TABLE_TYPE") == "VIEW" 
+                {
+                    IsAView = dr.GetValue<string>("TABLE_TYPE") == "VIEW"
                 };
 
                 if (table == null || table.Schema != dt.Schema || table.Name != dt.Name)
@@ -85,7 +52,8 @@ namespace DbEx
                 };
 
                 table.Columns.Add(dc);
-            })).ConfigureAwait(false);
+                return 0;
+            }).ConfigureAwait(false);
 
             // Exit where no tables initially found.
             if (tables.Count == 0)
@@ -99,8 +67,8 @@ namespace DbEx
             }
 
             // Configure all the single column primary and unique constraints.
-            using var sr2 = StreamLocator.GetResourcesStreamReader("SelectTablePrimaryKey.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
-            var pks = await SqlStatement(await sr2.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(dr => new
+            using var sr2 = StreamLocator.GetResourcesStreamReader("SelectTablePrimaryKey.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
+            var pks = await database.SqlStatement(await sr2.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("CONSTRAINT_NAME"),
                 TableSchema = dr.GetValue<string>("TABLE_SCHEMA"),
@@ -134,8 +102,8 @@ namespace DbEx
             }
 
             // Configure all the single column foreign keys.
-            using var sr3 = StreamLocator.GetResourcesStreamReader("SelectTableForeignKeys.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
-            var fks = await SqlStatement(await sr3.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(dr => new
+            using var sr3 = StreamLocator.GetResourcesStreamReader("SelectTableForeignKeys.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
+            var fks = await database.SqlStatement(await sr3.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("FK_CONSTRAINT_NAME"),
                 TableSchema = dr.GetValue<string>("FK_SCHEMA_NAME"),
@@ -145,7 +113,7 @@ namespace DbEx
                 ForeignTable = dr.GetValue<string>("UQ_TABLE_NAME"),
                 ForiegnColumn = dr.GetValue<string>("UQ_COLUMN_NAME")
             }).ConfigureAwait(false);
-            
+
             foreach (var grp in fks.GroupBy(x => x.ConstraintName).Where(x => x.Count() == 1))
             {
                 var fk = grp.Single();
@@ -161,33 +129,36 @@ namespace DbEx
             }
 
             // Select the table identity columns.
-            using var sr4 = StreamLocator.GetResourcesStreamReader("SelectTableIdentityColumns.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
-            await SqlStatement(await sr4.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
+            using var sr4 = StreamLocator.GetResourcesStreamReader("SelectTableIdentityColumns.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
+            await database.SqlStatement(await sr4.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr =>
             {
                 var t = tables.Single(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
                 var c = t.Columns.Single(x => x.Name == dr.GetValue<string>("COLUMN_NAME"));
                 c.IsIdentity = true;
                 c.IdentitySeed = 1;
                 c.IdentityIncrement = 1;
-            })).ConfigureAwait(false);
+                return 0;
+            }).ConfigureAwait(false);
 
             // Select the "always" generated columns.
-            using var sr5 = StreamLocator.GetResourcesStreamReader("SelectTableAlwaysGeneratedColumns.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
-            await SqlStatement(await sr5.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
+            using var sr5 = StreamLocator.GetResourcesStreamReader("SelectTableAlwaysGeneratedColumns.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
+            await database.SqlStatement(await sr5.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr =>
             {
                 var t = tables.Single(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
                 var c = t.Columns.Single(x => x.Name == dr.GetValue<string>("COLUMN_NAME"));
                 t.Columns.Remove(c);
-            })).ConfigureAwait(false);
+                return 0;
+            }).ConfigureAwait(false);
 
             // Select the generated columns.
-            using var sr6 = StreamLocator.GetResourcesStreamReader("SelectTableGeneratedColumns.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
-            await SqlStatement(await sr6.ReadToEndAsync().ConfigureAwait(false)).SelectAsync(new DatabaseRecordMapper(dr =>
+            using var sr6 = StreamLocator.GetResourcesStreamReader("SelectTableGeneratedColumns.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
+            await database.SqlStatement(await sr6.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr =>
             {
                 var t = tables.Single(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
                 var c = t.Columns.Single(x => x.Name == dr.GetValue<string>("COLUMN_NAME"));
                 c.IsComputed = true;
-            })).ConfigureAwait(false);
+                return 0;
+            }).ConfigureAwait(false);
 
             // Attempt to infer foreign key reference data relationship where not explicitly specified. 
             foreach (var t in tables)
@@ -212,23 +183,28 @@ namespace DbEx
             return tables;
         }
 
-        /// <inheritdoc/>
-        public void Dispose()
+        private class DatabaseRecordMapper : IDatabaseMapper
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+            public Type SourceType => throw new NotImplementedException();
 
-        /// <summary>
-        /// Dispose of the resources.
-        /// </summary>
-        /// <param name="disposing">Indicates whether to dispose.</param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing && _dbConn != null)
+            public object? MapFromDb(DatabaseRecord record, OperationTypes operationType = OperationTypes.Unspecified)
             {
-                _dbConn.Dispose();
-                _dbConn = null;
+                throw new NotImplementedException();
+            }
+
+            public void MapPrimaryKeyParameters(DatabaseParameterCollection parameters, OperationTypes operationType, object? value)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void MapPrimaryKeyParameters(DatabaseParameterCollection parameters, OperationTypes operationType, CompositeKey key)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void MapToDb(object? value, DatabaseParameterCollection parameters, OperationTypes operationType = OperationTypes.Unspecified)
+            {
+                throw new NotImplementedException();
             }
         }
     }
