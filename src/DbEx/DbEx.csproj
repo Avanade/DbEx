@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>DbEx</RootNamespace>
-    <Version>1.0.11</Version>
+    <Version>1.0.12</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>DbEx Developers</Authors>
     <Company>Avanade</Company>
@@ -37,23 +37,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="Resources\Alter_sql.hbs" />
-    <None Remove="Resources\CdcDb_sql.hbs" />
-    <None Remove="Resources\Cdc_sql.hbs" />
-    <None Remove="Resources\Create_sql.hbs" />
-    <None Remove="Resources\RefData_sql.hbs" />
-    <None Remove="Resources\Schema_sql.hbs" />
-    <None Remove="Templates\EventOutboxDequeue_cs.hbs" />
-    <None Remove="Templates\EventOutboxEnqueue_cs.hbs" />
-    <None Remove="Templates\SqlServer\SchemaEventOutbox_sql.hbs" />
-    <None Remove="Templates\SqlServer\SpEventOutboxDequeue_sql.hbs" />
-    <None Remove="Templates\SqlServer\SpEventOutboxEnqueue_sql.hbs" />
-    <None Remove="Templates\SqlServer\TableEventOutboxData_sql.hbs" />
-    <None Remove="Templates\SqlServer\TableEventOutbox_sql.hbs" />
-    <None Remove="Templates\SqlServer\UdtEventOutbox_sql.hbs" />
-  </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\Schema_sql.hbs" />

@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v1.0.12
+- *Fixed:* `Reset` command fixed to load embedded resource file correctly.
+
 ## v1.0.11
 - *Enhancement:* Updated to `CoreEx.Database` version `1.0.7`.
 

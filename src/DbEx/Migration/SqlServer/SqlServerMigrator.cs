@@ -106,8 +106,8 @@ namespace DbEx.Migration.SqlServer
         /// <inheritdoc/>
         protected override async Task<bool> DatabaseResetAsync()
         {
-            Logger.LogInformation("    Deleting data from all tables (excludes schema 'dbo' and 'cdc').");
-            using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DeleteAllAndReset.sql", new Assembly[] { typeof(IDatabase).Assembly }).StreamReader!;
+            Logger.LogInformation("  Deleting data from all tables (excludes schema 'dbo' and 'cdc').");
+            using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DeleteAllAndReset.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
             var ss = new SqlScript($"{typeof(IDatabase).Namespace}.SqlServer.DeleteAllAndReset.sql", await sr.ReadToEndAsync().ConfigureAwait(false), new SqlScriptOptions { ScriptType = DbUp.Support.ScriptType.RunAlways });
             return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(new SqlScript[] { ss }, false).ConfigureAwait(false));
         }
