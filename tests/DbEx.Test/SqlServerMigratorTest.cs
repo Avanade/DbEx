@@ -92,7 +92,7 @@ namespace DbEx.Test
 
             Assert.AreEqual(3, res.Count);
             var row2 = res2[0];
-            Assert.AreEqual(88.ToGuid(), row2.PersonId);
+            Assert.AreEqual(DataValueConverter.IntToGuid(88), row2.PersonId);
             Assert.AreEqual("RUNTIME", row2.Name);
             Assert.AreEqual(m.ParserArgs.UserName, row2.CreatedBy);
             Assert.AreEqual(m.ParserArgs.DateTimeNow, row2.CreatedDate);
