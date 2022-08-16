@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v1.0.13
+- *Fixed:* `Int32.ToGuid` extension method changed to `DataValueConverter.IntToGuid` to be more explicit.
+
 ## v1.0.12
 - *Fixed:* `Reset` command fixed to load embedded resource file correctly.
 

@@ -113,7 +113,7 @@ namespace DbEx.Migration.Data
 
                     case "Guid":
                         if (int.TryParse(str, out int a))
-                            column.Value = a.ToGuid();
+                            column.Value = DataValueConverter.IntToGuid(a);
                         else
                         {
                             if (Guid.TryParse(str, out Guid g))
