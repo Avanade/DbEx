@@ -39,6 +39,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\SqlServer\DatabaseCreate.sql" />
+    <None Remove="Resources\SqlServer\DatabaseDrop.sql" />
+    <None Remove="Resources\SqlServer\JournalAuditScript.sql" />
+    <None Remove="Resources\SqlServer\JournalEnsureExists.sql" />
+    <None Remove="Resources\SqlServer\JournalGetExecuted.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="Resources\Schema_sql.hbs" />
     <EmbeddedResource Include="Resources\Alter_sql.hbs" />
     <EmbeddedResource Include="Resources\CdcDb_sql.hbs" />
@@ -52,7 +60,12 @@
     <EmbeddedResource Include="Resources\SelectTableGeneratedColumns.sql" />
     <EmbeddedResource Include="Resources\SelectTableIdentityColumns.sql" />
     <EmbeddedResource Include="Resources\SelectTablePrimaryKey.sql" />
+    <EmbeddedResource Include="Resources\SqlServer\DatabaseDrop.sql" />
+    <EmbeddedResource Include="Resources\SqlServer\DatabaseCreate.sql" />
     <EmbeddedResource Include="Resources\SqlServer\DeleteAllAndReset.sql" />
+    <EmbeddedResource Include="Resources\SqlServer\JournalAuditScript.sql" />
+    <EmbeddedResource Include="Resources\SqlServer\JournalEnsureExists.sql" />
+    <EmbeddedResource Include="Resources\SqlServer\JournalGetExecuted.sql" />
     <EmbeddedResource Include="Resources\SqlServer\TableInsertOrMerge_sql.hb" />
     <EmbeddedResource Include="Templates\SqlServer\EventOutboxDequeue_cs.hbs" />
     <EmbeddedResource Include="Templates\SqlServer\EventOutboxEnqueue_cs.hbs" />
@@ -73,8 +86,6 @@
 
   <ItemGroup>
     <PackageReference Include="CoreEx.Database" Version="1.0.7" />
-    <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="4.1.0" />
     <PackageReference Include="OnRamp" Version="1.0.5" />
   </ItemGroup>
 

@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 using CoreEx.Database;
-using CoreEx.Entities;
-using CoreEx.Mapping;
 using DbEx.Schema;
 using OnRamp.Utility;
 using System;
@@ -181,31 +179,6 @@ namespace DbEx
             }
 
             return tables;
-        }
-
-        private class DatabaseRecordMapper : IDatabaseMapper
-        {
-            public Type SourceType => throw new NotImplementedException();
-
-            public object? MapFromDb(DatabaseRecord record, OperationTypes operationType = OperationTypes.Unspecified)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void MapPrimaryKeyParameters(DatabaseParameterCollection parameters, OperationTypes operationType, object? value)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void MapPrimaryKeyParameters(DatabaseParameterCollection parameters, OperationTypes operationType, CompositeKey key)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void MapToDb(object? value, DatabaseParameterCollection parameters, OperationTypes operationType = OperationTypes.Unspecified)
-            {
-                throw new NotImplementedException();
-            }
         }
     }
 }

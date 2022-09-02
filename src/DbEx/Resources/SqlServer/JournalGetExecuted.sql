@@ -1,0 +1,1 @@
+﻿SELECT DISTINCT [ScriptName] FROM [dbo].[SchemaVersions]
