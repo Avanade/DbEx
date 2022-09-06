@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 namespace DbEx.Migration.SqlServer
 {
     /// <summary>
-    /// Provides the <see href="https://docs.microsoft.com/en-us/sql/connect/ado-net/microsoft-ado-net-sql-server">SQL Server</see> migration orchestration leveraging <see href="https://dbup.readthedocs.io/en/latest/">DbUp</see>.
+    /// Provides the <see href="https://docs.microsoft.com/en-us/sql/connect/ado-net/microsoft-ado-net-sql-server">SQL Server</see> migration orchestration.
     /// </summary>
     public class SqlServerMigrator : DatabaseMigratorBase
     {

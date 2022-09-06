@@ -5,7 +5,7 @@ using System;
 namespace DbEx.Console
 {
     /// <summary>
-    /// Represents the base capabilities for the database migration orchestrator leveraging <see href="https://dbup.readthedocs.io/en/latest/">DbUp</see>.
+    /// Represents the base capabilities for the database migration orchestration.
     /// </summary>
     public abstract class MigratorConsoleBase<T> : MigratorConsoleBase where T : MigratorConsoleBase<T>
     {

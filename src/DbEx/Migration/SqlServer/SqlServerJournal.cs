@@ -14,6 +14,8 @@ namespace DbEx.Migration.SqlServer
     /// <summary>
     /// Provides the <see href="https://docs.microsoft.com/en-us/sql/connect/ado-net/microsoft-ado-net-sql-server">SQL Server</see> journaling capability to ensure selected scripts are only executed once.
     /// </summary>
+    /// <remarks>Journaling is the recording/auditing of migration scripts executed against the database to ensure they are executed only once. This is implemented in a manner compatible, same-as, 
+    /// <see href="https://github.com/DbUp/DbUp/blob/master/src/dbup-sqlserver/SqlTableJournal.cs">DbUp</see> to ensure consistency.</remarks>
     public class SqlServerJournal : IDatabaseJournal
     {
         private bool _journalExists;

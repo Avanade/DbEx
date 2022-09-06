@@ -7,7 +7,7 @@
 ## Introduction
 
 _DbEx_ provides database extensions for both:
-- [DbUp-based](#DbUp-based) database migrations; and
+- [DbUp-inspired](#DbUp-inspired) database migrations; and
 - [ADO.NET](#ADO.NET) database access.
 
 <br/>
@@ -20,11 +20,13 @@ The included [change log](CHANGELOG.md) details all key changes per published ve
 
 <br/>
 
-## DbUp-based
+## DbUp-inspired
 
-[DbUp](https://dbup.readthedocs.io/en/latest/) is a .NET library that is used to deploy changes to relational databases (supports multiple database technologies). It tracks which SQL scripts have been run already, and runs the change scripts in the order specified that are needed to get a database up to date. _DbEx_ provides additional functionality to improve the end-to-end experience of managing database migrations/updates leveraging DbUp.
+[DbUp](https://dbup.readthedocs.io/en/latest/) is a .NET library that is used to deploy changes to relational databases (supports multiple database technologies). It tracks which SQL scripts have been run already, and runs the change scripts in the order specified that are needed to get a database up to date. 
 
 Traditionally, a [Data-tier Application (DAC)](https://docs.microsoft.com/en-us/sql/relational-databases/data-tier-applications/data-tier-applications) is used to provide a logical means to define all of the SQL Server objects - like tables, views, and instance objects, including logins - associated with a database. A DAC is a self-contained unit of SQL Server database deployment that enables data-tier developers and database administrators to package SQL Server objects into a portable artifact called a DAC package, also known as a DACPAC. This is largely specific to Microsoft SQL Server. Alternatively, there are other tools such as [redgate](https://www.red-gate.com/products/sql-development/sql-toolbelt-essentials/) that may be used. DbUp provides a more explicit approach, one that Microsoft also adopts with the likes of [EF Migrations](https://docs.microsoft.com/en-us/ef/core/managing-schemas/migrations/).
+
+_DbEx_ provides additional functionality to improve the end-to-end experience of managing database migrations/updates leveraging the concepts of DbUp. _DbEx_ prior to version `1.0.14` leveraged DbUb; however, due to the slow uptake of pull requests by the maintainers of DbUp that was starting to impose limitations on `DbEx` the decision was made to emulate functionality internally to achieve the functionality goals of `DbEx.` The changes are compatible with the underlying [journaling](./src/DbEx/Migration/SqlServer/SqlServerJournal.cs) that DbUp leverages (i.e. simulates the same).
 
 <br/>
 
@@ -51,7 +53,7 @@ Command | Description
 -|-
 `Drop` | Drop the existing database (where it already exists).
 `Create` | Create the database (where it does not already exist).
-[`Migrate`](#Migrate) | Being the upgrading of a database overtime using order-based migration scripts; the tool leverages the philosophy and NuGet packages of [DbUp](https://dbup.readthedocs.io/en/latest/philosophy-behind-dbup/) to enable.
+[`Migrate`](#Migrate) | Being the upgrading of a database overtime using order-based migration scripts; the tool is consistent with the philosophy of [DbUp](https://dbup.readthedocs.io/en/latest/philosophy-behind-dbup/) to enable.
 [`Schema`](#Schema) | There are a number of database schema objects that can be managed outside of the above migrations, that are dropped and (re-)applied to the database using their native `Create` statement.
 `Reset` | Resets the database by deleting all existing data (excludes `dbo` and `cdc` schema).
 [`Data`](#Data) | There is data, for example *Reference Data* that needs to be applied to a database. This provides a simpler configuration than specifying the required SQL statements directly (which is also supported). This is _also_ useful for setting up Master and Transaction data for the likes of testing scenarios.
@@ -73,7 +75,7 @@ Command | Description
 
 ### Migrate
 
-As stated, [DbUp](https://dbup.readthedocs.io/en/latest/) is used enabling a database to be dropped, created and migrated. The migration is managed by tracking order-based migration scripts. It tracks which SQL scripts have been run already, and runs the change scripts that are needed to get the database up to date. 
+As stated, the [DbUp](https://dbup.readthedocs.io/en/latest/) approach is used enabling a database to be dropped, created and migrated. The migration is managed by tracking order-based migration scripts. It tracks which SQL scripts have been run already, and runs the change scripts that are needed to get the database up to date. 
 
 Over time there will be more than one script updating a single object, for example a `Table`. In this case the first script operation will be a `Create`, followed by subsequent `Alter` operations. The scripts should be considered immutable, in that they cannot be changed once they have been applied; ongoing changes will need additional scripts.
 

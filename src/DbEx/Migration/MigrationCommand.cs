@@ -28,13 +28,12 @@ namespace DbEx.Migration
         /// <summary>
         /// Migrate the database using the <b>Migrations</b> scripts (those that have not already been executed).
         /// </summary>
-        /// <remarks>Internally this uses <see href="http://dbup.github.io/"/> to orchestrate schema versions.</remarks>
         Migrate = 4,
 
         /// <summary>
         /// Drops and creates the known database <b>Schema</b> objects.
         /// </summary>
-        /// <remarks>These are generally schema related artefacts that are applied as scripted on every invocation. These may be deleted (where underlying object is pre-existing) and then applied where object type is known.</remarks>
+        /// <remarks>These are generally schema related artefacts that are applied as scripted on every invocation. These may be deleted (where underlying object is pre-existing) and then (re-)applied where object type is known.</remarks>
         Schema = 8,
 
         /// <summary>
