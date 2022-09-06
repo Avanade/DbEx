@@ -39,7 +39,22 @@ namespace DbEx.Test
         }
 
         [Test]
-        public async Task A120_MigrateAll_Console()
+        public async Task A120_MigrateAll_Error()
+        {
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ErrorDb");
+            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Error.TestError).Assembly);
+            var r = await m.MigrateAsync().ConfigureAwait(false);
+
+            Assert.IsFalse(r);
+
+            using var db = new SqlServerDatabase(() => new SqlConnection(cs));
+            var res = await db.SqlStatement("IF (OBJECT_ID(N'Test.Gender') IS NULL) SELECT 0 ELSE SELECT 1").ScalarAsync<int>().ConfigureAwait(false);
+            Assert.AreEqual(0, res, "Test.Gender script should not have been executed as prior should have failed.");
+        }
+
+        [Test]
+        public async Task A130_MigrateAll_Console()
         {
             var (cs, l, m) = await CreateConsoleDb().ConfigureAwait(false);
 
@@ -122,17 +137,6 @@ namespace DbEx.Test
             Assert.AreEqual(null, row.DateOfBirth);
             Assert.AreEqual(2, row.ContactTypeId);
             Assert.IsNull(row.GenderId);
-        }
-
-        [Test]
-        public async Task A130_MigrateAll_Console_Error()
-        {
-            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ErrorDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Error.TestError).Assembly);
-            var r = await m.MigrateAsync().ConfigureAwait(false);
-
-            Assert.IsFalse(r);
         }
 
         private static async Task<(string cs, ILogger l, SqlServerMigrator m)> CreateConsoleDb()
