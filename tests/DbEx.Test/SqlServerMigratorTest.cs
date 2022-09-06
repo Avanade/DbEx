@@ -124,6 +124,17 @@ namespace DbEx.Test
             Assert.IsNull(row.GenderId);
         }
 
+        [Test]
+        public async Task A130_MigrateAll_Console_Error()
+        {
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ErrorDb");
+            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Error.TestError).Assembly);
+            var r = await m.MigrateAsync().ConfigureAwait(false);
+
+            Assert.IsFalse(r);
+        }
+
         private static async Task<(string cs, ILogger l, SqlServerMigrator m)> CreateConsoleDb()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");

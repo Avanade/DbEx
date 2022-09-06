@@ -5,5 +5,5 @@ BEGIN
     [ScriptName] NVARCHAR(255) NOT NULL,
     [Applied] DATETIME2 NOT NULL)
 
-  SELECT 'Journal table [dbo].[SchemaVersion] did not exist within the database and was automatically created.'
+  SELECT '*Journal table [dbo].[SchemaVersion] did not exist within the database and was automatically created.'
 END

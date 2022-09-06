@@ -48,7 +48,7 @@ namespace DbEx.Migration.SqlServer
             using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.JournalEnsureExists.sql", new Assembly[] { typeof(SqlServerJournal).Assembly }).StreamReader!;
             var message = await Database.SqlStatement(sr.ReadToEnd()).ScalarAsync<string?>(cancellationToken).ConfigureAwait(false);
             if (message is not null)
-                Logger.LogInformation("{Content}", message);
+                Logger.LogInformation("    {Content}", message);
 
             _journalExists = true;
         }
@@ -72,19 +72,6 @@ namespace DbEx.Migration.SqlServer
 
             using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.JournalGetExecuted.sql", new Assembly[] { typeof(SqlServerJournal).Assembly }).StreamReader!;
             return await Database.SqlStatement(sr.ReadToEnd()).SelectQueryAsync(dr => dr.GetValue<string>("ScriptName"), cancellationToken).ConfigureAwait(false);
-        }
-
-        private async Task<T> WrapSqlStatementAsync<T>(string command, Func<CancellationToken, Task<T>> func, CancellationToken cancellationToken)
-        {
-            try
-            {
-                return await func(cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogCritical(ex, "{Command} failed within the following error: {Message}", command, ex.Message);
-                return default!;
-            }
         }
     }
 }

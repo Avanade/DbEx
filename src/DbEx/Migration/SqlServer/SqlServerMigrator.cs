@@ -180,6 +180,7 @@ namespace DbEx.Migration.SqlServer
         {
             await Journal.EnsureExistsAsync().ConfigureAwait(false);
             IEnumerable<string>? previous = null;
+            bool somethingExecuted = false;
 
             foreach (var script in scripts.OrderBy(x => x.GroupOrder).ThenBy(x => x.Name))
             {
@@ -204,7 +205,11 @@ namespace DbEx.Migration.SqlServer
                 }
 
                 await Journal.AuditScriptExecutionAsync(script, default).ConfigureAwait(false);
+                somethingExecuted = true;
             }
+
+            if (includeExecutionLogging && !somethingExecuted)
+                Logger.LogInformation("    {Content}", "No new scripts found to execute.");
 
             return true;
         }
