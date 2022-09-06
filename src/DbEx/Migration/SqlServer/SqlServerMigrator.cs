@@ -4,12 +4,10 @@ using CoreEx.Database;
 using CoreEx.Database.SqlServer;
 using DbEx.Migration.Data;
 using DbEx.Migration.SqlServer.Internal;
-using DbUp;
-using DbUp.Engine;
-using DbUp.Engine.Output;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using OnRamp.Utility;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -18,10 +16,12 @@ using System.Threading.Tasks;
 namespace DbEx.Migration.SqlServer
 {
     /// <summary>
-    /// Provides the <see href="https://docs.microsoft.com/en-us/sql/connect/ado-net/microsoft-ado-net-sql-server">SQL Server</see> migration orchestration leveraging <see href="https://dbup.readthedocs.io/en/latest/">DbUp</see>.
+    /// Provides the <see href="https://docs.microsoft.com/en-us/sql/connect/ado-net/microsoft-ado-net-sql-server">SQL Server</see> migration orchestration.
     /// </summary>
     public class SqlServerMigrator : DatabaseMigratorBase
     {
+        private IDatabase? _database;
+        private IDatabaseJournal? _journal;
         private HandlebarsCodeGenerator? _codeGen;
 
         /// <summary>
@@ -31,8 +31,13 @@ namespace DbEx.Migration.SqlServer
         /// <param name="command">The <see cref="MigrationCommand"/>.</param>
         /// <param name="logger">The <see cref="ILogger"/>.</param>
         /// <param name="assemblies">The <see cref="Assembly"/> list to use to probe for assembly resource (in specified sequence).</param>
-        public SqlServerMigrator(string connectionString, MigrationCommand command, ILogger logger, params Assembly[] assemblies)
-            : base(connectionString, command, logger, assemblies) { }
+        public SqlServerMigrator(string connectionString, MigrationCommand command, ILogger logger, params Assembly[] assemblies) : base(connectionString, command, logger, assemblies) { }
+
+        /// <inheritdoc/>
+        protected override IDatabase Database => _database ??= new SqlServerDatabase(() => new SqlConnection(ConnectionString));
+
+        /// <inheritdoc/>
+        protected override IDatabaseJournal Journal => _journal ??= new SqlServerJournal(Database, Logger);
 
         /// <inheritdoc/>
         protected override string[] KnownSchemaObjectTypes => new string[] { "TYPE", "FUNCTION", "VIEW", "PROCEDURE", "PROC" };
@@ -43,19 +48,51 @@ namespace DbEx.Migration.SqlServer
         public int MaxRetries { get; set; } = 5;
 
         /// <inheritdoc/>
-        protected override Task<bool> DatabaseDropAsync()
+        protected async override Task<bool> DatabaseDropAsync()
         {
-            Logger.LogInformation("  Drop database (using DbUp)...");
-            DropDatabase.For.SqlDatabase(ConnectionString, new LoggerSink(Logger));
-            return Task.FromResult(true);
+            Logger.LogInformation("  Drop database...");
+
+            var mdb = GetMasterDatabase();
+            if (mdb == null)
+                return false;
+
+            using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DatabaseDrop.sql", new Assembly[] { typeof(SqlServerJournal).Assembly }).StreamReader!;
+            var message = await mdb.SqlStatement(sr.ReadToEnd().Replace("@DatabaseName", new SqlConnectionStringBuilder(ConnectionString).InitialCatalog)).ScalarAsync<string>(default);
+
+            Logger.LogInformation("    {Content}", message);
+            return true;
         }
 
         /// <inheritdoc/>
-        protected override Task<bool> DatabaseCreateAsync()
+        protected async override Task<bool> DatabaseCreateAsync()
         {
-            Logger.LogInformation("  Create database (using DbUp)...");
-            EnsureDatabase.For.SqlDatabase(ConnectionString, new LoggerSink(Logger));
-            return Task.FromResult(true);
+            Logger.LogInformation("  Create database...");
+
+            var mdb = GetMasterDatabase();
+            if (mdb == null)
+                return false;
+
+            using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DatabaseCreate.sql", new Assembly[] { typeof(SqlServerJournal).Assembly }).StreamReader!;
+            var message = await mdb.SqlStatement(sr.ReadToEnd().Replace("@DatabaseName", new SqlConnectionStringBuilder(ConnectionString).InitialCatalog)).ScalarAsync<string>(default);
+
+            Logger.LogInformation("    {Content}", message);
+            return true;
+        }
+
+        /// <summary>
+        /// Gets the corresponding 'master' database.
+        /// </summary>
+        private SqlServerDatabase? GetMasterDatabase()
+        {
+            var csb = new SqlConnectionStringBuilder(ConnectionString);
+            if (string.IsNullOrEmpty(csb.InitialCatalog?.Trim()))
+            {
+                Logger.LogError("    {Message}", "The connection string does not specify a database name.");
+                return null;
+            }
+
+            csb.InitialCatalog = "master";
+            return new SqlServerDatabase(() => new SqlConnection(csb.ConnectionString));
         }
 
         /// <inheritdoc/>
@@ -79,41 +116,39 @@ namespace DbEx.Migration.SqlServer
 
             // Drop all existing (in reverse order).
             int i = 0;
-            var ss = new List<SqlScript>();
-            Logger.LogInformation("  Drop (using DbUp) known schema objects...");
+            var ss = new List<DatabaseMigrationScript>();
+            Logger.LogInformation("  Drop known schema objects...");
             foreach (var sor in list.OrderByDescending(x => x.SchemaOrder).ThenByDescending(x => x.TypeOrder).ThenByDescending(x => x.Name))
             {
                 var sql = $"DROP {sor.Type} IF EXISTS [{sor.Schema}].[{sor.Name}]";
-                ss.Add(new SqlScript(sql, sql, new SqlScriptOptions { RunGroupOrder = i++, ScriptType = DbUp.Support.ScriptType.RunAlways }));
+                ss.Add(new DatabaseMigrationScript(sql, sql) { GroupOrder = i++, RunAlways = true });
             }
 
-            var r = await ExecuteScriptsAsync(ss, true).ConfigureAwait(false);
-            if (!r.Successful)
+            if (!await ExecuteScriptsAsync(ss, true).ConfigureAwait(false))
                 return false;
 
             // Execute each script proper.
             i = 0;
             ss.Clear();
-            Logger.LogInformation("  Create (using DbUp) known schema objects...");
+            Logger.LogInformation("  Create known schema objects...");
             foreach (var sor in list.OrderBy(x => x.SchemaOrder).ThenBy(x => x.TypeOrder).ThenBy(x => x.Name))
             {
-                ss.Add(new SqlScript(sor.ScriptName, sor.GetSql(), new SqlScriptOptions { RunGroupOrder = i++, ScriptType = DbUp.Support.ScriptType.RunAlways }));
+                ss.Add(new DatabaseMigrationScript(sor.GetSql(), sor.ScriptName) { GroupOrder = i++, RunAlways = true });
             }
 
-            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(ss, true).ConfigureAwait(false));
+            return await ExecuteScriptsAsync(ss, true).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
         protected override async Task<bool> DatabaseResetAsync()
         {
             Logger.LogInformation("  Deleting data from all tables (excludes schema 'dbo' and 'cdc').");
-            using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DeleteAllAndReset.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
-            var ss = new SqlScript($"{typeof(IDatabase).Namespace}.SqlServer.DeleteAllAndReset.sql", await sr.ReadToEndAsync().ConfigureAwait(false), new SqlScriptOptions { ScriptType = DbUp.Support.ScriptType.RunAlways });
-            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(new SqlScript[] { ss }, false).ConfigureAwait(false));
+            var ss = new DatabaseMigrationScript(typeof(DatabaseExtensions).Assembly, $"{typeof(IDatabase).Namespace}.SqlServer.DeleteAllAndReset.sql") { RunAlways = true };
+            return await ExecuteScriptsAsync(new DatabaseMigrationScript[] { ss }, false).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        protected override async Task<bool> DatabaseDataAsync(IDatabase database, List<DataTable> dataTables)
+        protected override async Task<bool> DatabaseDataAsync(List<DataTable> dataTables)
         {
             // Cache the compiled code-gen template.
             if (_codeGen == null)
@@ -125,13 +160,13 @@ namespace DbEx.Migration.SqlServer
             foreach (var table in dataTables)
             {
                 Logger.LogInformation("");
-                Logger.LogInformation("{Message}", $"---- Executing {table.Schema}.{table.Name} SQL:");
+                Logger.LogInformation("{Content}", $"---- Executing {table.Schema}.{table.Name} SQL:");
 
                 var sql = _codeGen.Generate(table);
-                Logger.LogInformation("{Message}", sql);
+                Logger.LogInformation("{Content}", sql);
 
-                var rows = await database.SqlStatement(sql).ScalarAsync<int>().ConfigureAwait(false);
-                Logger.LogInformation("{Message}", $"Result: {rows} rows affected.");
+                var rows = await Database.SqlStatement(sql).ScalarAsync<int>().ConfigureAwait(false);
+                Logger.LogInformation("{Content}", $"Result: {rows} rows affected.");
             }
 
             return true;
@@ -141,24 +176,42 @@ namespace DbEx.Migration.SqlServer
         protected override IDatabase CreateDatabase(string connectionString) => new SqlServerDatabase(() => new SqlConnection(connectionString));
 
         /// <inheritdoc/>
-        public override async Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts, bool includeExecutionLogging)
+        public override async Task<bool> ExecuteScriptsAsync(IEnumerable<DatabaseMigrationScript> scripts, bool includeExecutionLogging)
         {
-            for (int i = 0; true; i++)
+            await Journal.EnsureExistsAsync().ConfigureAwait(false);
+            IEnumerable<string>? previous = null;
+            bool somethingExecuted = false;
+
+            foreach (var script in scripts.OrderBy(x => x.GroupOrder).ThenBy(x => x.Name))
             {
-                var dur = DbUp.DeployChanges.To
-                    .SqlDatabase(ConnectionString)
-                    .WithScripts(scripts)
-                    .WithoutTransaction()
-                    .LogTo(includeExecutionLogging ? (IUpgradeLog)new LoggerSink(Logger) : (IUpgradeLog)new NullSink())
-                    .Build()
-                    .PerformUpgrade();
+                if (!script.RunAlways)
+                {
+                    previous ??= await Journal.GetExecutedScriptsAsync(default).ConfigureAwait(false);
+                    if (previous.Any(x => x == script.Name))
+                        continue;
+                }
 
-                if (dur.Successful || dur.ErrorScript != null || i >= MaxRetries)
-                    return dur;
+                if (includeExecutionLogging)
+                    Logger.LogInformation("    {Content}", script.Name);
 
-                Logger.LogWarning("{Message}", $"    Possible transient error (will try again in 500ms): {dur.Error.Message}");
-                await Task.Delay(500).ConfigureAwait(false);
+                try
+                {
+                    await Database.SqlStatement(script.GetStreamReader().ReadToEnd()).NonQueryAsync(default).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogCritical(ex, "An error occured executing the script: {Message}", ex.Message);
+                    return false;
+                }
+
+                await Journal.AuditScriptExecutionAsync(script, default).ConfigureAwait(false);
+                somethingExecuted = true;
             }
+
+            if (includeExecutionLogging && !somethingExecuted)
+                Logger.LogInformation("    {Content}", "No new scripts found to execute.");
+
+            return true;
         }
     }
 }

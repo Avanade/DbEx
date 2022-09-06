@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Migrations\001-create-test-schema.sql" />
+    <None Remove="Migrations\002-create-test-contact-type-table.sql" />
+    <None Remove="Migrations\003-create-test-gender-table.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations\001-create-test-schema.sql" />
+    <EmbeddedResource Include="Migrations\002-create-test-contact-type-table.sql" />
+    <EmbeddedResource Include="Migrations\003-create-test-gender-table.sql" />
+  </ItemGroup>
+
+</Project>

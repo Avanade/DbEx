@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v1.0.14
+- *Enhancement:* Removed `DbUp` package dependencies and implemented equivalent (basics) that is compatible with `[dbo].[SchemaVersion]` journal management. Primary reason is related to the slow uptake of pull requests by the maintainers of `DbUp` that imposes limitations on `DbEx`.
+- *Fixed:* `DbTypeMapper` updated to support `SMALLDATETIME` and `IMAGE` Microsoft Sql Server types.
+
 ## v1.0.13
 - *Fixed:* `Int32.ToGuid` extension method changed to `DataValueConverter.IntToGuid` to be more explicit.
 

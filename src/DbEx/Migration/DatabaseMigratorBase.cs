@@ -2,7 +2,6 @@
 
 using CoreEx.Database;
 using DbEx.Migration.Data;
-using DbUp.Engine;
 using Microsoft.Extensions.Logging;
 using OnRamp.Console;
 using OnRamp.Utility;
@@ -57,6 +56,16 @@ namespace DbEx.Migration
         /// Gets the <see cref="MigrationCommand"/>.
         /// </summary>
         protected MigrationCommand Command { get; }
+
+        /// <summary>
+        /// Gets the <see cref="IDatabase"/>.
+        /// </summary>
+        protected abstract IDatabase Database { get; }
+
+        /// <summary>
+        /// Gets the <see cref="IDatabaseJournal"/>.
+        /// </summary>
+        protected abstract IDatabaseJournal Journal { get; }
 
         /// <summary>
         /// Gets the <see cref="ILogger"/>.
@@ -222,29 +231,10 @@ namespace DbEx.Migration
         /// <summary>
         /// Execute the <paramref name="scripts"/>.
         /// </summary>
-        /// <param name="scripts">The <see cref="SqlScript"/> list.</param>
+        /// <param name="scripts">The <see cref="DatabaseMigrationScript"/> list.</param>
         /// <param name="includeExecutionLogging">Indicates whether to include detailed execution logging.</param>
-        /// <returns>The <see cref="DatabaseUpgradeResult"/>.</returns>
-        public abstract Task<DatabaseUpgradeResult> ExecuteScriptsAsync(IEnumerable<SqlScript> scripts, bool includeExecutionLogging);
-
-        /// <summary>
-        /// Check the <see cref="DatabaseUpgradeResult"/> and report error where not <see cref="DatabaseUpgradeResult.Successful"/>.
-        /// </summary>
-        /// <param name="r">The <see cref="DatabaseUpgradeResult"/>.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
-        protected bool CheckDatabaseUpgradeResult(DatabaseUpgradeResult r)
-        {
-            if (r.Successful)
-                return true;
-
-            Logger.LogInformation("{Content}", string.Empty);
-            if (r.ErrorScript?.Name != null)
-                Logger.LogError("{Content}", $"Error occured executing script '{r.ErrorScript.Name}': {r.Error.Message}");
-            else
-                Logger.LogError("{Content}", $"Unexpected error occured: {r.Error?.Message}");
-
-            return false;
-        }
+        public abstract Task<bool> ExecuteScriptsAsync(IEnumerable<DatabaseMigrationScript> scripts, bool includeExecutionLogging);
 
         /// <summary>
         /// Performs the <see cref="MigrationCommand.Drop"/> command.
@@ -267,7 +257,7 @@ namespace DbEx.Migration
         {
             Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.sql"))}");
 
-            var scripts = new List<SqlScript>();
+            var scripts = new List<DatabaseMigrationScript>();
             foreach (var ass in Assemblies)
             {
                 foreach (var name in ass.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture))).OrderBy(x => x))
@@ -277,7 +267,7 @@ namespace DbEx.Migration
                                 name.EndsWith(".post.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 3 : 2;
 
                     using var sr = new StreamReader(ass.GetManifestResourceStream(name)!);
-                    scripts.Add(new SqlScript(name, sr.ReadToEnd(), new SqlScriptOptions { RunGroupOrder = order, ScriptType = order == 2 ? DbUp.Support.ScriptType.RunOnce : DbUp.Support.ScriptType.RunAlways }));
+                    scripts.Add(new DatabaseMigrationScript(ass, name) { GroupOrder = order, RunAlways = order != 2 });
                 }
             }
 
@@ -287,8 +277,8 @@ namespace DbEx.Migration
                 return true;
             }
 
-            Logger.LogInformation("{Content}", "  Migrate (using DbUp) the embedded resources...");
-            return CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(scripts, true).ConfigureAwait(false));
+            Logger.LogInformation("{Content}", "  Migrate the embedded resources...");
+            return await ExecuteScriptsAsync(scripts, true).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -388,9 +378,8 @@ namespace DbEx.Migration
 
             // Infer database schema.
             Logger.LogInformation("  Querying database to infer table(s)/column(s) schema...");
-            using var db = CreateDatabase(ConnectionString) ?? throw new InvalidOperationException($"An {nameof(IDatabase)} instance must be returned from the {nameof(CreateDatabase)} method.");
             var pargs = ParserArgs ?? new DataParserArgs();
-            var dbTables = await db.SelectSchemaAsync(pargs.RefDataPredicate).ConfigureAwait(false);
+            var dbTables = await Database.SelectSchemaAsync(pargs.RefDataPredicate).ConfigureAwait(false);
 
             // Iterate through each resource - parse the data, then insert/merge as requested.
             var parser = new DataParser(dbTables, pargs);
@@ -404,9 +393,8 @@ namespace DbEx.Migration
                     Logger.LogInformation("{Content}", string.Empty);
                     Logger.LogInformation("{Content}", $"** Executing: {item.ResourceName}");
 
-                    var ss = new SqlScript(item.ResourceName, await sr.ReadToEndAsync().ConfigureAwait(false), new SqlScriptOptions { ScriptType = DbUp.Support.ScriptType.RunAlways });
-                    var success = CheckDatabaseUpgradeResult(await ExecuteScriptsAsync(new SqlScript[] { ss }, false).ConfigureAwait(false));
-                    if (!success)
+                    var ss = new DatabaseMigrationScript(item.Assembly, item.ResourceName) { RunAlways = true };
+                    if (!await ExecuteScriptsAsync(new DatabaseMigrationScript[] { ss }, false).ConfigureAwait(false))
                         return false;
                 }
                 else
@@ -419,7 +407,7 @@ namespace DbEx.Migration
 
                         var tables = await parser.ParseYamlAsync(sr);
 
-                        if (!await DatabaseDataAsync(db, tables).ConfigureAwait(false))
+                        if (!await DatabaseDataAsync(tables).ConfigureAwait(false))
                             return false;
                     }
                     catch (DataParserException dpex)
@@ -437,11 +425,10 @@ namespace DbEx.Migration
         /// <summary>
         /// Performs the <see cref="MigrationCommand.Data"/> command.
         /// </summary>
-        /// <param name="database">The <see cref="IDatabase"/>.</param>
         /// <param name="dataTables">The <see cref="DataTable"/> list that contains the parsed data to be inserted/merged.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
         /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{Task{bool}}, Func{string}?)"/>.</remarks>
-        protected abstract Task<bool> DatabaseDataAsync(IDatabase database, List<DataTable> dataTables);
+        protected abstract Task<bool> DatabaseDataAsync(List<DataTable> dataTables);
 
         /// <summary>
         /// Create an <see cref="IDatabase"/> instance.
@@ -547,7 +534,7 @@ namespace DbEx.Migration
         }
 
         /// <summary>
-        /// Executes the raw SQL statements by creating the equivalent <see cref="SqlScript"/> and invoking <see cref="ExecuteScriptsAsync(IEnumerable{SqlScript}, bool)"/>.
+        /// Executes the raw SQL statements by creating the equivalent <see cref="DatabaseMigrationScript"/> and invoking <see cref="ExecuteScriptsAsync(IEnumerable{DatabaseMigrationScript}, bool)"/>.
         /// </summary>
         /// <param name="statements"></param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
@@ -571,27 +558,16 @@ namespace DbEx.Migration
 
             var sn = $"{DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture)}-console-execute-";
 
-            var scripts = new List<SqlScript>();
+            var scripts = new List<DatabaseMigrationScript>();
             for (int i = 0; i < statements.Length; i++)
             {
                 if (File.Exists(statements[i]))
-                    scripts.Add(new SqlScript(statements[i], await File.ReadAllTextAsync(statements[i]).ConfigureAwait(false)));
+                    scripts.Add(new DatabaseMigrationScript(new FileInfo(statements[i]), statements[i]));
                 else
-                    scripts.Add(new SqlScript($"{sn}{i + 1:000}.sql", statements[i]));
+                    scripts.Add(new DatabaseMigrationScript(statements[i], $"{sn}{i + 1:000}.sql"));
             }
 
-            var dur = await ExecuteScriptsAsync(scripts, false).ConfigureAwait(false);
-            if (dur.Successful)
-                Logger.LogInformation($"  All scripts executed successfully.");
-            else
-            {
-                Logger.LogInformation("{Content}", string.Empty);
-                Logger.LogError("{Content}", $"The SQL statement failed with: {dur.Error.Message}");
-                Logger.LogWarning("{Content}", $"Script '{dur.ErrorScript.Name}' contents:");
-                Logger.LogWarning("{Content}", dur.ErrorScript.Contents);
-            }
-
-            return dur.Successful;
+            return await ExecuteScriptsAsync(scripts, false).ConfigureAwait(false);
         }
     }
 }

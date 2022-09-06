@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text;
 
 namespace DbEx.Migration
 {
@@ -11,54 +12,63 @@ namespace DbEx.Migration
     /// </summary>
     public class DatabaseMigrationScript
     {
+        private readonly FileInfo? _file;
+        private readonly Assembly? _assembly;
+        private readonly string? _sql;
+
         /// <summary>
-        /// Initializes a new <see cref="DatabaseMigrationScript"/> class for a file.
+        /// Initializes a new instance of the <see cref="DatabaseMigrationScript"/> class for a <paramref name="file"/>.
         /// </summary>
         /// <param name="file">The <see cref="FileInfo"/>.</param>
-        /// <param name="name">The resource name.</param>
+        /// <param name="name">The file name.</param>
         public DatabaseMigrationScript(FileInfo file, string name)
         {
-            IsResource = false;
-            File = file ?? throw new ArgumentNullException(nameof(file));
+            _file = file ?? throw new ArgumentNullException(nameof(file));
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
         /// <summary>
-        /// Initializes a new <see cref="DatabaseMigrationScript"/> class for an embedded resource.
+        /// Initializes a new instance of the <see cref="DatabaseMigrationScript"/> class for an embedded resource.
         /// </summary>
         /// <param name="assembly">The <see cref="Assembly"/>.</param>
         /// <param name="name">The resource name.</param>
         public DatabaseMigrationScript(Assembly assembly, string name)
         {
-            IsResource = true;
-            Assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
+            _assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
         /// <summary>
-        /// Indicates whether the source of the SQL Script is an embedded <see cref="Assembly"/> resource; otherwise, it is a <see cref="File"/>.
+        /// Initializes a new instance of the <see cref="DatabaseMigrationScript"/> class for the specified <paramref name="sql"/>.
         /// </summary>
-        public bool IsResource { get; }
+        /// <param name="sql"></param>
+        /// <param name="name">The sql name.</param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public DatabaseMigrationScript(string sql, string name)
+        {
+            _sql = sql ?? throw new ArgumentNullException(nameof(sql));
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+        }
 
         /// <summary>
-        /// Gets the resource name.
+        /// Gets the name used for journaling.
         /// </summary>
-        /// <remarks>The file name is also formatted as a resource name.</remarks>
         public string Name { get; }
 
         /// <summary>
-        /// Gets the <see cref="System.Reflection.Assembly"/> where <see cref="IsResource"/>.
+        /// Gets or sets the group order for the script.
         /// </summary>
-        public Assembly? Assembly { get; }
+        public int GroupOrder { get; set; }
 
         /// <summary>
-        /// Gets the <see cref="FileInfo"/> where not <see cref="IsResource"/>.
+        /// Indicates whether the script is run once or always.
         /// </summary>
-        public FileInfo? File { get; }
+        /// <remarks><c>true</c> to run always; otherwise, <c>false</c> to run once (default).</remarks>
+        public bool RunAlways { get; set; }
 
         /// <summary>
         /// Gets the resource or file <see cref="System.IO.StreamReader"/>.
         /// </summary>
-        public StreamReader GetStreamReader() => IsResource ? new StreamReader(Assembly!.GetManifestResourceStream(Name)!) : File!.OpenText();
+        public StreamReader GetStreamReader() =>_assembly is not null ? new StreamReader(_assembly!.GetManifestResourceStream(Name)!) : (_file is not null ? _file!.OpenText() : new StreamReader(new MemoryStream(Encoding.Default.GetBytes(_sql))));
     }
 }

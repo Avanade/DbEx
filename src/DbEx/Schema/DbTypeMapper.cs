@@ -52,7 +52,7 @@ namespace DbEx.Schema
 
             return dbType.ToUpperInvariant() switch
             {
-                "DATE" or "DATETIME" or "DATETIME2" => true,
+                "DATE" or "DATETIME" or "DATETIME2" or "SMALLDATETIME" => true,
                 _ => false,
             };
         }
@@ -105,6 +105,7 @@ namespace DbEx.Schema
                 "TIMESTAMP" => "byte[]",
                 "BINARY" => "byte[]",
                 "VARBINARY" => "byte[]",
+                "IMAGE" => "byte[]",
                 "BIT" => "bool",
                 "DATETIMEOFFSET" => "DateTimeOffset",
                 "FLOAT" => "double",
@@ -115,34 +116,6 @@ namespace DbEx.Schema
                 "REAL" => "float",
                 "TIME" => "TimeSpan",
                 "UNIQUEIDENTIFIER" => "Guid",
-                _ => throw new InvalidOperationException($"Database data type '{dbType}' does not have corresponding .NET type mapping defined."),
-            };
-        }
-
-        /// <summary>
-        /// Gets the corresponding .NET <see cref="System.Type"/> for the database type.
-        /// </summary>
-        /// <param name="dbType">The database type.</param>
-        /// <returns>The .NET <see cref="System.Type"/> name.</returns>
-        public static Type GetDotNetType(string dbType)
-        {
-            return (GetDotNetTypeName(dbType).ToUpperInvariant()) switch
-            {
-                "STRING" => typeof(string),
-                "DECIMAL" => typeof(decimal),
-                "DATETIME" => typeof(DateTime),
-                "BINARY" => typeof(byte[]),
-                "VARBINARY" => typeof(byte[]),
-                "BOOL" => typeof(bool),
-                "DATETIMEOFFSET" => typeof(DateTimeOffset),
-                "DOUBLE" => typeof(double),
-                "INT" => typeof(int),
-                "LONG" => typeof(long),
-                "SHORT" => typeof(short),
-                "BYTE" => typeof(byte),
-                "FLOAT" => typeof(float),
-                "TIMESPAN" => typeof(TimeSpan),
-                "GUID" => typeof(Guid),
                 _ => throw new InvalidOperationException($"Database data type '{dbType}' does not have corresponding .NET type mapping defined."),
             };
         }

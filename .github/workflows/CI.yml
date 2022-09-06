@@ -37,6 +37,7 @@ jobs:
     - name: Set EnvVar for Test
       run: |
         echo "DbEx_ConnectionStrings__NoneDb=Data Source=localhost, 1433;Initial Catalog=DbEx.None;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
+        echo "DbEx_ConnectionStrings__ErrorDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Error;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
         echo "DbEx_ConnectionStrings__EmptyDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Empty;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
         echo "DbEx_ConnectionStrings__ConsoleDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Console;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
         
