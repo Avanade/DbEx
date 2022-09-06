@@ -133,7 +133,7 @@ namespace DbEx.Migration.SqlServer
             Logger.LogInformation("  Create known schema objects...");
             foreach (var sor in list.OrderBy(x => x.SchemaOrder).ThenBy(x => x.TypeOrder).ThenBy(x => x.Name))
             {
-                ss.Add(new DatabaseMigrationScript(sor.GetSql(), sor.ScriptName) { GroupOrder = i++, RunAlways = true });
+                ss.Add(new DatabaseMigrationScript(sor.GetSql(), sor.ScriptName) { GroupOrder = i++, RunAlways = true, Tag = $">> CREATE {sor.Type} [{sor.Schema}].[{sor.Name}]" });
             }
 
             return await ExecuteScriptsAsync(ss, true).ConfigureAwait(false);
@@ -179,20 +179,20 @@ namespace DbEx.Migration.SqlServer
         public override async Task<bool> ExecuteScriptsAsync(IEnumerable<DatabaseMigrationScript> scripts, bool includeExecutionLogging)
         {
             await Journal.EnsureExistsAsync().ConfigureAwait(false);
-            IEnumerable<string>? previous = null;
+            HashSet<string>? previous = null;
             bool somethingExecuted = false;
 
             foreach (var script in scripts.OrderBy(x => x.GroupOrder).ThenBy(x => x.Name))
             {
                 if (!script.RunAlways)
                 {
-                    previous ??= await Journal.GetExecutedScriptsAsync(default).ConfigureAwait(false);
-                    if (previous.Any(x => x == script.Name))
+                    previous ??= new(await Journal.GetExecutedScriptsAsync(default).ConfigureAwait(false));
+                    if (previous.Contains(script.Name))
                         continue;
                 }
 
                 if (includeExecutionLogging)
-                    Logger.LogInformation("    {Content}", script.Name);
+                    Logger.LogInformation("    {Content} {Tag}", script.Name, script.Tag ?? "");
 
                 try
                 {

@@ -67,6 +67,11 @@ namespace DbEx.Migration
         public bool RunAlways { get; set; }
 
         /// <summary>
+        /// Gets or sets additional tag text to output to the log.
+        /// </summary>
+        public string? Tag { get; set; }
+
+        /// <summary>
         /// Gets the resource or file <see cref="System.IO.StreamReader"/>.
         /// </summary>
         public StreamReader GetStreamReader() =>_assembly is not null ? new StreamReader(_assembly!.GetManifestResourceStream(Name)!) : (_file is not null ? _file!.OpenText() : new StreamReader(new MemoryStream(Encoding.Default.GetBytes(_sql))));
