@@ -185,21 +185,5 @@ namespace DbEx.Test
 
             Assert.IsTrue(r);
         }
-
-        // todo: remove this
-        [Test]
-        public async Task ScriptExists_RemoveThis()
-        {
-            var script = $"{typeof(IDatabase).Namespace}.SqlServer.DeleteAllAndReset.sql";
-            var assembly = typeof(DatabaseExtensions).Assembly;
-            System.Console.WriteLine("Looking for {0}", script);
-
-            using var stream = assembly!.GetManifestResourceStream(script);
-
-            var all = assembly.GetManifestResourceNames();
-            System.Console.WriteLine(string.Join("\n", all));
-
-            Assert.IsNotNull(stream);
-        }
     }
 }

@@ -143,7 +143,7 @@ namespace DbEx.Migration.SqlServer
         protected override async Task<bool> DatabaseResetAsync()
         {
             Logger.LogInformation("  Deleting data from all tables (excludes schema 'dbo' and 'cdc').");
-            var ss = new DatabaseMigrationScript(typeof(DatabaseExtensions).Assembly, $"{typeof(IDatabase).Namespace}.SqlServer.DeleteAllAndReset.sql") { RunAlways = true };
+            var ss = new DatabaseMigrationScript(typeof(DatabaseExtensions).Assembly, $"DbEx.Resources.SqlServer.DeleteAllAndReset.sql") { RunAlways = true };
             return await ExecuteScriptsAsync(new DatabaseMigrationScript[] { ss }, false).ConfigureAwait(false);
         }
 
