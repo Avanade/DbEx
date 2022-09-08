@@ -1,5 +1,7 @@
 ﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+CREATE TABLE #temp ([Schema] VARCHAR(256), [Table] VARCHAR(256))
+
 DECLARE t_cursor 
   CURSOR LOCAL READ_ONLY STATIC SCROLL FOR
   SELECT t.TABLE_SCHEMA, t.TABLE_NAME FROM (
@@ -7,6 +9,7 @@ DECLARE t_cursor
     FROM INFORMATION_SCHEMA.TABLES as i
       WHERE i.TABLE_TYPE = 'BASE TABLE' AND i.TABLE_SCHEMA <> 'dbo' AND i.TABLE_SCHEMA <> 'cdc'
   ) AS [t] WHERE t.TABLE_HISTORY IN (0,2)
+  ORDER BY t.TABLE_SCHEMA, t.TABLE_NAME
 
 DECLARE @TableSchema VARCHAR(256)
 DECLARE @TableName VARCHAR(256)
@@ -31,6 +34,7 @@ BEGIN
   SET @SqlCommand = 'SET QUOTED_IDENTIFIER ON; DELETE FROM [' + @TableSchema + '].[' + @TableName + ']'
   PRINT @SqlCommand
   EXECUTE (@SqlCommand)
+  INSERT INTO #temp ([Schema], [Table]) VALUES (@TableSchema,  @TableName)
   FETCH NEXT FROM t_cursor into @TableSchema, @TableName
 END
 
@@ -46,3 +50,6 @@ END
 
 CLOSE t_cursor
 DEALLOCATE t_cursor
+
+SELECT [Schema], [Table] FROM #temp
+DROP TABLE #temp

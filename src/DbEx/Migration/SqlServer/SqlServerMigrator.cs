@@ -142,9 +142,13 @@ namespace DbEx.Migration.SqlServer
         /// <inheritdoc/>
         protected override async Task<bool> DatabaseResetAsync()
         {
-            Logger.LogInformation("  Deleting data from all tables (excludes schema 'dbo' and 'cdc').");
-            var ss = new DatabaseMigrationScript(typeof(DatabaseExtensions).Assembly, $"DbEx.Resources.SqlServer.DeleteAllAndReset.sql") { RunAlways = true };
-            return await ExecuteScriptsAsync(new DatabaseMigrationScript[] { ss }, false).ConfigureAwait(false);
+            Logger.LogInformation("  Deleting data from all tables (excludes schema 'dbo' and 'cdc')...");
+            using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DeleteAllAndReset.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
+            var tables = await Database.SqlStatement(sr.ReadToEnd()).SelectQueryAsync(dr => { Logger.LogInformation("{Content}", $"    [{dr.GetValue<string>("Schema")}].[{dr.GetValue<string>("Table")}]"); return 0; }).ConfigureAwait(false);
+            if (!tables.Any())
+                Logger.LogInformation("    None.");
+
+            return true;
         }
 
         /// <inheritdoc/>
@@ -196,7 +200,8 @@ namespace DbEx.Migration.SqlServer
 
                 try
                 {
-                    await Database.SqlStatement(script.GetStreamReader().ReadToEnd()).NonQueryAsync(default).ConfigureAwait(false);
+                    using var sr = script.GetStreamReader();
+                    await Database.SqlStatement(sr.ReadToEnd()).NonQueryAsync(default).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
