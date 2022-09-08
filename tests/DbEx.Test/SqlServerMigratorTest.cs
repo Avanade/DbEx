@@ -1,4 +1,7 @@
-﻿using CoreEx.Database;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using CoreEx.Database;
 using CoreEx.Database.SqlServer;
 using DbEx.Migration.Data;
 using DbEx.Migration.SqlServer;
@@ -6,9 +9,6 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace DbEx.Test
 {
@@ -173,6 +173,33 @@ namespace DbEx.Test
 
             var r = await m.ExecuteSqlStatementsAsync("SELECT * FROM Test.Contact", "SELECT BANANAS").ConfigureAwait(false);
             Assert.IsFalse(r);
+        }
+
+        [Test]
+        public async Task A140_Reset_None()
+        {
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("NoneDb");
+            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Reset, l);
+            var r = await m.MigrateAsync().ConfigureAwait(false);
+
+            Assert.IsTrue(r);
+        }
+
+        // todo: remove this
+        [Test]
+        public async Task ScriptExists_RemoveThis()
+        {
+            var script = $"{typeof(IDatabase).Namespace}.SqlServer.DeleteAllAndReset.sql";
+            var assembly = typeof(DatabaseExtensions).Assembly;
+            System.Console.WriteLine("Looking for {0}", script);
+
+            using var stream = assembly!.GetManifestResourceStream(script);
+
+            var all = assembly.GetManifestResourceNames();
+            System.Console.WriteLine(string.Join("\n", all));
+
+            Assert.IsNotNull(stream);
         }
     }
 }
