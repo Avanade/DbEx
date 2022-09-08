@@ -1,4 +1,7 @@
-﻿using CoreEx.Database;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using CoreEx.Database;
 using CoreEx.Database.SqlServer;
 using DbEx.Migration.Data;
 using DbEx.Migration.SqlServer;
@@ -6,9 +9,6 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace DbEx.Test
 {
@@ -173,6 +173,41 @@ namespace DbEx.Test
 
             var r = await m.ExecuteSqlStatementsAsync("SELECT * FROM Test.Contact", "SELECT BANANAS").ConfigureAwait(false);
             Assert.IsFalse(r);
+        }
+
+        [Test]
+        public async Task A140_Reset_None()
+        {
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("NoneDb");
+            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Reset, l);
+            var r = await m.MigrateAsync().ConfigureAwait(false);
+
+            Assert.IsTrue(r);
+        }
+
+        [Test]
+        public async Task A150_Reset_Console()
+        {
+            var (cs, l, m) = await CreateConsoleDb().ConfigureAwait(false);
+            using var db = new SqlServerDatabase(() => new SqlConnection(cs));
+
+            // There should be data loaded in Test.Contact.
+            var c = await db.SqlStatement("SELECT COUNT(*) FROM Test.Contact").ScalarAsync<int>().ConfigureAwait(false);
+            Assert.That(c, Is.GreaterThanOrEqualTo(1));
+
+            // Execute Reset.
+            m = new SqlServerMigrator(cs, Migration.MigrationCommand.Reset, l);
+            var r = await m.MigrateAsync().ConfigureAwait(false);
+            Assert.IsTrue(r);
+
+            // There should now be no data in Test.Contact.
+            c = await db.SqlStatement("SELECT COUNT(*) FROM Test.Contact").ScalarAsync<int>().ConfigureAwait(false);
+            Assert.That(c, Is.EqualTo(0));
+
+            // Tables in dbo schema should not be touched.
+            c = await db.SqlStatement("SELECT COUNT(*) FROM [dbo].[SchemaVersions]").ScalarAsync<int>().ConfigureAwait(false);
+            Assert.That(c, Is.GreaterThanOrEqualTo(1));
         }
     }
 }
