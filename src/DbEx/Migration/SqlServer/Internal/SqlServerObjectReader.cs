@@ -16,29 +16,8 @@ namespace DbEx.Migration.SqlServer.Internal
         private readonly TextReader _tr;
         private readonly string[] _knownSchemaObjectTypes;
         private readonly string[] _schemaOrder;
-        private readonly List<string?> _lines = new();
-        private readonly List<Token> _tokens = new();
-
-        /// <summary>
-        /// Represents the token characteristics.
-        /// </summary>
-        internal class Token
-        {
-            /// <summary>
-            /// Gets or sets the line.
-            /// </summary>
-            public int Line { get; set; }
-
-            /// <summary>
-            /// Gets or sets the column.
-            /// </summary>
-            public int Column { get; set; }
-
-            /// <summary>
-            /// Gets or sets the value.
-            /// </summary>
-            public string? Value { get; set; }
-        }
+        private readonly List<string> _tokens = new();
+        private string? _sql;
 
         /// <summary>
         /// Reads and parses the SQL <see cref="string"/>.
@@ -99,7 +78,7 @@ namespace DbEx.Migration.SqlServer.Internal
             if (!IsValid)
                 return;
 
-            var parts = SqlObjectName!.Value!.Split('.');
+            var parts = SqlObjectName!.Split('.');
             if (parts.Length == 1)
             {
                 Schema = "dbo";
@@ -122,77 +101,37 @@ namespace DbEx.Migration.SqlServer.Internal
         /// </summary>
         private void Parse()
         {
-            Token? token = null;
-            bool inComment = false;
+            _sql = _tr.ReadToEnd();
 
-            while (true)
+            int start = -1;
+            string? line;
+            using var sr = new StringReader(_sql);
+            using var tr = new StringReader(SqlServerMigrator.CleanSql(sr));
+            while ((line = tr.ReadLine()) is not null)
             {
-                var txt = _tr.ReadLine();
-                if (txt == null)
-                    break;
-
-                _lines.Add(txt.TrimEnd());
-
-                // Stop parsing after 3 tokens; howver, keep filling the statement list.
-                if (_tokens.Count >= 3)
-                    continue;
-
-                txt = txt.Trim();
-                int ci = 0;
-
-                // Remove /* */ comments
-                if (inComment)
-                {
-                    ci = txt.IndexOf("*/");
-                    if (ci < 0)
-                        continue;
-
-                    txt = txt[(ci + 2)..].Trim();
-                    inComment = false;
-                }
-
-                ci = txt.IndexOf("/*");
-                if (ci >= 0)
-                {
-                    var ci2 = txt.IndexOf("*/");
-                    if (ci2 >= 0)
-                        txt = (txt[0..ci] + txt[(ci2 + 2)..]).Trim();
-                    else
-                    {
-                        txt = txt[0..ci].Trim();
-                        inComment = true;
-                    }
-                }
-
-                // Remove -- comments.
-                ci = txt.IndexOf("--", StringComparison.InvariantCulture);
-                if (ci >= 0)
-                    txt = txt[..ci].Trim();
-
                 // Parse out the token(s).
                 var col = 0;
-                for (; col < txt.Length; col++)
+                for (; col < line.Length; col++)
                 {
-                    if (char.IsWhiteSpace(txt[col]) || new char[] { ',', ';', '(', ')', '{', '}' }.Contains(txt[col]))
+                    if (char.IsWhiteSpace(line[col]) || new char[] { ',', ';', '(', ')', '{', '}' }.Contains(line[col]))
                     {
-                        if (token != null)
+                        if (start >= 0)
                         {
-                            token.Value = txt[token.Column..col];
-                            _tokens.Add(token);
-                            token = null;
+                            _tokens.Add(line[start..col]);
+                            start = -1;
+
+                            if (_tokens.Count > 2)
+                                return;
                         }
                     }
-                    else if (token == null)
-                    {
-                        token = new Token { Line = _lines.Count - 1, Column = col };
-                    }
+                    else if (start < 0)
+                        start = col;
                 }
 
-                if (token != null)
+                if (start >= 0)
                 {
-                    token.Value = txt[token.Column..col];
-                    _tokens.Add(token);
-                    token = null;
+                    _tokens.Add(line[start..col]);
+                    start = -1;
                 }
             }
         }
@@ -215,17 +154,17 @@ namespace DbEx.Migration.SqlServer.Internal
         /// <summary>
         /// Gets the primary SQL command (first token).
         /// </summary>
-        private Token? SqlStatement => _tokens.Count < 1 ? null : _tokens[0];
+        private string? SqlStatement => _tokens.Count < 1 ? null : _tokens[0];
 
         /// <summary>
         /// Gets the underlying SQL object type (second token).
         /// </summary>
-        private Token? SqlObjectType => _tokens.Count < 2 ? null : _tokens[1];
+        private string? SqlObjectType => _tokens.Count < 2 ? null : _tokens[1];
 
         /// <summary>
         /// Gets the underlying SQL object name (third token).
         /// </summary>
-        private Token? SqlObjectName => _tokens.Count < 3 ? null : _tokens[2];
+        private string? SqlObjectName => _tokens.Count < 3 ? null : _tokens[2];
 
         /// <summary>
         /// Gets the SQL object type.
@@ -256,12 +195,7 @@ namespace DbEx.Migration.SqlServer.Internal
         /// Gets the underlying SQL <see cref="string"/>.
         /// </summary>
         /// <returns>The SQL <see cref="string"/>.</returns>
-        public string GetSql()
-        {
-            var sb = new StringBuilder();
-            _lines.ForEach((l) => sb.AppendLine(l));
-            return sb.ToString();
-        }
+        public string GetSql() => _sql!;
 
         /// <summary>
         /// Create the error message where not valid.
@@ -270,8 +204,8 @@ namespace DbEx.Migration.SqlServer.Internal
         {
             if (SqlStatement == null)
                 return "The SQL statement could not be determined; expecting a `CREATE` statement.";
-            else if (string.Compare(SqlStatement.Value, "create", StringComparison.InvariantCultureIgnoreCase) != 0)
-                return $"The SQL statement must be a `CREATE`; found '{SqlStatement.Value}'.";
+            else if (string.Compare(SqlStatement, "create", StringComparison.InvariantCultureIgnoreCase) != 0)
+                return $"The SQL statement must be a `CREATE`; found '{SqlStatement}'.";
 
             if (Type == null)
                 return "The SQL object type could not be determined.";
@@ -292,7 +226,7 @@ namespace DbEx.Migration.SqlServer.Internal
             if (SqlObjectType == null)
                 return -1;
 
-            Type = _knownSchemaObjectTypes.Where(x => string.Compare(x, SqlObjectType.Value, StringComparison.InvariantCultureIgnoreCase) == 0).SingleOrDefault();
+            Type = _knownSchemaObjectTypes.Where(x => string.Compare(x, SqlObjectType, StringComparison.InvariantCultureIgnoreCase) == 0).SingleOrDefault();
             return Type == null ? -1 : Array.IndexOf(_knownSchemaObjectTypes, Type);
         }
     }

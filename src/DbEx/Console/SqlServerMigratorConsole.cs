@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DbEx.Console
@@ -39,23 +40,23 @@ namespace DbEx.Console
         /// Executes the <see cref="SqlServerMigrator"/>.
         /// </summary>
         /// <returns><inheritdoc/></returns>
-        protected override async Task<bool> OnMigrateAsync()
+        protected override async Task<bool> OnMigrateAsync(CancellationToken cancellationToken)
         {
             var migrator = new SqlServerMigrator(Args.ConnectionString!, Args.MigrationCommand, Args.Logger ?? NullLogger.Instance, Args.Assemblies.ToArray());
 
             // Where only creating a new script, then quickly do it and get out of here!
             if (Args.MigrationCommand.HasFlag(MigrationCommand.Script))
-                return await RunScriptCommand(migrator).ConfigureAwait(false);
+                return await RunScriptCommandAsync(migrator, cancellationToken).ConfigureAwait(false);
 
             // Where only executing SQL statement, then execute and get out of here!
             if (Args.MigrationCommand.HasFlag(MigrationCommand.Execute))
-                return await RunExecuteCommand(migrator).ConfigureAwait(false);
+                return await RunExecuteCommandAsync(migrator, cancellationToken).ConfigureAwait(false);
 
             // Perform migration.
             if (Args.DataParserArgs != null)
                 migrator.ParserArgs = Args.DataParserArgs;
 
-            if (!await migrator.MigrateAsync().ConfigureAwait(false))
+            if (!await migrator.MigrateAsync(cancellationToken).ConfigureAwait(false))
                 return false;
 
             Logger?.LogInformation("{Content}", string.Empty);
@@ -67,11 +68,11 @@ namespace DbEx.Console
         /// <summary>
         /// Executes the <see cref="MigrationCommand.Script"/> command.
         /// </summary>
-        private async Task<bool> RunScriptCommand(SqlServerMigrator migrator) => await migrator.CreateScriptAsync(Args.ScriptName, Args.ScriptArguments).ConfigureAwait(false);
+        private async Task<bool> RunScriptCommandAsync(SqlServerMigrator migrator, CancellationToken cancellationToken) => await migrator.CreateScriptAsync(Args.ScriptName, Args.ScriptArguments, null, cancellationToken).ConfigureAwait(false);
 
         /// <summary>
         /// Executes the <see cref="MigrationCommand.Execute"/> command.
         /// </summary>
-        private async Task<bool> RunExecuteCommand(SqlServerMigrator migrator) => await migrator.ExecuteSqlStatementsAsync(Args.ExecuteStatements?.ToArray() ?? Array.Empty<string>()).ConfigureAwait(false);
+        private async Task<bool> RunExecuteCommandAsync(SqlServerMigrator migrator, CancellationToken cancellationToken) => await migrator.ExecuteSqlStatementsAsync(Args.ExecuteStatements?.ToArray() ?? Array.Empty<string>(), cancellationToken).ConfigureAwait(false);
     }
 }

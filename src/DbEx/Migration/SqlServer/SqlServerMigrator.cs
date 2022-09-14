@@ -9,8 +9,11 @@ using Microsoft.Extensions.Logging;
 using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DbEx.Migration.SqlServer
@@ -48,7 +51,7 @@ namespace DbEx.Migration.SqlServer
         public int MaxRetries { get; set; } = 5;
 
         /// <inheritdoc/>
-        protected async override Task<bool> DatabaseDropAsync()
+        protected async override Task<bool> DatabaseDropAsync(CancellationToken cancellationToken = default)
         {
             Logger.LogInformation("  Drop database...");
 
@@ -57,14 +60,14 @@ namespace DbEx.Migration.SqlServer
                 return false;
 
             using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DatabaseDrop.sql", new Assembly[] { typeof(SqlServerJournal).Assembly }).StreamReader!;
-            var message = await mdb.SqlStatement(sr.ReadToEnd().Replace("@DatabaseName", new SqlConnectionStringBuilder(ConnectionString).InitialCatalog)).ScalarAsync<string>(default);
+            var message = await mdb.SqlStatement(sr.ReadToEnd().Replace("@DatabaseName", new SqlConnectionStringBuilder(ConnectionString).InitialCatalog)).ScalarAsync<string>(cancellationToken);
 
             Logger.LogInformation("    {Content}", message);
             return true;
         }
 
         /// <inheritdoc/>
-        protected async override Task<bool> DatabaseCreateAsync()
+        protected async override Task<bool> DatabaseCreateAsync(CancellationToken cancellationToken = default)
         {
             Logger.LogInformation("  Create database...");
 
@@ -73,7 +76,7 @@ namespace DbEx.Migration.SqlServer
                 return false;
 
             using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DatabaseCreate.sql", new Assembly[] { typeof(SqlServerJournal).Assembly }).StreamReader!;
-            var message = await mdb.SqlStatement(sr.ReadToEnd().Replace("@DatabaseName", new SqlConnectionStringBuilder(ConnectionString).InitialCatalog)).ScalarAsync<string>(default);
+            var message = await mdb.SqlStatement(sr.ReadToEnd().Replace("@DatabaseName", new SqlConnectionStringBuilder(ConnectionString).InitialCatalog)).ScalarAsync<string>(cancellationToken);
 
             Logger.LogInformation("    {Content}", message);
             return true;
@@ -96,7 +99,7 @@ namespace DbEx.Migration.SqlServer
         }
 
         /// <inheritdoc/>
-        protected override async Task<bool> DatabaseSchemaAsync(List<DatabaseMigrationScript> scripts)
+        protected override async Task<bool> DatabaseSchemaAsync(List<DatabaseMigrationScript> scripts, CancellationToken cancellationToken = default)
         {
             // Parse each script and determine type and object.
             var list = new List<SqlServerObjectReader>();
@@ -124,7 +127,7 @@ namespace DbEx.Migration.SqlServer
                 ss.Add(new DatabaseMigrationScript(sql, sql) { GroupOrder = i++, RunAlways = true });
             }
 
-            if (!await ExecuteScriptsAsync(ss, true).ConfigureAwait(false))
+            if (!await ExecuteScriptsAsync(ss, true, cancellationToken).ConfigureAwait(false))
                 return false;
 
             // Execute each script proper.
@@ -136,15 +139,15 @@ namespace DbEx.Migration.SqlServer
                 ss.Add(new DatabaseMigrationScript(sor.GetSql(), sor.ScriptName) { GroupOrder = i++, RunAlways = true, Tag = $">> CREATE {sor.Type} [{sor.Schema}].[{sor.Name}]" });
             }
 
-            return await ExecuteScriptsAsync(ss, true).ConfigureAwait(false);
+            return await ExecuteScriptsAsync(ss, true, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        protected override async Task<bool> DatabaseResetAsync()
+        protected override async Task<bool> DatabaseResetAsync(CancellationToken cancellationToken = default)
         {
             Logger.LogInformation("  Deleting data from all tables (excludes schema 'dbo' and 'cdc')...");
             using var sr = StreamLocator.GetResourcesStreamReader("SqlServer.DeleteAllAndReset.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
-            var tables = await Database.SqlStatement(sr.ReadToEnd()).SelectQueryAsync(dr => { Logger.LogInformation("{Content}", $"    [{dr.GetValue<string>("Schema")}].[{dr.GetValue<string>("Table")}]"); return 0; }).ConfigureAwait(false);
+            var tables = await Database.SqlStatement(sr.ReadToEnd()).SelectQueryAsync(dr => { Logger.LogInformation("{Content}", $"    [{dr.GetValue<string>("Schema")}].[{dr.GetValue<string>("Table")}]"); return 0; }, cancellationToken).ConfigureAwait(false);
             if (!tables.Any())
                 Logger.LogInformation("    None.");
 
@@ -152,7 +155,7 @@ namespace DbEx.Migration.SqlServer
         }
 
         /// <inheritdoc/>
-        protected override async Task<bool> DatabaseDataAsync(List<DataTable> dataTables)
+        protected override async Task<bool> DatabaseDataAsync(List<DataTable> dataTables, CancellationToken cancellationToken = default)
         {
             // Cache the compiled code-gen template.
             if (_codeGen == null)
@@ -169,7 +172,7 @@ namespace DbEx.Migration.SqlServer
                 var sql = _codeGen.Generate(table);
                 Logger.LogInformation("{Content}", sql);
 
-                var rows = await Database.SqlStatement(sql).ScalarAsync<int>().ConfigureAwait(false);
+                var rows = await Database.SqlStatement(sql).ScalarAsync<int>(cancellationToken).ConfigureAwait(false);
                 Logger.LogInformation("{Content}", $"Result: {rows} rows affected.");
             }
 
@@ -180,9 +183,9 @@ namespace DbEx.Migration.SqlServer
         protected override IDatabase CreateDatabase(string connectionString) => new SqlServerDatabase(() => new SqlConnection(connectionString));
 
         /// <inheritdoc/>
-        public override async Task<bool> ExecuteScriptsAsync(IEnumerable<DatabaseMigrationScript> scripts, bool includeExecutionLogging)
+        public override async Task<bool> ExecuteScriptsAsync(IEnumerable<DatabaseMigrationScript> scripts, bool includeExecutionLogging, CancellationToken cancellationToken = default)
         {
-            await Journal.EnsureExistsAsync().ConfigureAwait(false);
+            await Journal.EnsureExistsAsync(cancellationToken).ConfigureAwait(false);
             HashSet<string>? previous = null;
             bool somethingExecuted = false;
 
@@ -200,8 +203,7 @@ namespace DbEx.Migration.SqlServer
 
                 try
                 {
-                    using var sr = script.GetStreamReader();
-                    await Database.SqlStatement(sr.ReadToEnd()).NonQueryAsync(default).ConfigureAwait(false);
+                    await ExecuteScriptAsync(script, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -217,6 +219,121 @@ namespace DbEx.Migration.SqlServer
                 Logger.LogInformation("    {Content}", "No new scripts found to execute.");
 
             return true;
+        }
+
+        /// <summary>
+        /// Execute the script as potentially multiple within a batch context; i.e. there is a GO statement.
+        /// </summary>
+        private async Task ExecuteScriptAsync(DatabaseMigrationScript script, CancellationToken cancellationToken = default)
+        {
+            using var sr = script.GetStreamReader();
+            foreach (var sql in SplitSql(CleanSql(sr)))
+            {
+                await Database.SqlStatement(sql).NonQueryAsync(cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// <see cref="CleanSql(TextReader)">Cleans</see> and splits (based on the SQL Server '<c><see href="http://technet.microsoft.com/en-us/library/ms188037.aspx">GO</see></c>' statement) the SQL command(s) from a <see cref="TextReader"/>.
+        /// </summary>
+        /// <param name="tr">The <see cref="TextReader"/>.</param>
+        /// <returns>A list of executable SQL statements.</returns>
+        /// <remarks>The '<c>GO [count]</c>' count syntax is not supported; i.e. will not be parsed correctly and will likely result in an error when executed.</remarks>
+        public static List<string> CleanAndSplitSql(TextReader tr) => SplitSql(CleanSql(tr));
+
+        /// <summary>
+        /// Split the SQL into multiple statements based on the SQL Server '<c><see href="http://technet.microsoft.com/en-us/library/ms188037.aspx">GO</see></c>' statement.
+        /// </summary>
+        /// <param name="sql">The originating SQL.</param>
+        /// <returns>A list of executable SQL statements.</returns>
+        private static List<string> SplitSql(string sql)
+        {
+            var list = new List<string>();
+            if (string.IsNullOrEmpty(sql))
+                return list;
+
+            var sb = new StringBuilder();
+            string? line;
+            using var tr = new StringReader(sql);
+
+            while ((line = tr.ReadLine()) is not null)
+            {
+                if (line.Trim().Equals("GO", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    if (sb.Length > 0 && !string.IsNullOrEmpty(sb.ToString().Trim()))
+                        list.Add(sb.ToString());
+
+                    sb.Clear();
+                }
+                else
+                {
+                    if (sb.Length > 0)
+                        sb.AppendLine();
+
+                    sb.Append(line);
+                }
+            }
+
+            if (sb.Length > 0 && !string.IsNullOrEmpty(sb.ToString().Trim()))
+                list.Add(sb.ToString());
+
+            return list;
+        }
+
+        /// <summary>
+        /// Reads the SQL command from a <see cref="TextReader"/> and parses out all of the comments.
+        /// </summary>
+        /// <param name="tr">The <see cref="TextReader"/>.</param>
+        public static string CleanSql(TextReader tr)
+        {
+            string? line;
+            bool inComment = false;
+            StringBuilder sb = new();
+
+            while ((line = tr.ReadLine()) is not null)
+            {
+                int ci;
+
+                // Remove /* */ comments
+                if (inComment)
+                {
+                    ci = line.IndexOf("*/");
+                    if (ci < 0)
+                        continue;
+
+                    line = line[(ci + 2)..];
+                    inComment = false;
+
+                    if (string.IsNullOrEmpty(line))
+                        continue;
+                }
+
+                ci = line.IndexOf("/*");
+                if (ci >= 0)
+                {
+                    var ci2 = line.IndexOf("*/");
+                    if (ci2 >= 0)
+                        line = line[0..ci] + line[(ci2 + 2)..];
+                    else
+                    {
+                        inComment = true;
+                        continue;
+                    }
+                }
+
+                // Remove -- comments.
+                ci = line.IndexOf("--", StringComparison.InvariantCulture);
+                if (ci >= 0)
+                    line = line[..ci];
+
+                // Add as valid statement.
+                if (sb.Length > 0)
+                    sb.AppendLine();
+
+                sb.Append(line);
+            }
+
+            return sb.ToString();
         }
     }
 }
