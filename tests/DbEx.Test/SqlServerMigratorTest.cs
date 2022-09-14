@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CoreEx.Database;
@@ -156,26 +157,6 @@ namespace DbEx.Test
         }
 
         [Test]
-        public async Task B100_Execute_Console_Success()
-        {
-            var c = await CreateConsoleDb().ConfigureAwait(false);
-            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
-
-            var r = await m.ExecuteSqlStatementsAsync("SELECT * FROM Test.Contact").ConfigureAwait(false);
-            Assert.IsTrue(r);
-        }
-
-        [Test]
-        public async Task B100_Execute_Console_Error()
-        {
-            var c = await CreateConsoleDb().ConfigureAwait(false);
-            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
-
-            var r = await m.ExecuteSqlStatementsAsync("SELECT * FROM Test.Contact", "SELECT BANANAS").ConfigureAwait(false);
-            Assert.IsFalse(r);
-        }
-
-        [Test]
         public async Task A140_Reset_None()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("NoneDb");
@@ -208,6 +189,93 @@ namespace DbEx.Test
             // Tables in dbo schema should not be touched.
             c = await db.SqlStatement("SELECT COUNT(*) FROM [dbo].[SchemaVersions]").ScalarAsync<int>().ConfigureAwait(false);
             Assert.That(c, Is.GreaterThanOrEqualTo(1));
+        }
+
+        [Test]
+        public async Task B100_Execute_Console_Success()
+        {
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
+
+            var r = await m.ExecuteSqlStatementsAsync(new string[] { "SELECT * FROM Test.Contact" }).ConfigureAwait(false);
+            Assert.IsTrue(r);
+        }
+
+        [Test]
+        public async Task B110_Execute_Console_Error()
+        {
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
+
+            var r = await m.ExecuteSqlStatementsAsync(new string[] { "SELECT * FROM Test.Contact", "SELECT BANANAS" }).ConfigureAwait(false);
+            Assert.IsFalse(r);
+        }
+
+        [Test]
+        public async Task B120_Execute_Console_Batch_Error()
+        {
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
+
+            var r = await m.ExecuteSqlStatementsAsync(new string[] { @"SELECT * FROM Test.Contact; /* end */ GO; SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
+            Assert.IsFalse(r);
+        }
+
+        [Test]
+        public async Task B120_Execute_Console_Batch_Success()
+        {
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
+
+            var r = await m.ExecuteSqlStatementsAsync(new string[] { @"SELECT * FROM Test.Contact;
+/* end */ 
+GO 
+SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
+            Assert.IsTrue(r);
+        }
+
+        [Test]
+        public void C100_CleanAndSplitSql()
+        {
+            var stmts = SqlServerMigrator.CleanAndSplitSql(new StringReader("SELECT * FROM Test.Contact; /* end */ GO; SELECT * FROM Test.Contact -- comment"));
+            Assert.That(stmts, Is.Not.Null);
+            Assert.That(stmts, Has.Count.EqualTo(1));
+            Assert.That(stmts[0], Is.EqualTo("SELECT * FROM Test.Contact;  GO; SELECT * FROM Test.Contact "));
+        }
+
+        [Test]
+        public void C110_CleanAndSplitSql()
+        {
+            var stmts = SqlServerMigrator.CleanAndSplitSql(new StringReader(@"SELECT * FROM Test.Contact;
+/* begin
+   end */
+GO 
+SELECT * FROM Test.Contact -- comment"));
+            Assert.That(stmts, Is.Not.Null);
+            Assert.That(stmts, Has.Count.EqualTo(2));
+            Assert.That(stmts[0], Is.EqualTo("SELECT * FROM Test.Contact;"));
+            Assert.That(stmts[1], Is.EqualTo("SELECT * FROM Test.Contact "));
+        }
+
+        [Test]
+        public void C120_CleanAndSplitSql()
+        {
+            var stmts = SqlServerMigrator.CleanAndSplitSql(new StringReader(@"SELECT 'abc\  
+def' AS [ColumnResult];"));
+
+            Assert.That(stmts, Is.Not.Null);
+            Assert.That(stmts, Has.Count.EqualTo(1));
+            Assert.That(stmts[0], Is.EqualTo(@"SELECT 'abc\  
+def' AS [ColumnResult];"));
+        }
+
+        [Test]
+        public void C130_CleanAndSplitSql()
+        {
+            var stmts = SqlServerMigrator.CleanAndSplitSql(new StringReader(@"SELECT * FROM Test.Contact;
+GO 
+"));
+            Assert.That(stmts[0], Is.EqualTo("SELECT * FROM Test.Contact;"));
         }
     }
 }

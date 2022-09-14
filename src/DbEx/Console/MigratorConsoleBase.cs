@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DbEx.Console
@@ -76,22 +77,25 @@ namespace DbEx.Console
         /// Runs the code generation using the passed <paramref name="migrationCommand"/>.
         /// </summary>
         /// <param name="migrationCommand">The <see cref="MigrationCommand"/>.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns><b>Zero</b> indicates success; otherwise, unsuccessful.</returns>
-        public async Task<int> RunAsync(MigrationCommand migrationCommand) => await RunAsync(migrationCommand.ToString()).ConfigureAwait(false);
+        public async Task<int> RunAsync(MigrationCommand migrationCommand, CancellationToken cancellationToken = default) => await RunAsync(migrationCommand.ToString(), cancellationToken).ConfigureAwait(false);
 
         /// <summary>
         /// Runs the code generation using the passed <paramref name="args"/> string.
         /// </summary>
         /// <param name="args">The command-line arguments.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns><b>Zero</b> indicates success; otherwise, unsuccessful.</returns>
-        public async Task<int> RunAsync(string? args = null) => await RunAsync(CodeGenConsole.SplitArgumentsIntoArray(args)).ConfigureAwait(false);
+        public async Task<int> RunAsync(string? args = null, CancellationToken cancellationToken = default) => await RunAsync(CodeGenConsole.SplitArgumentsIntoArray(args), cancellationToken).ConfigureAwait(false);
 
         /// <summary>
         /// Runs the code generation using the passed <paramref name="args"/> array.
         /// </summary>
         /// <param name="args">The command-line arguments.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns><b>Zero</b> indicates success; otherwise, unsuccessful.</returns>
-        public async Task<int> RunAsync(string[] args)
+        public async Task<int> RunAsync(string[] args, CancellationToken cancellationToken = default)
         {
             Args.Logger ??= new ConsoleLogger(PhysicalConsole.Singleton);
             HandlebarsHelpers.Logger ??= Args.Logger;
@@ -178,12 +182,12 @@ namespace DbEx.Console
             });
 
             // Set up the code generation execution.
-            app.OnExecuteAsync(async _ => await RunRunawayAsync().ConfigureAwait(false));
+            app.OnExecuteAsync(RunRunawayAsync);
 
             // Execute the command-line app.
             try
             {
-                return await app.ExecuteAsync(args).ConfigureAwait(false);
+                return await app.ExecuteAsync(args, cancellationToken).ConfigureAwait(false);
             }
             catch (CommandParsingException cpex)
             {
@@ -253,7 +257,7 @@ namespace DbEx.Console
         /// <summary>
         /// Performs the actual code-generation.
         /// </summary>
-        private async Task<int> RunRunawayAsync() /* Method name inspired by: Slade - Run Runaway - https://www.youtube.com/watch?v=gMxcGaAwy-Q */
+        private async Task<int> RunRunawayAsync(CancellationToken cancellationToken) /* Method name inspired by: Slade - Run Runaway - https://www.youtube.com/watch?v=gMxcGaAwy-Q */
         {
             try
             {
@@ -267,7 +271,7 @@ namespace DbEx.Console
 
                 // Run the code generator.
                 var sw = Stopwatch.StartNew();
-                if (!await OnMigrateAsync().ConfigureAwait(false))
+                if (!await OnMigrateAsync(cancellationToken).ConfigureAwait(false))
                     return 3;
 
                 // Write footer and exit successfully.
@@ -295,8 +299,9 @@ namespace DbEx.Console
         /// <summary>
         /// Invoked to execute the <see cref="DatabaseMigratorBase"/>.
         /// </summary>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
-        protected abstract Task<bool> OnMigrateAsync();
+        protected abstract Task<bool> OnMigrateAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// Invoked to write the <see cref="MastheadText"/> to the <see cref="Logger"/>.

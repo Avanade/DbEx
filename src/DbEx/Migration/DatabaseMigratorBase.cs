@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DbEx.Migration
@@ -88,7 +89,7 @@ namespace DbEx.Migration
         protected List<string> SchemaOrder { get; } = new List<string>();
 
         /// <summary>
-        /// Gets the output parent <see cref="DirectoryInfo"/> where <see cref="MigrationCommand.Schema"/> and <see cref="CreateScriptAsync(string, IDictionary{string, string?}, string[])"/> artefacts reside.
+        /// Gets the output parent <see cref="DirectoryInfo"/> where <see cref="MigrationCommand.Schema"/> and <see cref="CreateScriptAsync"/> artefacts reside.
         /// </summary>
         protected DirectoryInfo OutputDirectory { get; set; }
 
@@ -122,8 +123,9 @@ namespace DbEx.Migration
         /// <summary>
         /// Orchestrates the migration steps as specified by the <see cref="MigrationCommand"/>.
         /// </summary>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
-        public virtual async Task<bool> MigrateAsync()
+        public virtual async Task<bool> MigrateAsync(CancellationToken cancellationToken = default)
         {
             // Check commands.
             if (Command.HasFlag(MigrationCommand.Execute))
@@ -133,27 +135,27 @@ namespace DbEx.Migration
                 throw new InvalidOperationException($@"{nameof(MigrateAsync)} does not support {nameof(MigrationCommand)}.{nameof(MigrationCommand.Script)}, please invoke {nameof(CreateScriptAsync)} method directly.");
 
             // Database drop.
-            if (!await CommandExecuteAsync(MigrationCommand.Drop, "DATABASE DROP: Checking database existence and dropping where found...", async () => await DatabaseDropAsync().ConfigureAwait(false)).ConfigureAwait(false))
+            if (!await CommandExecuteAsync(MigrationCommand.Drop, "DATABASE DROP: Checking database existence and dropping where found...", DatabaseDropAsync, null, cancellationToken).ConfigureAwait(false))
                 return false;
 
             // Database create.
-            if (!await CommandExecuteAsync(MigrationCommand.Create, "DATABASE CREATE: Checking database existence and creating where not found...", async () => await DatabaseCreateAsync().ConfigureAwait(false)).ConfigureAwait(false))
+            if (!await CommandExecuteAsync(MigrationCommand.Create, "DATABASE CREATE: Checking database existence and creating where not found...", DatabaseCreateAsync, null, cancellationToken).ConfigureAwait(false))
                 return false;
 
             // Database migration scripts.
-            if (!await CommandExecuteAsync(MigrationCommand.Migrate, "DATABASE MIGRATE: Migrating the database...", async () => await DatabaseMigrateAsync().ConfigureAwait(false)).ConfigureAwait(false))
+            if (!await CommandExecuteAsync(MigrationCommand.Migrate, "DATABASE MIGRATE: Migrating the database...", DatabaseMigrateAsync, null, cancellationToken).ConfigureAwait(false))
                 return false;
 
             // Database schema scripts.
-            if (!await CommandExecuteAsync(MigrationCommand.Schema, "DATABASE SCHEMA: Drops and creates the database objects...", async () => await DatabaseSchemaAsync().ConfigureAwait(false)).ConfigureAwait(false))
+            if (!await CommandExecuteAsync(MigrationCommand.Schema, "DATABASE SCHEMA: Drops and creates the database objects...", DatabaseSchemaAsync, null, cancellationToken).ConfigureAwait(false))
                 return false;
 
             // Database reset.
-            if (!await CommandExecuteAsync(MigrationCommand.Reset, "DATABASE RESET: Resets database by dropping data from all tables...", async () => await DatabaseResetAsync().ConfigureAwait(false)).ConfigureAwait(false))
+            if (!await CommandExecuteAsync(MigrationCommand.Reset, "DATABASE RESET: Resets database by dropping data from all tables...", DatabaseResetAsync, null, cancellationToken).ConfigureAwait(false))
                 return false;
 
             // Database data load.
-            if (!await CommandExecuteAsync(MigrationCommand.Data, "DATABASE DATA: Insert or merge the embedded YAML data...", async () => await DatabaseDataAsync().ConfigureAwait(false)).ConfigureAwait(false))
+            if (!await CommandExecuteAsync(MigrationCommand.Data, "DATABASE DATA: Insert or merge the embedded YAML data...", DatabaseDataAsync, null, cancellationToken).ConfigureAwait(false))
                 return false;
 
             return true;
@@ -162,7 +164,7 @@ namespace DbEx.Migration
         /// <summary>
         /// Verifies execution, then wraps and times the command execution.
         /// </summary>
-        private async Task<bool> CommandExecuteAsync(MigrationCommand command, string title, Func<Task<bool>> action, Func<string>? summary = null)
+        private async Task<bool> CommandExecuteAsync(MigrationCommand command, string title, Func<CancellationToken, Task<bool>> action, Func<string>? summary, CancellationToken cancellationToken)
         {
             var isSelected = Command.HasFlag(command);
 
@@ -171,7 +173,7 @@ namespace DbEx.Migration
 
             if (isSelected)
             {
-                if (!await CommandExecuteAsync(title, action, summary).ConfigureAwait(false))
+                if (!await CommandExecuteAsync(title, action, summary, cancellationToken).ConfigureAwait(false))
                     return false;
             }
 
@@ -202,8 +204,9 @@ namespace DbEx.Migration
         /// <param name="title">The title text.</param>
         /// <param name="action">The primary action to be performed.</param>
         /// <param name="summary">Optional summary text appended to the complete log text.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <remarks>This will also catch any unhandled exceptions and log accordingly.</remarks>
-        protected async Task<bool> CommandExecuteAsync(string title, Func<Task<bool>> action, Func<string>? summary = null)
+        protected async Task<bool> CommandExecuteAsync(string title, Func<CancellationToken, Task<bool>> action, Func<string>? summary, CancellationToken cancellationToken)
         {
             Logger.LogInformation("{Content}", string.Empty);
             Logger.LogInformation("{Content}", new string('-', 80));
@@ -213,7 +216,7 @@ namespace DbEx.Migration
             try
             {
                 var sw = Stopwatch.StartNew();
-                if (!await (action ?? throw new ArgumentNullException(nameof(action))).Invoke().ConfigureAwait(false))
+                if (!await (action ?? throw new ArgumentNullException(nameof(action))).Invoke(cancellationToken).ConfigureAwait(false))
                     return false;
 
                 sw.Stop();
@@ -233,27 +236,30 @@ namespace DbEx.Migration
         /// </summary>
         /// <param name="scripts">The <see cref="DatabaseMigrationScript"/> list.</param>
         /// <param name="includeExecutionLogging">Indicates whether to include detailed execution logging.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
-        public abstract Task<bool> ExecuteScriptsAsync(IEnumerable<DatabaseMigrationScript> scripts, bool includeExecutionLogging);
+        public abstract Task<bool> ExecuteScriptsAsync(IEnumerable<DatabaseMigrationScript> scripts, bool includeExecutionLogging, CancellationToken cancellationToken);
 
         /// <summary>
         /// Performs the <see cref="MigrationCommand.Drop"/> command.
         /// </summary>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
-        /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{Task{bool}}, Func{string}?)"/>.</remarks>
-        protected abstract Task<bool> DatabaseDropAsync();
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+        /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{CancellationToken, Task{bool}}, Func{string}?, CancellationToken)"/>.</remarks>
+        protected abstract Task<bool> DatabaseDropAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Performs the <see cref="MigrationCommand.Create"/> command.
         /// </summary>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
-        /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{Task{bool}}, Func{string}?)"/>.</remarks>
-        protected abstract Task<bool> DatabaseCreateAsync();
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+        /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{CancellationToken, Task{bool}}, Func{string}?, CancellationToken)"/>.</remarks>
+        protected abstract Task<bool> DatabaseCreateAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Performs the <see cref="MigrationCommand.Migrate"/> command.
         /// </summary>
-        private async Task<bool> DatabaseMigrateAsync()
+        private async Task<bool> DatabaseMigrateAsync(CancellationToken cancellationToken)
         {
             Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.sql"))}");
 
@@ -278,13 +284,13 @@ namespace DbEx.Migration
             }
 
             Logger.LogInformation("{Content}", "  Migrate the embedded resources...");
-            return await ExecuteScriptsAsync(scripts, true).ConfigureAwait(false);
+            return await ExecuteScriptsAsync(scripts, true, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Performs the <see cref="MigrationCommand.Schema"/> command.
         /// </summary>
-        private async Task<bool> DatabaseSchemaAsync()
+        private async Task<bool> DatabaseSchemaAsync(CancellationToken cancellationToken)
         {
             // Build list of all known schema type objects to be dropped and created.
             var scripts = new List<DatabaseMigrationScript>();
@@ -331,28 +337,30 @@ namespace DbEx.Migration
             }
 
             // Execute the database specific logic.
-            return await DatabaseSchemaAsync(scripts).ConfigureAwait(false);
+            return await DatabaseSchemaAsync(scripts, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Performs the <see cref="MigrationCommand.Schema"/> command.
         /// </summary>
         /// <param name="scripts">The <see cref="DatabaseMigrationScript"/> list discovered during the file and resource probes.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
-        /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{Task{bool}}, Func{string}?)"/>.</remarks>
-        protected abstract Task<bool> DatabaseSchemaAsync(List<DatabaseMigrationScript> scripts);
+        /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{CancellationToken, Task{bool}}, Func{string}?, CancellationToken)"/>.</remarks>
+        protected abstract Task<bool> DatabaseSchemaAsync(List<DatabaseMigrationScript> scripts, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Performs the <see cref="MigrationCommand.Reset"/> command.
         /// </summary>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
-        /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{Task{bool}}, Func{string}?)"/>.</remarks>
-        protected abstract Task<bool> DatabaseResetAsync();
+        /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{CancellationToken, Task{bool}}, Func{string}?, CancellationToken)"/>.</remarks>
+        protected abstract Task<bool> DatabaseResetAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Performs the <see cref="MigrationCommand.Data"/> command.
         /// </summary>
-        private async Task<bool> DatabaseDataAsync()
+        private async Task<bool> DatabaseDataAsync(CancellationToken cancellationToken)
         {
             Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*.[sql|yaml]", true))}");
 
@@ -394,7 +402,7 @@ namespace DbEx.Migration
                     Logger.LogInformation("{Content}", $"** Executing: {item.ResourceName}");
 
                     var ss = new DatabaseMigrationScript(item.Assembly, item.ResourceName) { RunAlways = true };
-                    if (!await ExecuteScriptsAsync(new DatabaseMigrationScript[] { ss }, false).ConfigureAwait(false))
+                    if (!await ExecuteScriptsAsync(new DatabaseMigrationScript[] { ss }, false, cancellationToken).ConfigureAwait(false))
                         return false;
                 }
                 else
@@ -407,7 +415,7 @@ namespace DbEx.Migration
 
                         var tables = await parser.ParseYamlAsync(sr);
 
-                        if (!await DatabaseDataAsync(tables).ConfigureAwait(false))
+                        if (!await DatabaseDataAsync(tables, cancellationToken).ConfigureAwait(false))
                             return false;
                     }
                     catch (DataParserException dpex)
@@ -426,9 +434,10 @@ namespace DbEx.Migration
         /// Performs the <see cref="MigrationCommand.Data"/> command.
         /// </summary>
         /// <param name="dataTables">The <see cref="DataTable"/> list that contains the parsed data to be inserted/merged.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
-        /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{Task{bool}}, Func{string}?)"/>.</remarks>
-        protected abstract Task<bool> DatabaseDataAsync(List<DataTable> dataTables);
+        /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{CancellationToken, Task{bool}}, Func{string}?, CancellationToken)"/>.</remarks>
+        protected abstract Task<bool> DatabaseDataAsync(List<DataTable> dataTables, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Create an <see cref="IDatabase"/> instance.
@@ -460,14 +469,15 @@ namespace DbEx.Migration
         /// <param name="resourceName">The script resource template name; defaults to '<c>default</c>'.</param>
         /// <param name="parameters">The optional parameters.</param>
         /// <param name="extensions">The optional file extensions used to probe for resource; defaults to '<c>_sql.hb</c>' and '<c>_sql.hbs</c>'.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
-        public async Task<bool> CreateScriptAsync(string? resourceName = null, IDictionary<string, string?>? parameters = null, params string[] extensions)
-            => await CommandExecuteAsync("DATABASE SCRIPT: Create a new database script...", async () => await CreateScriptInternalAsync(resourceName, parameters, extensions).ConfigureAwait(false)).ConfigureAwait(false);
+        public async Task<bool> CreateScriptAsync(string? resourceName = null, IDictionary<string, string?>? parameters = null, string[]? extensions = null, CancellationToken cancellationToken = default)
+            => await CommandExecuteAsync("DATABASE SCRIPT: Create a new database script...", async ct => await CreateScriptInternalAsync(resourceName, parameters, extensions, ct).ConfigureAwait(false), null, cancellationToken).ConfigureAwait(false);
 
         /// <summary>
         /// Creates the new script.
         /// </summary>
-        private async Task<bool> CreateScriptInternalAsync(string? resourceName = null, IDictionary<string, string?>? parameters = null, params string[] extensions)
+        private async Task<bool> CreateScriptInternalAsync(string? resourceName, IDictionary<string, string?>? parameters, string[]? extensions, CancellationToken cancellationToken)
         {
             resourceName ??= "default";
             if (extensions == null || extensions.Length == 0)
@@ -527,25 +537,26 @@ namespace DbEx.Migration
             if (!fi.Directory.Exists)
                 fi.Directory.Create();
 
-            await File.WriteAllTextAsync(fi.FullName, new HandlebarsCodeGenerator(txt).Generate(data)).ConfigureAwait(false);
+            await File.WriteAllTextAsync(fi.FullName, new HandlebarsCodeGenerator(txt).Generate(data), cancellationToken).ConfigureAwait(false);
 
             Logger.LogWarning("{Content}", $"Script file created: {fi.FullName}");
             return true;
         }
 
         /// <summary>
-        /// Executes the raw SQL statements by creating the equivalent <see cref="DatabaseMigrationScript"/> and invoking <see cref="ExecuteScriptsAsync(IEnumerable{DatabaseMigrationScript}, bool)"/>.
+        /// Executes the raw SQL statements by creating the equivalent <see cref="DatabaseMigrationScript"/> and invoking <see cref="ExecuteScriptsAsync"/>.
         /// </summary>
-        /// <param name="statements"></param>
+        /// <param name="statements">The SQL statements.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
         /// <remarks>A maximum of 999 SQL statements may be executed at one-time. Each script is run independently (i.e. not within an overall database tramsaction); therefore, any preceeding scripts before error will have executed successfully.</remarks>
-        public async Task<bool> ExecuteSqlStatementsAsync(params string[] statements)
-            => await CommandExecuteAsync("DATABASE EXECUTE: Executes the SQL statement(s)...", async () => await ExecuteSqlStatementsInternalAsync(statements).ConfigureAwait(false)).ConfigureAwait(false);
+        public async Task<bool> ExecuteSqlStatementsAsync(string[]? statements, CancellationToken cancellationToken = default)
+            => await CommandExecuteAsync("DATABASE EXECUTE: Executes the SQL statement(s)...", async ct => await ExecuteSqlStatementsInternalAsync(statements, ct).ConfigureAwait(false), null, cancellationToken).ConfigureAwait(false);
 
         /// <summary>
         /// Executes the raw SQL statements.
         /// </summary>
-        private async Task<bool> ExecuteSqlStatementsInternalAsync(params string[] statements)
+        private async Task<bool> ExecuteSqlStatementsInternalAsync(string[]? statements, CancellationToken cancellationToken)
         {
             if (statements == null || statements.Length == 0)
             {
@@ -567,7 +578,7 @@ namespace DbEx.Migration
                     scripts.Add(new DatabaseMigrationScript(statements[i], $"{sn}{i + 1:000}.sql"));
             }
 
-            return await ExecuteScriptsAsync(scripts, false).ConfigureAwait(false);
+            return await ExecuteScriptsAsync(scripts, false, cancellationToken).ConfigureAwait(false);
         }
     }
 }
