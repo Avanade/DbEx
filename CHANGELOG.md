@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v1.0.17
+- *Fixed:* Updated to `CoreEx` version `1.0.9` and `OnRamp` version `1.0.6`.
+
 ## v1.0.16
 - *Fixed:* SQL using batch, i.e. `GO` statement, were not being split and executed (indepently) correctly.
 - *Fixed:* Standard pattern of `CancellationToken` added to all `Async` methods.
