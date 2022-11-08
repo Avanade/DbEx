@@ -6,9 +6,7 @@
 
 ## Introduction
 
-_DbEx_ provides database extensions for both:
-- [DbUp-inspired](#DbUp-inspired) database migrations; and
-- [ADO.NET](#ADO.NET) database access.
+_DbEx_ provides database extensions for [DbUp-inspired](#DbUp-inspired) database migrations.
 
 <br/>
 
@@ -24,7 +22,7 @@ The included [change log](CHANGELOG.md) details all key changes per published ve
 
 [DbUp](https://dbup.readthedocs.io/en/latest/) is a .NET library that is used to deploy changes to relational databases (supports multiple database technologies). It tracks which SQL scripts have been run already, and runs the change scripts in the order specified that are needed to get a database up to date. 
 
-Traditionally, a [Data-tier Application (DAC)](https://docs.microsoft.com/en-us/sql/relational-databases/data-tier-applications/data-tier-applications) is used to provide a logical means to define all of the SQL Server objects - like tables, views, and instance objects, including logins - associated with a database. A DAC is a self-contained unit of SQL Server database deployment that enables data-tier developers and database administrators to package SQL Server objects into a portable artifact called a DAC package, also known as a DACPAC. This is largely specific to Microsoft SQL Server. Alternatively, there are other tools such as [redgate](https://www.red-gate.com/products/sql-development/sql-toolbelt-essentials/) that may be used. DbUp provides a more explicit approach, one that Microsoft also adopts with the likes of [EF Migrations](https://docs.microsoft.com/en-us/ef/core/managing-schemas/migrations/).
+Traditionally, a [Data-tier Application (DAC)](https://docs.microsoft.com/en-us/sql/relational-databases/data-tier-applications/data-tier-applications) is used to provide a logical means to define all of the SQL Server objects - like tables, views, and instance objects, including logins - associated with a database. A DAC is a self-contained unit of SQL Server database deployment that enables data-tier developers and database administrators to package SQL Server objects into a portable artifact called a DAC package, also known as a DACPAC. This is largely specific to Microsoft SQL Server. Alternatively, there are other tools such as [redgate](https://www.red-gate.com/products/sql-development/sql-toolbelt-essentials/) that may be used. DbUp provides a more explicit approach, one that Microsoft similarily adopts with the likes of [EF Migrations](https://docs.microsoft.com/en-us/ef/core/managing-schemas/migrations/).
 
 _DbEx_ provides additional functionality to improve the end-to-end experience of managing database migrations/updates leveraging the concepts of DbUp. _DbEx_ prior to version `1.0.14` leveraged DbUb; however, due to the slow uptake of pull requests by the maintainers of DbUp that was starting to impose limitations on `DbEx` the decision was made to emulate functionality internally to achieve the functionality goals of `DbEx.` The changes are compatible with the underlying [journaling](./src/DbEx/Migration/SqlServer/SqlServerJournal.cs) that DbUp leverages (i.e. simulates the same).
 
@@ -39,7 +37,7 @@ DbEx.Test.Console git:(main)> export cs="Data Source=localhost, 1433;Initial Cat
 DbEx.Test.Console git:(main)> dotnet run -- -cv cs all
 ```
 
-Next, create your own console app, follow the structure of `DbEx.Test.Console` project, add reference to https://www.nuget.org/packages/DbEx and your SQL scripts.
+Next, create your own console app, follow the structure of `DbEx.Test.Console` project, add reference to https://www.nuget.org/packages/DbEx, then add in your SQL scripts.
 
 Currently, the easiest way of generating scripts from an existing database, is to use the `Generate Scripts` feature of _SQL Server Management Studio_ and copy its output.
 
@@ -55,7 +53,7 @@ Command | Description
 `Create` | Create the database (where it does not already exist).
 [`Migrate`](#Migrate) | Being the upgrading of a database overtime using order-based migration scripts; the tool is consistent with the philosophy of [DbUp](https://dbup.readthedocs.io/en/latest/philosophy-behind-dbup/) to enable.
 [`Schema`](#Schema) | There are a number of database schema objects that can be managed outside of the above migrations, that are dropped and (re-)applied to the database using their native `Create` statement.
-`Reset` | Resets the database by deleting all existing data (excludes `dbo` and `cdc` schema).
+`Reset` | Resets the database by deleting all existing data (excludes `dbo` and `cdc` schemas).
 [`Data`](#Data) | There is data, for example *Reference Data* that needs to be applied to a database. This provides a simpler configuration than specifying the required SQL statements directly (which is also supported). This is _also_ useful for setting up Master and Transaction data for the likes of testing scenarios.
 
 Additional commands available are:
@@ -273,36 +271,21 @@ dotnet run execute ./schema/createscehma.sql
 
 Within a code-generation, or other context, the database schema may need to be inferred to understand the basic schema for all tables and their corresponding columns.
 
-The [`Database`](./src/DbEx/DatabaseExtensions.cs) class provides a `SelectSchemaAsync` method to return a [`DbTableSchema`](./src/DbEx/Schema/DbTableSchema.cs) list, including the respective columns for each table (see [`DbColumnSchema`](./src/DbEx/Schema/DbColumnSchema.cs)).
+The [`Database`](./src/DbEx/DatabaseExtensions.cs) class provides a `SelectSchemaAsync` method to return a [`DbTableSchema`](./src/DbEx/DbSchema/DbTableSchema.cs) list, including the respective columns for each table (see [`DbColumnSchema`](./src/DbEx/DbSchema/DbColumnSchema.cs)).
 
 <br/>
 
-## SQL Server Event Outbox
+## Other considerations
 
-To enable a consistent implemenation (and re-use) an implementation of the [Event Outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html) specifically for SQL Server based around the [`EventSendData`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx/Events/EventSendData.cs) as enabled by [_CoreEx_](https://github.com/Avanade/CoreEx) is provided.
+To simplify the database management here are some further considerations that may make life easier over time; especially where you adopt the philosophy that the underlying busines logic (within the application APIs) is primarily responsible for the consistency of the data; and the data source (the database) is being largely used for storage and advanced query:
 
-The code-generation is enabled by [_OnRamp_](https://github.com/Avanade/onramp) leveraging the following [templates](https://github.com/Avanade/onramp#templates). The [`DbEx.Test.OutboxConsole`](./tests/DbEx.Test.OutboxConsole) demonstrates usage.
-
-Template | Description | Example
--|-|-
-[`SchemaEventOutbox_sql.hbs`](./src/DbEx/Templates/SqlServer/SchemaEventOutbox_sql.hbs) | Outbox database schema. | See [example](./tests/DbEx.Test.OutboxConsole/Migrations/100-create-outbox-schema.sql).
-[`TableEventOutbox_sql.hbs`](./src/DbEx/Templates/SqlServer/TableEventOutbox_sql.hbs) | Event outbox table. | See [example](./tests/DbEx.Test.OutboxConsole/Migrations/101-create-outbox-eventoutbox-table.sql).
-[`TableEventOutboxData_sql.hbs`](./src/DbEx/Templates/SqlServer/TableEventOutboxData_sql.hbs) | Event outbox table. | See [example](./tests/DbEx.Test.OutboxConsole/Migrations/102-create-outbox-eventoutboxdata-table.sql).
-[`UdtEventOutbox_sql.hbs`](./src/DbEx/Templates/SqlServer/UdtEventOutbox_sql.hbs) | Event outbox user-defined table type. | See [example](./tests/DbEx.Test.OutboxConsole/Schema/Outbox/Types/User-Defined%20Table%20Types/Generated/udtEventOutboxList.sql).
-[`SpEventOutboxEnqueue_sql.hbs`](./src/DbEx/Templates/SqlServer/SpEventOutboxEnqueue_sql.hbs) | Event outbox enqueue stored procedure. | See [example](./tests/DbEx.Test.OutboxConsole/Schema/Outbox/Stored%20Procedures/Generated/spEventOutboxEnqueue.sql).
-[`SpEventOutboxDequeue_sql.hbs`](./src/DbEx/Templates/SqlServer/SpEventOutboxDequeue_sql.hbs) | Event outbox dequeue stored procedure. | See [example](./tests/DbEx.Test.OutboxConsole/Schema/Outbox/Stored%20Procedures/Generated/spEventOutboxDequeue.sql).
-[`EventOutboxEnqueue_cs.hbs`](./src/DbEx/Templates/SqlServer/EventOutboxEnqueue_cs.hbs) | Event outbox enqueue (.NET C#); inherits capabilities from [`EventOutboxEnqueueBase`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx.Database/SqlServer/EventOutboxEnqueueBase.cs). | See [example](./tests/DbEx.Test.OutboxConsole/Generated/EventOutboxEnqueue.cs).
-[`EventOutboxEnqueue_cs.hbs`](./src/DbEx/Templates/SqlServer/EventOutboxDequeue_cs.hbs) | Event outbox dequeue (.NET C#); inherits capabilities from [`EventOutboxDequeueBase`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx.Database/SqlServer/EventOutboxDequeueBase.cs). | See [example](./tests/DbEx.Test.OutboxConsole/Generated/EventOutboxDequeue.cs).
+- **Nullable everything** - all columns (except) the primary key should be defined as nullable. The business logic should validate the request to ensure data is provided where mandatory. Makes changes to the database schema easier over time without this constraint.
+- **Minimise constraints** - do not use database constraints unless absolutely necessary; only leverage where the database is the best and/or most efficient means to perform; i.e. uniqueness. The business logic should validate the request to ensure that any related data is provided, is valid and consistent. 
+- **No cross-schema referencing** - avoid referencing across `Schemas` where possible as this will impact the Migrations as part of this tooling; and we should not be using constraints as per prior point. Each schema is considered independent of others except in special cases, such as `dbo` or `sec` (security where used) for example.
+- **JSON for schema-less** - where there is data that needs to be persisted, but rarely searched on, a schema-less approach should be considered such that a JSON object is persisted into a single column versus having to define additional tables and/or columns. This can further simplify the database requirements where the data is hierarchical in nature. To enable the [`ObjectToJsonConverter`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx/Mapping/Converters/ObjectToJsonConverter.cs) and [`AutoMapperObjectToJsonConverter`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx.AutoMapper/Converters/AutoMapperObjectToJsonConverter.cs) can be used within the corresponding mapper to enable.
 
 <br/>
 
-### Event Outbox Enqueue
-
-The [`EventOutboxDequeueBase`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx.Database/SqlServer/EventOutboxEnqueueBase.cs) provides the base [`IEventSender`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx/Events/IEventSender.cs) send/enqueue capabilities.
-
-By default the events are first sent/enqueued to the datatbase outbox, then a secondary out-of-process dequeues and sends. This can however introduce unwanted latency depending on the frequency in which the secondary process performs the dequeue and send, as this is essentially a polling-based operation. To improve (minimize) latency, the primary `IEventSender` can be specified using the `SetPrimaryEventSender` method. This will then be used to send the events immediately, and where successful, they will be audited in the database as dequeued event(s); versus on error (as a backup), where they will be enqueued for the out-of-process dequeue and send (as per default).
-
-<br/>
 
 ## Other repos
 
