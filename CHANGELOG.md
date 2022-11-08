@@ -2,6 +2,12 @@
 
 Represents the **NuGet** versions.
 
+## v1.0.18
+- *Fixed:* Corrected issue where comments were removed from the SQL statement when executed against the database; i.e. they were missing from the likes of stored procedures, etc.
+- *Fixed:* Schema create template updated to remove transaction wrap which was invalid.
+- *Enhancement:* Existing namespace `Schema` renamed to `DbSchema`.
+- *Enhancement:* Updated the outbox code generation templates to support the `Key` column.
+
 ## v1.0.17
 - *Fixed:* Updated to `CoreEx` version `1.0.9` and `OnRamp` version `1.0.6`.
 

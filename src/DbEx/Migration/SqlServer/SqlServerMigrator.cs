@@ -227,70 +227,32 @@ namespace DbEx.Migration.SqlServer
         private async Task ExecuteScriptAsync(DatabaseMigrationScript script, CancellationToken cancellationToken = default)
         {
             using var sr = script.GetStreamReader();
-            foreach (var sql in SplitSql(CleanSql(sr)))
+            foreach (var (OriginalSql, _) in SplitAndCleanSql(sr))
             {
-                await Database.SqlStatement(sql).NonQueryAsync(cancellationToken).ConfigureAwait(false);
+                if (!string.IsNullOrEmpty(OriginalSql))
+                    await Database.SqlStatement(OriginalSql).NonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
         /// <summary>
-        /// <see cref="CleanSql(TextReader)">Cleans</see> and splits (based on the SQL Server '<c><see href="http://technet.microsoft.com/en-us/library/ms188037.aspx">GO</see></c>' statement) the SQL command(s) from a <see cref="TextReader"/>.
+        /// Splits (based on the SQL Server '<c><see href="http://technet.microsoft.com/en-us/library/ms188037.aspx">GO</see></c>' statement) and cleans (removes comments) the SQL command(s) from a <see cref="TextReader"/>.
         /// </summary>
         /// <param name="tr">The <see cref="TextReader"/>.</param>
-        /// <returns>A list of executable SQL statements.</returns>
-        /// <remarks>The '<c>GO [count]</c>' count syntax is not supported; i.e. will not be parsed correctly and will likely result in an error when executed.</remarks>
-        public static List<string> CleanAndSplitSql(TextReader tr) => SplitSql(CleanSql(tr));
-
-        /// <summary>
-        /// Split the SQL into multiple statements based on the SQL Server '<c><see href="http://technet.microsoft.com/en-us/library/ms188037.aspx">GO</see></c>' statement.
-        /// </summary>
-        /// <param name="sql">The originating SQL.</param>
-        /// <returns>A list of executable SQL statements.</returns>
-        private static List<string> SplitSql(string sql)
+        /// <returns>A list of executable SQL statement pairs.</returns>
+        /// <remarks>The resulting list contains two strings, the first being the original SQL statement (including all comments), and the second being the cleaned SQL statement (all comments removed).
+        /// <para>Note: The '<c>GO [count]</c>' count syntax is not supported; i.e. will not be parsed correctly and will likely result in an error when executed.</para></remarks>
+        public static List<(string OriginalSql, string CleanSql)> SplitAndCleanSql(TextReader tr)
         {
-            var list = new List<string>();
-            if (string.IsNullOrEmpty(sql))
-                return list;
+            if (tr == null)
+                throw new ArgumentNullException(nameof(tr));
 
-            var sb = new StringBuilder();
-            string? line;
-            using var tr = new StringReader(sql);
-
-            while ((line = tr.ReadLine()) is not null)
-            {
-                if (line.Trim().Equals("GO", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    if (sb.Length > 0 && !string.IsNullOrEmpty(sb.ToString().Trim()))
-                        list.Add(sb.ToString());
-
-                    sb.Clear();
-                }
-                else
-                {
-                    if (sb.Length > 0)
-                        sb.AppendLine();
-
-                    sb.Append(line);
-                }
-            }
-
-            if (sb.Length > 0 && !string.IsNullOrEmpty(sb.ToString().Trim()))
-                list.Add(sb.ToString());
-
-            return list;
-        }
-
-        /// <summary>
-        /// Reads the SQL command from a <see cref="TextReader"/> and parses out all of the comments.
-        /// </summary>
-        /// <param name="tr">The <see cref="TextReader"/>.</param>
-        public static string CleanSql(TextReader tr)
-        {
-            string? line;
+            var list = new List<(string, string)>();
+            string? orig, line;
             bool inComment = false;
-            StringBuilder sb = new();
+            StringBuilder sbo = new();
+            StringBuilder sbc = new();
 
-            while ((line = tr.ReadLine()) is not null)
+            while ((orig = line = tr.ReadLine()) is not null)
             {
                 int ci;
 
@@ -299,26 +261,39 @@ namespace DbEx.Migration.SqlServer
                 {
                     ci = line.IndexOf("*/");
                     if (ci < 0)
+                    {
+                        sbo.AppendLine(orig);
                         continue;
+                    }
 
                     line = line[(ci + 2)..];
                     inComment = false;
 
                     if (string.IsNullOrEmpty(line))
+                    {
+                        sbo.AppendLine(orig);
                         continue;
+                    }
                 }
 
-                ci = line.IndexOf("/*");
-                if (ci >= 0)
+                while ((ci = line.IndexOf("/*")) >= 0)
                 {
+                    sbc.Append(line[0..ci]);
+                    line = line[ci..];
                     var ci2 = line.IndexOf("*/");
                     if (ci2 >= 0)
-                        line = line[0..ci] + line[(ci2 + 2)..];
+                        line = line[(ci2 + 2)..];
                     else
                     {
                         inComment = true;
-                        continue;
+                        break;
                     }
+                }
+
+                if (inComment == true)
+                {
+                    sbo.AppendLine(orig);
+                    continue;
                 }
 
                 // Remove -- comments.
@@ -326,14 +301,33 @@ namespace DbEx.Migration.SqlServer
                 if (ci >= 0)
                     line = line[..ci];
 
-                // Add as valid statement.
-                if (sb.Length > 0)
-                    sb.AppendLine();
-
-                sb.Append(line);
+                if (line.Trim().Equals("GO", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    AddSqlStatement(list, sbo.ToString(), sbc.ToString());
+                    sbo.Clear();
+                    sbc.Clear();
+                }
+                else
+                {
+                    sbo.AppendLine(orig);
+                    sbc.AppendLine(line);
+                }
             }
 
-            return sb.ToString();
+            AddSqlStatement(list, sbo.ToString(), sbc.ToString());
+            return list;
+        }
+
+        /// <summary>
+        /// Adds the SQL statement to the list.
+        /// </summary>
+        private static void AddSqlStatement(List<(string OriginalSql, string CleanSql)> list, string orig, string clean)
+        {
+            var temp = clean.Replace(Environment.NewLine, string.Empty).Trim();
+            if (temp.Length == 0)
+                list.Add((orig, string.Empty));
+            else
+                list.Add((orig, clean));
         }
     }
 }

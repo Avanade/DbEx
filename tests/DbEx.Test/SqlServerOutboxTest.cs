@@ -21,7 +21,7 @@ namespace DbEx.Test
         public async Task Setup()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var l = UnitTest.GetLogger<SqlServerOutboxTest>();
             var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Console.Program).Assembly, typeof(DbEx.Test.OutboxConsole.Program).Assembly);
             m.ParserArgs.Parameters.Add("DefaultName", "Bazza");
             m.ParserArgs.RefDataColumnDefaults.Add("SortOrder", i => 1);
@@ -32,7 +32,7 @@ namespace DbEx.Test
         public async Task A100_EnqueueDequeue()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var l = UnitTest.GetLogger<SqlServerOutboxTest>();
 
             using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
@@ -47,6 +47,7 @@ namespace DbEx.Test
                 Source = new Uri("/source", UriKind.Relative),
                 CorrelationId = "corrid",
                 TenantId = "tenant",
+                Key = "kiwi",
                 Destination = "queue-name",
                 ETag = "etag",
                 PartitionKey = "partition-key",
@@ -74,6 +75,7 @@ namespace DbEx.Test
             Assert.AreEqual(new Uri("/source", UriKind.Relative), e.Source);
             Assert.AreEqual("corrid", e.CorrelationId);
             Assert.AreEqual("tenant", e.TenantId);
+            Assert.AreEqual("kiwi", e.Key);
             Assert.AreEqual("queue-name", e.Destination);
             Assert.AreEqual("etag", e.ETag);
             Assert.AreEqual("partition-key", e.PartitionKey);
@@ -89,7 +91,7 @@ namespace DbEx.Test
         public async Task A110_EnqueueDequeue_MaxDequeueSize()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var l = UnitTest.GetLogger<SqlServerOutboxTest>();
 
             using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
@@ -129,7 +131,7 @@ namespace DbEx.Test
         public async Task A120_EnqueueDequeue_PartitionKey_Destination_Selection()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var l = UnitTest.GetLogger<SqlServerOutboxTest>();
 
             using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
@@ -184,7 +186,7 @@ namespace DbEx.Test
         public async Task B100_EnqueueDequeue_PrimarySender_Success()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var l = UnitTest.GetLogger<SqlServerOutboxTest>();
 
             using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);
@@ -211,7 +213,7 @@ namespace DbEx.Test
         public async Task B110_EnqueueDequeue_PrimarySender_Error()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var l = UnitTest.GetLogger<SqlServerOutboxTest>();
 
             using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);

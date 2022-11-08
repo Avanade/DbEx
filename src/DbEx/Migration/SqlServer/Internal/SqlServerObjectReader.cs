@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace DbEx.Migration.SqlServer.Internal
 {
@@ -106,7 +105,18 @@ namespace DbEx.Migration.SqlServer.Internal
             int start = -1;
             string? line;
             using var sr = new StringReader(_sql);
-            using var tr = new StringReader(SqlServerMigrator.CleanSql(sr));
+
+            var stmts = SqlServerMigrator.SplitAndCleanSql(sr);
+            if (stmts.Count == 0)
+                return;
+
+            if (stmts.Count > 1)
+            {
+                ErrorMessage = "The SQL contains more than a single statement.";
+                return;
+            }
+
+            using var tr = new StringReader(stmts[0].CleanSql);
             while ((line = tr.ReadLine()) is not null)
             {
                 // Parse out the token(s).

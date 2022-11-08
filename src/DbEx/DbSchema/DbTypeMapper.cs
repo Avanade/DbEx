@@ -2,7 +2,7 @@
 
 using System;
 
-namespace DbEx.Schema
+namespace DbEx.DbSchema
 {
     /// <summary>
     /// Provides Database Type mapper/helper functions.
