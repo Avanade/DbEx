@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using DbEx.Schema;
+using DbEx.DbSchema;
 using System;
 using System.Collections.Generic;
 using System.Linq;

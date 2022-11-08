@@ -4,7 +4,7 @@ using System;
 using System.Diagnostics;
 using System.Text;
 
-namespace DbEx.Schema
+namespace DbEx.DbSchema
 {
     /// <summary>
     /// Represents the Database <b>Column</b> schema definition.

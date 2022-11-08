@@ -237,45 +237,151 @@ SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
         [Test]
         public void C100_CleanAndSplitSql()
         {
-            var stmts = SqlServerMigrator.CleanAndSplitSql(new StringReader("SELECT * FROM Test.Contact; /* end */ GO; SELECT * FROM Test.Contact -- comment"));
+            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader("SELECT * FROM Test.Contact; /* end */ GO; SELECT * FROM Test.Contact -- comment"));
             Assert.That(stmts, Is.Not.Null);
             Assert.That(stmts, Has.Count.EqualTo(1));
-            Assert.That(stmts[0], Is.EqualTo("SELECT * FROM Test.Contact;  GO; SELECT * FROM Test.Contact "));
+            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT * FROM Test.Contact; /* end */ GO; SELECT * FROM Test.Contact -- comment
+"));
+            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT * FROM Test.Contact;  GO; SELECT * FROM Test.Contact 
+"));
         }
 
         [Test]
         public void C110_CleanAndSplitSql()
         {
-            var stmts = SqlServerMigrator.CleanAndSplitSql(new StringReader(@"SELECT * FROM Test.Contact;
+            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT * FROM Test.Contact;
 /* begin
    end */
 GO 
 SELECT * FROM Test.Contact -- comment"));
             Assert.That(stmts, Is.Not.Null);
             Assert.That(stmts, Has.Count.EqualTo(2));
-            Assert.That(stmts[0], Is.EqualTo("SELECT * FROM Test.Contact;"));
-            Assert.That(stmts[1], Is.EqualTo("SELECT * FROM Test.Contact "));
+            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT * FROM Test.Contact;
+/* begin
+   end */
+"));
+            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT * FROM Test.Contact;
+"));
+            Assert.That(stmts[1].OriginalSql, Is.EqualTo(@"SELECT * FROM Test.Contact -- comment
+"));
+            Assert.That(stmts[1].CleanSql, Is.EqualTo(@"SELECT * FROM Test.Contact 
+"));
         }
 
         [Test]
         public void C120_CleanAndSplitSql()
         {
-            var stmts = SqlServerMigrator.CleanAndSplitSql(new StringReader(@"SELECT 'abc\  
+            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT 'abc\  
 def' AS [ColumnResult];"));
 
             Assert.That(stmts, Is.Not.Null);
             Assert.That(stmts, Has.Count.EqualTo(1));
-            Assert.That(stmts[0], Is.EqualTo(@"SELECT 'abc\  
-def' AS [ColumnResult];"));
+            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT 'abc\  
+def' AS [ColumnResult];
+"));
+            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT 'abc\  
+def' AS [ColumnResult];
+"));
         }
 
         [Test]
         public void C130_CleanAndSplitSql()
         {
-            var stmts = SqlServerMigrator.CleanAndSplitSql(new StringReader(@"SELECT * FROM Test.Contact;
+            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT * FROM Test.Contact;
 GO 
 "));
-            Assert.That(stmts[0], Is.EqualTo("SELECT * FROM Test.Contact;"));
+            Assert.AreEqual(2, stmts.Count);
+            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT * FROM Test.Contact;
+"));
+            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT * FROM Test.Contact;
+"));
+            Assert.That(stmts[1].OriginalSql, Is.EqualTo(@""));
+            Assert.That(stmts[1].CleanSql, Is.EqualTo(@""));
+        }
+
+        [Test]
+        public void C140_CleanAndSplitSql()
+        {
+            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
+GO 
+SELECT COUNT(*) -- comment"));
+
+            Assert.AreEqual(2, stmts.Count);
+            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
+"));
+            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT  Test.Contact  WHERE;
+"));
+            Assert.That(stmts[1].OriginalSql, Is.EqualTo(@"SELECT COUNT(*) -- comment
+"));
+            Assert.That(stmts[1].CleanSql, Is.EqualTo(@"SELECT COUNT(*) 
+"));
+        }
+
+        [Test]
+        public void C150_CleanAndSplitSql()
+        {
+            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
+GO 
+GO
+SELECT COUNT(*) -- comment"));
+
+            Assert.AreEqual(3, stmts.Count);
+            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
+"));
+            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT  Test.Contact  WHERE;
+"));
+            Assert.That(stmts[1].OriginalSql, Is.EqualTo(@""));
+            Assert.That(stmts[1].CleanSql, Is.EqualTo(@""));
+            Assert.That(stmts[2].OriginalSql, Is.EqualTo(@"SELECT COUNT(*) -- comment
+"));
+            Assert.That(stmts[2].CleanSql, Is.EqualTo(@"SELECT COUNT(*) 
+"));
+        }
+
+        [Test]
+        public void C160_CleanAndSplitSql()
+        {
+            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
+GO 
+-- Bananas
+GO
+SELECT COUNT(*) -- comment"));
+
+            Assert.AreEqual(3, stmts.Count);
+            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
+"));
+            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT  Test.Contact  WHERE;
+"));
+            Assert.That(stmts[1].OriginalSql, Is.EqualTo(@"-- Bananas
+"));
+            Assert.That(stmts[1].CleanSql, Is.EqualTo(@""));
+            Assert.That(stmts[2].OriginalSql, Is.EqualTo(@"SELECT COUNT(*) -- comment
+"));
+            Assert.That(stmts[2].CleanSql, Is.EqualTo(@"SELECT COUNT(*) 
+"));
+        }
+
+        [Test]
+        public void C170_CleanAndSplitSql()
+        {
+            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
+GO 
+/* */
+GO
+SELECT COUNT(*) -- comment"));
+
+            Assert.AreEqual(3, stmts.Count);
+            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
+"));
+            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT  Test.Contact  WHERE;
+"));
+            Assert.That(stmts[1].OriginalSql, Is.EqualTo(@"/* */
+"));
+            Assert.That(stmts[1].CleanSql, Is.EqualTo(@""));
+            Assert.That(stmts[2].OriginalSql, Is.EqualTo(@"SELECT COUNT(*) -- comment
+"));
+            Assert.That(stmts[2].CleanSql, Is.EqualTo(@"SELECT COUNT(*) 
+"));
         }
     }
 }

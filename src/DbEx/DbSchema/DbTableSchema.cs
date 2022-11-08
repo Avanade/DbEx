@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace DbEx.Schema
+namespace DbEx.DbSchema
 {
     /// <summary>
     /// Represents the Database <b>Table</b> schema definition.

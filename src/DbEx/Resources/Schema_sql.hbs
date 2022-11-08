@@ -3,9 +3,5 @@
 {{! PARAM:Param1=Name }}
 -- Create schema: [{{lookup Parameters 'Param1'}}]
 
-BEGIN TRANSACTION
-
 CREATE SCHEMA [{{lookup Parameters 'Param1'}}]
     AUTHORIZATION [dbo];
-
-COMMIT TRANSACTION

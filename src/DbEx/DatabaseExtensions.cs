@@ -1,10 +1,11 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 using CoreEx.Database;
-using DbEx.Schema;
+using DbEx.DbSchema;
 using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
