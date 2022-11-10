@@ -669,7 +669,7 @@ namespace DbEx.Migration
         private async Task<bool> CreateScriptInternalAsync(string? name, IDictionary<string, string?>? parameters, CancellationToken cancellationToken)
         {
             name ??= "Default";
-            var rn = $"{Provider}.{name}_sql";
+            var rn = $"{Provider}.Script{name}_sql";
 
             // Find the resource.
             using var sr = StreamLocator.GetResourcesStreamReader(rn, ArtefactResourceAssemblies, StreamLocator.HandlebarsExtensions).StreamReader;
