@@ -2,7 +2,7 @@
   "profiles": {
     "DbEx.Test.Console": {
       "commandName": "Project",
-      "commandLineArgs": "all"
+      "commandLineArgs": "script create Hr Person"
     }
   }
 }

@@ -1,6 +1,7 @@
 ﻿using CoreEx.Database;
 using CoreEx.Database.SqlServer;
 using CoreEx.Events;
+using DbEx.Console;
 using DbEx.Migration.SqlServer;
 using DbEx.Test.OutboxConsole.Data;
 using Microsoft.Data.SqlClient;
@@ -22,9 +23,10 @@ namespace DbEx.Test
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerOutboxTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Console.Program).Assembly, typeof(DbEx.Test.OutboxConsole.Program).Assembly);
-            m.ParserArgs.Parameters.Add("DefaultName", "Bazza");
-            m.ParserArgs.RefDataColumnDefaults.Add("SortOrder", i => 1);
+            var a = new MigratorConsoleArgs(Migration.MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Console.Program), typeof(DbEx.Test.OutboxConsole.Program));
+            var m = new SqlServerMigrator(a);
+            m.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
+            m.Args.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => 1);
             await m.MigrateAsync().ConfigureAwait(false);
         }
 

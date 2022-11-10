@@ -1,4 +1,4 @@
-﻿using DbEx.Console;
+﻿using DbEx.Console.SqlServer;
 using System.Threading.Tasks;
 
 namespace DbEx.Test.Console
@@ -12,6 +12,7 @@ namespace DbEx.Test.Console
                 a.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
                 a.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
                 a.AddAssembly(typeof(DbEx.Test.OutboxConsole.Program).Assembly);
+                a.AddSchemaOrder("Test", "Outbox");
             })
             .RunAsync(args);
     }

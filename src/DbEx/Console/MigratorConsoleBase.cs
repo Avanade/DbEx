@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 using DbEx.Migration;
+using DbEx.Migration.SqlServer;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using OnRamp;
@@ -23,7 +24,7 @@ namespace DbEx.Console
     /// </summary>
     /// <remarks>The standard console command-line arguments/options can be controlled via the constructor using the <see cref="SupportedOptions"/> flags. Additional capabilities can be added by inherting and overridding the
     /// <see cref="OnBeforeExecute(CommandLineApplication)"/>, <see cref="OnValidation(ValidationContext)"/> and <see cref="OnMigrateAsync"/>. Changes to the console output can be achieved by overridding
-    /// <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(MigratorConsoleArgs)"/> and <see cref="OnWriteFooter(double)"/>.
+    /// <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(DatabaseMigratorBase)"/> and <see cref="OnWriteFooter(double)"/>.
     /// <para>The underlying command line parsing is provided by <see href="https://natemcmaster.github.io/CommandLineUtils/"/>.</para></remarks>
     public abstract class MigratorConsoleBase
     {
@@ -59,7 +60,7 @@ namespace DbEx.Console
         protected ILogger? Logger => Args.Logger;
 
         /// <summary>
-        /// Indicates whether to bypass standard execution of <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(MigratorConsoleArgs)"/> and <see cref="OnWriteFooter(double)"/>.
+        /// Indicates whether to bypass standard execution of <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(DatabaseMigratorBase)"/> and <see cref="OnWriteFooter(double)"/>.
         /// </summary>
         protected bool BypassOnWrites { get; set; }
 
@@ -261,17 +262,20 @@ namespace DbEx.Console
         {
             try
             {
+                // Create the migrator.
+                var migrator = CreateMigrator();
+
                 // Write header, etc.
                 if (!BypassOnWrites)
                 {
                     OnWriteMasthead();
                     OnWriteHeader();
-                    OnWriteArgs(Args);
+                    OnWriteArgs(migrator);
                 }
 
                 // Run the code generator.
                 var sw = Stopwatch.StartNew();
-                if (!await OnMigrateAsync(cancellationToken).ConfigureAwait(false))
+                if (!await OnMigrateAsync(migrator, cancellationToken).ConfigureAwait(false))
                     return 3;
 
                 // Write footer and exit successfully.
@@ -299,9 +303,34 @@ namespace DbEx.Console
         /// <summary>
         /// Invoked to execute the <see cref="DatabaseMigratorBase"/>.
         /// </summary>
+        /// <param name="migrator">The <see cref="DatabaseMigratorBase"/>.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
-        protected abstract Task<bool> OnMigrateAsync(CancellationToken cancellationToken);
+        protected virtual async Task<bool> OnMigrateAsync(DatabaseMigratorBase migrator, CancellationToken cancellationToken)
+        {
+            // Where only creating a new script, then quickly do it and get out of here!
+            if (Args.MigrationCommand.HasFlag(MigrationCommand.Script))
+                return await migrator.CreateScriptAsync(Args.ScriptName, Args.ScriptArguments, cancellationToken).ConfigureAwait(false);
+
+            // Where only executing SQL statement, then execute and get out of here!
+            if (Args.MigrationCommand.HasFlag(MigrationCommand.Execute))
+                return await migrator.ExecuteSqlStatementsAsync(Args.ExecuteStatements?.ToArray() ?? Array.Empty<string>(), cancellationToken).ConfigureAwait(false);
+
+            // Perform migration.
+            if (!await migrator.MigrateAsync(cancellationToken).ConfigureAwait(false))
+                return false;
+
+            Logger?.LogInformation("{Content}", string.Empty);
+            Logger?.LogInformation("{Content}", new string('-', 80));
+
+            return true;
+        }
+
+        /// <summary>
+        /// Creates the <see cref="DatabaseMigratorBase"/> that is used to perform the database migration orchestration.
+        /// </summary>
+        /// <returns></returns>
+        protected abstract DatabaseMigratorBase CreateMigrator();
 
         /// <summary>
         /// Invoked to write the <see cref="MastheadText"/> to the <see cref="Logger"/>.
@@ -325,25 +354,27 @@ namespace DbEx.Console
         /// <summary>
         /// Invoked to write the <see cref="Args"/> to the <see cref="Logger"/>.
         /// </summary>
-        /// <param name="args">The <see cref="MigratorConsoleArgs"/> to write.</param>
-        protected virtual void OnWriteArgs(MigratorConsoleArgs args) => WriteStandardizedArgs(args);
+        /// <param name="migrator">The <see cref="DatabaseMigratorBase"/> to write.</param>
+        protected virtual void OnWriteArgs(DatabaseMigratorBase migrator) => WriteStandardizedArgs(migrator);
 
         /// <summary>
-        /// Write the <see cref="Args"/> to the <see cref="Logger"/> in a standardized (reusable) manner.
+        /// Write the <paramref name="migrator"/> context to the <see cref="Logger"/> in a standardized (reusable) manner.
         /// </summary>
-        /// <param name="args">The <see cref="MigratorConsoleArgs"/> to write.</param>
-        public static void WriteStandardizedArgs(MigratorConsoleArgs args)
+        /// <param name="migrator">The <see cref="DatabaseMigratorBase"/> to write.</param>
+        public static void WriteStandardizedArgs(DatabaseMigratorBase migrator)
         {
-            if (args == null || args.Logger == null)
+            if (migrator.Args.Logger == null)
                 return;
 
-            args.Logger.LogInformation("{Content}", $"Command = {args.MigrationCommand}");
-            args.Logger.LogInformation("{Content}", $"SchemaOrder = {string.Join(", ", args.SchemaOrder.ToArray())}");
-            args.Logger.LogInformation("{Content}", $"OutDir = {args.OutputDirectory?.FullName}");
-            args.Logger.LogInformation("{Content}", $"Assemblies{(args.Assemblies.Count == 0 ? " = none" : ":")}");
-            foreach (var a in args.Assemblies)
+            migrator.Args.Logger.LogInformation("{Content}", $"Command = {migrator.Args.MigrationCommand}");
+            migrator.Args.Logger.LogInformation("{Content}", $"Provider = {migrator.Provider}");
+            migrator.Args.Logger.LogInformation("{Content}", $"Database = {migrator.DatabaseName}");
+            migrator.Args.Logger.LogInformation("{Content}", $"SchemaOrder = {string.Join(", ", migrator.Args.SchemaOrder.ToArray())}");
+            migrator.Args.Logger.LogInformation("{Content}", $"OutDir = {migrator.Args.OutputDirectory?.FullName}");
+            migrator.Args.Logger.LogInformation("{Content}", $"Assemblies{(migrator.Args.Assemblies.Count == 0 ? " = none" : ":")}");
+            foreach (var a in migrator.Args.Assemblies)
             {
-                args.Logger.LogInformation("{Content}", $"  {a.FullName}");
+                migrator.Args.Logger.LogInformation("{Content}", $"  {a.FullName}");
             }
         }
 

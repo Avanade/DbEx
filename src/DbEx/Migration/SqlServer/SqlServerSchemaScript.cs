@@ -1,0 +1,123 @@
+﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
+
+using DbUp.SqlServer;
+using DbUp.Support;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace DbEx.Migration.SqlServer
+{
+    /// <summary>
+    /// Provides the SQL Server database schema script functionality.
+    /// </summary>
+    public class SqlServerSchemaScript : DatabaseSchemaScriptBase
+    {
+        /// <summary>
+        /// Creates the <see cref="SqlServerSchemaScript"/> from the <see cref="DatabaseMigrationScript"/>.
+        /// </summary>
+        /// <param name="migrationScript">The <see cref="DatabaseMigrationScript"/>.</param>
+        /// <returns>The <see cref="SqlServerSchemaScript"/>.</returns>
+        public static SqlServerSchemaScript Create(DatabaseMigrationScript migrationScript)
+        {
+            var script = new SqlServerSchemaScript(migrationScript);
+
+            using var sr = script.MigrationScript.GetStreamReader();
+            var sql = sr.ReadToEnd();
+            var tokens = new SqlCommandTokenizer(sql).ReadAllTokens();
+
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                if (string.Compare(tokens[i], "create", StringComparison.OrdinalIgnoreCase) != 0)
+                    continue;
+
+                if (i + 2 < tokens.Length)
+                {
+                    script.Type = tokens[i + 1];
+                    script.FullyQualifiedName = tokens[i + 2];
+
+                    var parser = new SqlServerObjectParser();
+                    var index = script.FullyQualifiedName.IndexOf('.');
+                    if (index < 0)
+                    {
+                        script.Schema = "dbo";
+                        script.Name = parser.UnquoteIdentifier(script.FullyQualifiedName);
+                    }
+                    else
+                    {
+                        script.Schema = parser.UnquoteIdentifier(script.FullyQualifiedName[..index]);
+                        script.Name = parser.UnquoteIdentifier(script.FullyQualifiedName[(index + 1)..]);
+                    }
+
+                    return script;
+                }
+            }
+
+            script.ErrorMessage = "The SQL statement must be a valid 'CREATE' statement.";
+            return script;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqlServerSchemaScript"/> class.
+        /// </summary>
+        /// <param name="migrationScript">The parent <see cref="DatabaseMigrationScript"/>.</param>
+        private SqlServerSchemaScript(DatabaseMigrationScript migrationScript) : base(migrationScript) { }
+
+        /// <inheritdoc/>
+        public override string SqlDropStatement => $"DROP {Type.ToUpperInvariant()} IF EXISTS [{Schema}].[{Name}]";
+
+        /// <inheritdoc/>
+        public override string SqlCreateStatement => $"CREATE {Type.ToUpperInvariant()} [{Schema}].[{Name}]";
+
+        private class SqlCommandTokenizer : SqlCommandReader
+        {
+            public SqlCommandTokenizer(string sqlText) : base(sqlText) { }
+
+            public string[] ReadAllTokens()
+            {
+                var words = new List<string>();
+                var sb = new StringBuilder();
+
+                while (!HasReachedEnd)
+                {
+                    ReadCharacter += (type, c) =>
+                    {
+                        switch (type)
+                        {
+                            case CharacterType.Command:
+                            case CharacterType.BracketedText:
+                                if (char.IsWhiteSpace(c))
+                                {
+                                    if (sb.Length > 0)
+                                        words.Add(sb.ToString());
+
+                                    sb.Clear();
+                                }
+                                else
+                                    sb.Append(c);
+
+                                break;
+
+                            case CharacterType.SlashStarComment:
+                            case CharacterType.DashComment:
+                            case CharacterType.QuotedString:
+                            case CharacterType.CustomStatement:
+                                break;
+                            case CharacterType.Delimiter:
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException(nameof(type), type, null);
+                        }
+                    };
+
+                    Parse();
+                }
+
+                if (sb.Length > 0)
+                    words.Add(sb.ToString());
+
+                return words.ToArray();
+            }
+        }
+    }
+}

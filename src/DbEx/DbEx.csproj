@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>DbEx</RootNamespace>
-    <Version>1.0.18</Version>
+    <Version>1.0.19</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>DbEx Developers</Authors>
     <Company>Avanade</Company>
@@ -46,6 +46,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Resources\SqlServer\JournalCreate.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\..\images\Logo256x256.png" Link="Logo256x256.png">
       <PackagePath>\</PackagePath>
       <Pack>true</Pack>
@@ -54,6 +58,7 @@
 
   <ItemGroup>
     <PackageReference Include="CoreEx.Database" Version="1.0.11" />
+    <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
     <PackageReference Include="OnRamp" Version="1.0.6" />
   </ItemGroup>
 

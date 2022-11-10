@@ -5,9 +5,9 @@ using DbEx.DbSchema;
 using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DbEx
@@ -22,9 +22,10 @@ namespace DbEx
         /// </summary>
         /// <param name="database">The <see cref="IDatabase"/>.</param>
         /// <param name="refDataPredicate">The reference data predicate used to determine whether a <see cref="DbTableSchema"/> is considered a reference data table (sets <see cref="DbTableSchema.IsRefData"/>).</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns>A list of all the table and column schema details.</returns>
         /// <remarks>The <paramref name="refDataPredicate"/> where not specified will default to checking whether the <see cref="DbTableSchema"/> has any non-primary key <see cref="string"/>-based <see cref="DbTableSchema.Columns">columns</see> named '<c>Code</c>' and '<c>Text</c>'.</remarks>
-        public static async Task<List<DbTableSchema>> SelectSchemaAsync(this IDatabase database, Func<DbTableSchema, bool>? refDataPredicate = null)
+        public static async Task<List<DbTableSchema>> SelectSchemaAsync(this IDatabase database, Func<DbTableSchema, bool>? refDataPredicate = null, CancellationToken cancellationToken = default)
         {
             var tables = new List<DbTableSchema>();
             DbTableSchema? table = null;
@@ -52,7 +53,7 @@ namespace DbEx
 
                 table.Columns.Add(dc);
                 return 0;
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
 
             // Exit where no tables initially found.
             if (tables.Count == 0)
@@ -74,7 +75,7 @@ namespace DbEx
                 TableName = dr.GetValue<string>("TABLE_NAME"),
                 TableColumnName = dr.GetValue<string>("COLUMN_NAME"),
                 IsPrimaryKey = dr.GetValue<string>("CONSTRAINT_TYPE").StartsWith("PRIMARY", StringComparison.InvariantCultureIgnoreCase)
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
 
             foreach (var grp in pks.GroupBy(x => x.ConstraintName))
             {
@@ -111,7 +112,7 @@ namespace DbEx
                 ForeignSchema = dr.GetValue<string>("UQ_SCHEMA_NAME"),
                 ForeignTable = dr.GetValue<string>("UQ_TABLE_NAME"),
                 ForiegnColumn = dr.GetValue<string>("UQ_COLUMN_NAME")
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
 
             foreach (var grp in fks.GroupBy(x => x.ConstraintName).Where(x => x.Count() == 1))
             {
@@ -137,7 +138,7 @@ namespace DbEx
                 c.IdentitySeed = 1;
                 c.IdentityIncrement = 1;
                 return 0;
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
 
             // Select the "always" generated columns.
             using var sr5 = StreamLocator.GetResourcesStreamReader("SelectTableAlwaysGeneratedColumns.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
@@ -147,7 +148,7 @@ namespace DbEx
                 var c = t.Columns.Single(x => x.Name == dr.GetValue<string>("COLUMN_NAME"));
                 t.Columns.Remove(c);
                 return 0;
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
 
             // Select the generated columns.
             using var sr6 = StreamLocator.GetResourcesStreamReader("SelectTableGeneratedColumns.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
@@ -157,7 +158,7 @@ namespace DbEx
                 var c = t.Columns.Single(x => x.Name == dr.GetValue<string>("COLUMN_NAME"));
                 c.IsComputed = true;
                 return 0;
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
 
             // Attempt to infer foreign key reference data relationship where not explicitly specified. 
             foreach (var t in tables)
