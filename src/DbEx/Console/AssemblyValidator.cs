@@ -16,13 +16,13 @@ namespace DbEx.Console
     /// </summary>
     public class AssemblyValidator : IOptionValidator
     {
-        private readonly MigratorConsoleArgs _args;
+        private readonly MigratorConsoleArgsBase _args;
 
         /// <summary>
         /// Initilizes a new instance of the <see cref="AssemblyValidator"/> class.
         /// </summary>
         /// <param name="args">The <see cref="MigratorConsoleArgs"/> to update.</param>
-        public AssemblyValidator(MigratorConsoleArgs args) => _args = args ?? throw new ArgumentNullException(nameof(args));
+        public AssemblyValidator(MigratorConsoleArgsBase args) => _args = args ?? throw new ArgumentNullException(nameof(args));
 
         /// <summary>
         /// Performs the validation.

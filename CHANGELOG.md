@@ -3,7 +3,7 @@
 Represents the **NuGet** versions.
 
 ## v1.0.19
-- *Enhancement:* **Breaking change:** Refactored the implementation/internals to be largely database agnostic to simplify introduction of additional databases (beyond current SQL Server implementation). As part of this exercise `DbUp` was re-introduced to provide the likes of SQL command parsing. The database connection management and implementation of `IDatabaseJournal` remains custom; using `DbUp` convention to enable. The `SqlServerMigrationConsole` implementation moved to `DbEx.Console.SqlServer` for separation and consistency.
+- *Enhancement:* **Breaking change:** Refactored the implementation/internals to be largely database agnostic, have improved extensibility, to simplify introduction of additional databases (beyond current SQL Server implementation). As part of this exercise `DbUp` was re-introduced to provide the likes of SQL command parsing. The database connection management and implementation of `IDatabaseJournal` remains custom (using `DbUp` convention to enable). The `SqlServerMigrationConsole` implementation moved to `DbEx.Console.SqlServer` for separation and consistency.
 
 ## v1.0.18
 - *Fixed:* Corrected issue where comments were removed from the SQL statement when executed against the database; i.e. they were missing from the likes of stored procedures, etc.

@@ -6,10 +6,19 @@ ALTER TABLE [{{Schema}}].[{{Name}}] NOCHECK CONSTRAINT ALL
 
 -- Delete data from all tables.
 {{#each .}}
-SET QUOTED_IDENTIFIER ON; DELETE FROM [{{Schema}}].[{{Name}}]
+DELETE FROM [{{Schema}}].[{{Name}}]
+{{/each}}
+
+-- Reset identity column (where any).
+{{#each .}}
+  {{#each PrimaryKeyColumns}}
+    {{#if IsIdentity}}
+DBCC CHECKIDENT ('{{DbTable.Schema}}.{{DbTable.Name}}', RESEED, {{add IdentitySeed -1}});
+    {{/if}}
+  {{/each}}
 {{/each}}
 
 -- Re-enable all constraints.
 {{#each .}}
-ALTER TABLE [{{Schema}}].[{{Name}}] WITH CHECK CHECK CONSTRAINT ALL
+ALTER TABLE [{{Schema}}].[{{Name}}] CHECK CONSTRAINT ALL
 {{/each}}

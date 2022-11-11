@@ -3,6 +3,7 @@
 using DbEx.DbSchema;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DbEx.Migration.Data
 {
@@ -72,6 +73,12 @@ namespace DbEx.Migration.Data
         public IIdentifierGenerator IdentifierGenerator { get; set; } = new GuidIdentifierGenerator();
 
         /// <summary>
+        /// Gets or sets the <see cref="DateTime"/> format.
+        /// </summary>
+        /// <remarks>Defaults to '<c>yyyy-MM-ddTHH:mm:ss.fffffff</c>'.</remarks>
+        public string DateTimeFormat { get; set; } = "yyyy-MM-ddTHH:mm:ss.fffffff";
+
+        /// <summary>
         /// Gets or sets the reference data predicate used to determine whether a <see cref="DbTableSchema"/> is considered a reference data table (sets <see cref="DbTableSchema.IsRefData"/>).
         /// </summary>
         public Func<DbTableSchema, bool>? RefDataPredicate { get; set; }
@@ -83,14 +90,34 @@ namespace DbEx.Migration.Data
         public Dictionary<string, Func<int, object?>> RefDataColumnDefaults { get; } = new Dictionary<string, Func<int, object?>>();
 
         /// <summary>
-        /// Gets or sets the <see cref="DateTime"/> format.
-        /// </summary>
-        /// <remarks>Defaults to '<c>yyyy-MM-ddTHH:mm:ss.fffffff</c>'.</remarks>
-        public string DateTimeFormat { get; set; } = "yyyy-MM-ddTHH:mm:ss.fffffff";
-
-        /// <summary>
         /// Gets the runtime parameters.
         /// </summary>
         public Dictionary<string, object?> Parameters { get; } = new Dictionary<string, object?>();
+
+        /// <summary>
+        /// Copy and replace from <paramref name="args"/>.
+        /// </summary>
+        /// <param name="args">The <see cref="DataParserArgs"/> to copy from.</param>
+        public void CopyFrom(DataParserArgs args)
+        {
+            if (args == null)
+                throw new ArgumentNullException(nameof(args));
+
+            UserName = args.UserName;
+            DateTimeNow = args.DateTimeNow;
+            CreatedDateColumnName = args.CreatedDateColumnName;
+            CreatedByColumnName = args.CreatedByColumnName;
+            UpdatedDateColumnName = args.UpdatedDateColumnName;
+            UpdatedByColumnName = args.UpdatedByColumnName;
+            RefDataCodeColumnName = args.RefDataCodeColumnName;
+            RefDataTextColumnName = args.RefDataTextColumnName;
+            IdentifierGenerator = args.IdentifierGenerator;
+            DateTimeFormat = args.DateTimeFormat;
+            RefDataPredicate = args.RefDataPredicate;
+            RefDataColumnDefaults.Clear();
+            args.RefDataColumnDefaults.ForEach(x => RefDataColumnDefaults.Add(x.Key, x.Value));
+            Parameters.Clear();
+            args.Parameters.ForEach(x => Parameters.Add(x.Key, x.Value));
+        }
     }
 }

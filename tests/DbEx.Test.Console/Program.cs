@@ -7,12 +7,12 @@ namespace DbEx.Test.Console
     {
         internal static Task<int> Main(string[] args) => SqlServerMigratorConsole
             .Create<Program>("Data Source=.;Initial Catalog=DbEx.Console;Integrated Security=True;TrustServerCertificate=true")
-            .ConsoleArgs(a =>
+            .Configure(c =>
             {
-                a.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
-                a.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
-                a.AddAssembly(typeof(DbEx.Test.OutboxConsole.Program).Assembly);
-                a.AddSchemaOrder("Test", "Outbox");
+                c.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
+                c.Args.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
+                c.Args.AddAssembly(typeof(DbEx.Test.OutboxConsole.Program).Assembly);
+                c.Args.AddSchemaOrder("Test", "Outbox");
             })
             .RunAsync(args);
     }

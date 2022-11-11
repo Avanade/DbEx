@@ -24,14 +24,13 @@ namespace DbEx.Migration
     public abstract class DatabaseMigratorBase
     {
         private const string NothingFoundText = "  ** Nothing found. **";
-        private IDatabaseJournal? _journal;
         private HandlebarsCodeGenerator? _dataCodeGen;
 
         /// <summary>
         /// Initializes an instance of the <see cref="DatabaseMigratorBase"/> class.
         /// </summary>
-        /// <param name="args">The <see cref="MigratorConsoleArgs"/>.</param>
-        protected DatabaseMigratorBase(MigratorConsoleArgs args)
+        /// <param name="args">The <see cref="MigratorConsoleArgsBase"/>.</param>
+        protected DatabaseMigratorBase(MigratorConsoleArgsBase args)
         {
             Args = args ?? throw new ArgumentNullException(nameof(args));
             if (string.IsNullOrEmpty(Args.ConnectionString))
@@ -48,12 +47,15 @@ namespace DbEx.Migration
 
             Namespaces = list;
             ArtefactResourceAssemblies = Args.Assemblies.Concat(new Assembly[] { GetType().Assembly, typeof(DatabaseMigratorBase).Assembly }).Distinct().ToArray();
+            SchemaObjectTypes = Array.Empty<string>();
+
+            Journal = new DatabaseJournal(this);
         }
 
         /// <summary>
-        /// Gets the <see cref="MigratorConsoleArgs"/>.
+        /// Gets the <see cref="MigratorConsoleArgsBase"/>.
         /// </summary>
-        public MigratorConsoleArgs Args { get; }
+        public MigratorConsoleArgsBase Args { get; }
 
         /// <summary>
         /// Gets the database provider name.
@@ -76,20 +78,20 @@ namespace DbEx.Migration
         /// Gets the 'master' <see cref="IDatabase"/>.
         /// </summary>
         /// <remarks>Returns the <see cref="Database"/> by default (unless specifically overridden).</remarks>
-        protected virtual IDatabase MasterDatabase => Database;
+        public virtual IDatabase MasterDatabase => Database;
 
         /// <summary>
         /// Gets the <see cref="IDatabaseJournal"/>.
         /// </summary>
-        protected virtual IDatabaseJournal Journal => _journal ??= new DatabaseJournal(this);
+        public virtual IDatabaseJournal Journal { get; }
 
         /// <summary>
-        /// Gets the <see cref="ILogger"/> (references <see cref="MigratorConsoleArgs.Logger"/>).
+        /// Gets the <see cref="ILogger"/> (references <see cref="MigratorConsoleArgsBase.Logger"/>).
         /// </summary>
         public ILogger Logger => Args.Logger!;
 
         /// <summary>
-        /// Gets the root namespaces for the <see cref="MigratorConsoleArgs.Assemblies"/>.
+        /// Gets the root namespaces for the <see cref="MigratorConsoleArgsBase.Assemblies"/>.
         /// </summary>
         protected IEnumerable<string> Namespaces { get; }
 
@@ -109,16 +111,23 @@ namespace DbEx.Migration
         public string DataNamespace { get; set; } = "Data";
 
         /// <summary>
-        /// Gets the list of known schema object types in the order of precedence.
+        /// Gets or sets the list of supported schema object types in the order of precedence.
         /// </summary>
-        /// <remarks>The objects will be added in the order specified, and removed in the reverse order. This is to allow for potential dependencies between the object types.</remarks>
-        protected abstract string[] KnownSchemaObjectTypes { get; }
+        /// <remarks>The objects will be added in the order specified, and removed in the reverse order. This is to allow for potential dependencies between the object types.
+        /// <para>Where none are specified then the <see cref="MigrationCommand.Schema"/> phase will be skipped.</para></remarks>
+        public string[] SchemaObjectTypes { get; set; }
 
         /// <summary>
-        /// Gets the assemblies for probing for artefact resources used for providing the requisite database statements.
+        /// Gets the assemblies used for probing the requisite artefact resources (used for providing the underlying requisite database statements for the specified <see cref="Provider"/>).
         /// </summary>
-        /// <remarks>Uses the <see cref="MigratorConsoleArgs.Assemblies"/> as the base, then adds for <c>this</c> <see cref="Type"/>.</remarks>
-        protected Assembly[] ArtefactResourceAssemblies { get; }
+        /// <remarks>Uses the <see cref="MigratorConsoleArgsBase.Assemblies"/> as the base, then adds for <c>this</c> <see cref="Type"/>.</remarks>
+        public Assembly[] ArtefactResourceAssemblies { get; }
+
+        /// <summary>
+        /// Indicates whether <see cref="MigrationCommand.CodeGen"/> functionality is enabled.
+        /// </summary>
+        /// <remarks>Where supported the <see cref="DatabaseCodeGenAsync(CancellationToken)"/> will be invoked and must be overridden to implement.</remarks>
+        public bool IsCodeGenEnabled { get; protected set; }
 
         /// <summary>
         /// Orchestrates the migration steps as specified by the <see cref="MigrationCommand"/>.
@@ -127,12 +136,15 @@ namespace DbEx.Migration
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
         public virtual async Task<bool> MigrateAsync(CancellationToken cancellationToken = default)
         {
-            // Check commands.
-            if (Args.MigrationCommand.HasFlag(MigrationCommand.Execute))
-                throw new InvalidOperationException($@"{nameof(MigrateAsync)} does not support {nameof(MigrationCommand)}.{nameof(MigrationCommand.Execute)}, please invoke {nameof(ExecuteSqlStatementsAsync)} method directly.");
-
+            // Where only creating a new script, then quickly do it and get out of here!
             if (Args.MigrationCommand.HasFlag(MigrationCommand.Script))
-                throw new InvalidOperationException($@"{nameof(MigrateAsync)} does not support {nameof(MigrationCommand)}.{nameof(MigrationCommand.Script)}, please invoke {nameof(CreateScriptAsync)} method directly.");
+                return await CreateScriptAsync(Args.ScriptName, Args.ScriptArguments, cancellationToken).ConfigureAwait(false);
+
+            // Where only executing SQL statement, then execute and get out of here!
+            if (Args.MigrationCommand.HasFlag(MigrationCommand.Execute))
+                return await ExecuteSqlStatementsAsync(Args.ExecuteStatements?.ToArray() ?? Array.Empty<string>(), cancellationToken).ConfigureAwait(false);
+
+            /* The remaining commands are executed in sequence as defined (where selected) to enable multiple in the correct run order. */
 
             // Database drop.
             if (!await CommandExecuteAsync(MigrationCommand.Drop, "DATABASE DROP: Checking database existence and dropping where found...", DatabaseDropAsync, null, cancellationToken).ConfigureAwait(false))
@@ -145,6 +157,26 @@ namespace DbEx.Migration
             // Database migration scripts.
             if (!await CommandExecuteAsync(MigrationCommand.Migrate, "DATABASE MIGRATE: Migrating the database...", DatabaseMigrateAsync, null, cancellationToken).ConfigureAwait(false))
                 return false;
+
+            // Code-generation (where supported).
+            if (Args.MigrationCommand == MigrationCommand.CodeGen && !IsCodeGenEnabled)
+            {
+                Logger.LogWarning("Code-generation has not been enabled for the database migrator; this feature must be explicitly enabled.");
+                return false;
+            }
+
+            if (IsCodeGenEnabled)
+            {
+                string? statistics = null;
+                string func() => statistics ?? throw new InvalidOperationException("Internal error; expected summary text output from code-generation.");
+                if (!await CommandExecuteAsync(MigrationCommand.CodeGen, "DATABASE CODEGEN: Code-gen database objects...", async ct =>
+                {
+                    var (Success, Statistics) = await DatabaseCodeGenAsync(ct).ConfigureAwait(false);
+                    statistics = Statistics;
+                    return Success;
+                }, func, cancellationToken).ConfigureAwait(false))
+                    return false;
+            }
 
             // Database schema scripts.
             if (!await CommandExecuteAsync(MigrationCommand.Schema, "DATABASE SCHEMA: Drops and creates the database objects...", DatabaseSchemaAsync, null, cancellationToken).ConfigureAwait(false))
@@ -184,7 +216,7 @@ namespace DbEx.Migration
         /// Provides an opportunity to perform additional processing <i>before</i> the <paramref name="command"/> is executed.
         /// </summary>
         /// <param name="command">The <see cref="MigrationCommand"/>.</param>
-        /// <param name="isSelected">Indicates whether the <paramref name="command"/> is selected (see <see cref="MigratorConsoleArgs.MigrationCommand"/>).</param>
+        /// <param name="isSelected">Indicates whether the <paramref name="command"/> is selected (see <see cref="MigratorConsoleArgsBase.MigrationCommand"/>).</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
         /// <remarks>This will be invoked for a command even where not selected for execution.</remarks>
         protected virtual Task<bool> OnBeforeCommandAsync(MigrationCommand command, bool isSelected) => Task.FromResult(true);
@@ -193,7 +225,7 @@ namespace DbEx.Migration
         /// Provides an opportunity to perform additional processing <i>after</i> the <paramref name="command"/> is executed.
         /// </summary>
         /// <param name="command">The <see cref="MigrationCommand"/>.</param>
-        /// <param name="isSelected">Indicates whether the <paramref name="command"/> is selected (see <see cref="MigratorConsoleArgs.MigrationCommand"/>).</param>
+        /// <param name="isSelected">Indicates whether the <paramref name="command"/> is selected (see <see cref="MigratorConsoleArgsBase.MigrationCommand"/>).</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
         /// <remarks>This will be invoked for a command even where not selected for execution, or unless the command execution failed.</remarks>
         protected virtual Task<bool> OnAfterCommandAsync(MigrationCommand command, bool isSelected) => Task.FromResult(true);
@@ -305,8 +337,8 @@ namespace DbEx.Migration
         /// <summary>
         /// Performs the <see cref="MigrationCommand.Create"/> command.
         /// </summary>
-        /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+        /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
         /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{CancellationToken, Task{bool}}, Func{string}?, CancellationToken)"/>.
         /// <para>The <c>@DatabaseName</c> literal within the resulting (embedded resource) is replaced by the <see cref="DatabaseName"/> using a <see cref="string.Replace(string, string)"/> (i.e. not database parameterized as not all databases support).</para></remarks>
         protected virtual async Task<bool> DatabaseCreateAsync(CancellationToken cancellationToken = default)
@@ -352,10 +384,25 @@ namespace DbEx.Migration
         }
 
         /// <summary>
+        /// Performs the <see cref="MigrationCommand.CodeGen"/> command.
+        /// </summary>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+        /// <returns><c>true</c> indicates success; otherwise, <c>false</c>. Additionally, on success the code-generation statistics summary should be returned to append to the log.</returns>
+        /// <remarks>This will only be invoked where <see cref="IsCodeGenEnabled"/> is set to <c>true</c>. The method must be implemented otherwise a <see cref="NotImplementedException"/> will be thrown.</remarks>
+        protected virtual Task<(bool Success, string? Statistics)> DatabaseCodeGenAsync(CancellationToken cancellationToken = default)
+            => throw new NotImplementedException($"The {nameof(DatabaseCodeGenAsync)} method must be implemented by the inheriting class to enable the code-generation functionality.");
+
+        /// <summary>
         /// Performs the <see cref="MigrationCommand.Schema"/> command.
         /// </summary>
         private async Task<bool> DatabaseSchemaAsync(CancellationToken cancellationToken)
         {
+            if (SchemaObjectTypes.Length == 0)
+            {
+                Logger.LogWarning("{Content}", $"  No schema object types have been configured for support; as such this command will not be executed.");
+                return true;
+            }
+
             // Build list of all known schema type objects to be dropped and created.
             var scripts = new List<DatabaseMigrationScript>();
 
@@ -470,10 +517,10 @@ namespace DbEx.Migration
             if (script.HasError)
                 return script;
 
-            var index = Array.FindIndex(KnownSchemaObjectTypes, x => string.Compare(x, script.Type, StringComparison.OrdinalIgnoreCase) == 0);
+            var index = Array.FindIndex(SchemaObjectTypes, x => string.Compare(x, script.Type, StringComparison.OrdinalIgnoreCase) == 0);
             if (index < 0)
             {
-                script.ErrorMessage = $"The SQL statement `CREATE` with object type '{script.Type}' is not supported.";
+                script.ErrorMessage = $"The SQL statement `CREATE` with object type '{script.Type}' is not supported; only the following are supported: {string.Join(", ", SchemaObjectTypes)}.";
                 return script;
             }
 
@@ -504,7 +551,7 @@ namespace DbEx.Migration
                 query = query.Where(Args.DataResetFilterPredicate);
 
             Logger.LogInformation("  Deleting data from all tables (except filtered)...");
-            var delete = tables.Where(x => !x.IsAView).ToList();
+            var delete = query.Where(x => !x.IsAView).ToList();
             if (delete.Count == 0)
             {
                 Logger.LogInformation("    None.");
@@ -513,7 +560,7 @@ namespace DbEx.Migration
 
             using var sr = StreamLocator.GetResourcesStreamReader($"{Provider}.DatabaseReset_sql", ArtefactResourceAssemblies, StreamLocator.HandlebarsExtensions).StreamReader!;
             var cg = new HandlebarsCodeGenerator(sr);
-            var sql = cg.Generate(query.ToArray());
+            var sql = cg.Generate(delete);
 
             using var sr2 = new StringReader(sql);
             string line;
@@ -530,7 +577,7 @@ namespace DbEx.Migration
         /// <summary>
         /// Gets the <see cref="MigrationCommand.Reset"/> table filtering predicate.
         /// </summary>
-        /// <remarks>Used to filter out any system or internal tables that should not be reset. The <see cref="MigratorConsoleArgs.DataResetFilterPredicate"/> is applied after this predicate (i.e. it can not override the base filtering).</remarks>
+        /// <remarks>Used to filter out any system or internal tables that should not be reset. The <see cref="MigratorConsoleArgsBase.DataResetFilterPredicate"/> is applied after this predicate (i.e. it can not override the base filtering).</remarks>
         protected abstract Func<DbSchema.DbTableSchema, bool> DataResetFilterPredicate { get; }
 
         /// <summary>

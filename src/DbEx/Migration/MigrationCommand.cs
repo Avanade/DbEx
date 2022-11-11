@@ -31,26 +31,32 @@ namespace DbEx.Migration
         Migrate = 4,
 
         /// <summary>
+        /// Generates the likes of database <b>Schema</b> objects via code-generation (where applicable).
+        /// </summary>
+        /// <remarks>The <see cref="DatabaseMigratorBase.IsCodeGenEnabled"/> must be set <c>true</c> to enable execution within the orchestration flow.</remarks>
+        CodeGen = 8,
+
+        /// <summary>
         /// Drops and creates the known database <b>Schema</b> objects.
         /// </summary>
         /// <remarks>These are generally schema related artefacts that are applied as scripted on every invocation. These may be deleted (where underlying object is pre-existing) and then (re-)applied where object type is known.</remarks>
-        Schema = 8,
+        Schema = 16,
 
         /// <summary>
         /// Resets the database by deleting all existing data.  
         /// </summary>
         /// <remarks>This is intended for development and testing purposes only; therefore, this should never be used in a production environment.</remarks>
-        Reset = 16,
+        Reset = 32,
 
         /// <summary>
         /// Inserts or merges <b>Data</b> from embedded YAML files.
         /// </summary>
-        Data = 32,
+        Data = 64,
 
         /// <summary>
-        /// Performs <b>all</b> the primary commands as follows; <see cref="Create"/>, <see cref="Migrate"/>, <see cref="Schema"/> and <see cref="Data"/>.
+        /// Performs <b>all</b> the primary commands as follows; <see cref="Create"/>, <see cref="Migrate"/>, <see cref="CodeGen"/>, <see cref="Schema"/> and <see cref="Data"/>.
         /// </summary>
-        All = Create | Migrate | Schema | Data,
+        All = Create | Migrate | CodeGen | Schema | Data,
 
         /// <summary>
         /// Performs <see cref="Migrate"/> and <see cref="Schema"/>.
@@ -71,6 +77,21 @@ namespace DbEx.Migration
         /// Performs <see cref="Reset"/> and <see cref="All"/>.
         /// </summary>
         ResetAndAll = Reset | All,
+
+        /// <summary>
+        /// Performs only the <b>database</b> commands as follows: <see cref="Create"/>, <see cref="Migrate"/>, <see cref="Schema"/> and <see cref="Data"/>.
+        /// </summary>
+        Database = Create | Migrate | Schema | Data,
+
+        /// <summary>
+        /// Performs <see cref="Drop"/> and <see cref="Database"/>.
+        /// </summary>
+        DropAndDatabase = Drop | Database,
+
+        /// <summary>
+        /// Performs <see cref="Reset"/> and <see cref="Database"/>.
+        /// </summary>
+        ResetAndDatabase = Reset | Database,
 
         /// <summary>
         /// Performs <see cref="Reset"/> and <see cref="Data"/>.

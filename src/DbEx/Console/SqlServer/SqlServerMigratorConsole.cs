@@ -24,13 +24,18 @@ namespace DbEx.Console.SqlServer
         /// Initializes a new instance of the <see cref="SqlServerMigratorConsole"/> class.
         /// </summary>
         /// <param name="args">The default <see cref="MigratorConsoleArgs"/> that will be overridden/updated by the command-line argument values.</param>
-        public SqlServerMigratorConsole(MigratorConsoleArgs? args = null) : base(args) { }
+        public SqlServerMigratorConsole(MigratorConsoleArgs? args = null) : base(args ?? new MigratorConsoleArgs()) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlServerMigratorConsole"/> class that provides a default for the <paramref name="connectionString"/>.
         /// </summary>
         /// <param name="connectionString">The database connection string.</param>
         public SqlServerMigratorConsole(string connectionString) : base(new MigratorConsoleArgs { ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString)) }) { }
+
+        /// <summary>
+        /// Gets the <see cref="MigratorConsoleArgs"/>.
+        /// </summary>
+        public new MigratorConsoleArgs Args => (MigratorConsoleArgs)base.Args;
 
         /// <inheritdoc/>
         protected override DatabaseMigratorBase CreateMigrator() => new SqlServerMigrator(Args);

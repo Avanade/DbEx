@@ -268,76 +268,23 @@ SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
         }
 
         [Test]
-        public void C100_CleanAndSplitSql()
+        public void SqlServerSchemaScript_FunctionWithBrackets()
         {
-            var stmts = new List<string>();
-            new SqlCommandReader(@"SELECT * FROM Test.Contact;
-/* begin
-   end */
-GO
-GO
-SELECT * FROM Test.Contact -- comment").ReadAllCommands(stmts.Add);
-
-            Assert.That(stmts, Is.Not.Null);
-            Assert.That(stmts, Has.Count.EqualTo(2));
-            Assert.That(stmts[0], Is.EqualTo(@"SELECT * FROM Test.Contact;
-/* begin
-   end */"));
-            Assert.That(stmts[1], Is.EqualTo(@"SELECT * FROM Test.Contact -- comment"));
-
-            var scr = new SqlCommandReaderEx("CREATE PROCEDURE [SCHEMA].[NAME] WTF");
-            scr.ReadAllKeywords();
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript("='stuf'", "X")); //CREATE FUNCTION [Sec].[fnGetUserHasPermission]( some, other='stuf', num = 1.3 );", "blah"));
+            Assert.That(ss.HasError, Is.False);
+            Assert.That(ss.Schema, Is.EqualTo("Sec"));
+            Assert.That(ss.Name, Is.EqualTo("fnGetUserHasPermission"));
         }
 
-        public class SqlCommandReaderEx : SqlCommandReader
+        [Test]
+        public void SqlServerSchemaScript_FunctionWithBrackets2()
         {
-            public SqlCommandReaderEx(string sqlText) : base(sqlText) { }
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript(@"CREATE FUNCTION [Sec].[fnGetUserHasPermission]()
+some other stuf", "blah"));
 
-            public string[] ReadAllKeywords()
-            {
-                var words = new List<string>();
-                var sb = new StringBuilder();
-
-                while (!HasReachedEnd)
-                {
-                    ReadCharacter += (type, c) =>
-                    {
-                        switch (type)
-                        {
-                            case CharacterType.Command:
-                            case CharacterType.BracketedText:
-                                if (char.IsWhiteSpace(c))
-                                {
-                                    if (sb.Length > 0)
-                                        words.Add(sb.ToString());
-
-                                    sb.Clear();
-                                }
-                                else
-                                    sb.Append(c);
-
-                                break;
-
-                            case CharacterType.SlashStarComment:
-                            case CharacterType.DashComment:
-                            case CharacterType.QuotedString:
-                            case CharacterType.CustomStatement:
-                                break;
-                            case CharacterType.Delimiter:
-                                break;
-                            default:
-                                throw new ArgumentOutOfRangeException(nameof(type), type, null);
-                        }
-                    };
-
-                    Parse();
-                }
-
-                if (sb.Length > 0)
-                    words.Add(sb.ToString());
-
-                return words.ToArray();
-            }
+            Assert.That(ss.HasError, Is.False);
+            Assert.That(ss.Schema, Is.EqualTo("Sec"));
+            Assert.That(ss.Name, Is.EqualTo("fnGetUserHasPermission"));
         }
     }
 }

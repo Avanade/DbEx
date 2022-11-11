@@ -4,6 +4,7 @@ using DbUp.SqlServer;
 using DbUp.Support;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace DbEx.Migration.SqlServer
@@ -85,22 +86,32 @@ namespace DbEx.Migration.SqlServer
                         switch (type)
                         {
                             case CharacterType.Command:
-                            case CharacterType.BracketedText:
                                 if (char.IsWhiteSpace(c))
                                 {
                                     if (sb.Length > 0)
                                         words.Add(sb.ToString());
 
                                     sb.Clear();
+                                    break;
                                 }
-                                else
-                                    sb.Append(c);
+                                else if (new char[] { '(', ')', ';', ',', '=' }.Contains(c))
+                                {
+                                    if (sb.Length > 0)
+                                        words.Add(sb.ToString());
 
+                                    sb.Clear();
+                                }
+
+                                sb.Append(c);
+                                break;
+
+                            case CharacterType.BracketedText:
+                            case CharacterType.QuotedString:
+                                sb.Append(c);
                                 break;
 
                             case CharacterType.SlashStarComment:
                             case CharacterType.DashComment:
-                            case CharacterType.QuotedString:
                             case CharacterType.CustomStatement:
                                 break;
                             case CharacterType.Delimiter:
