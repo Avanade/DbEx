@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DbEx.Migration.Data
@@ -13,11 +14,11 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Generate a new <see cref="string"/> identifier.
         /// </summary>
-        public Task<string> GenerateStringIdentifierAsync() => Task.FromResult(Guid.NewGuid().ToString());
+        public Task<string> GenerateStringIdentifierAsync(CancellationToken cancellation = default) => Task.FromResult(Guid.NewGuid().ToString());
 
         /// <summary>
         /// Generate a new <see cref="Guid"/> identifier.
         /// </summary>
-        public Task<Guid> GenerateGuidIdentifierAsync() => Task.FromResult(Guid.NewGuid());
+        public Task<Guid> GenerateGuidIdentifierAsync(CancellationToken cancellation = default) => Task.FromResult(Guid.NewGuid());
     }
 }

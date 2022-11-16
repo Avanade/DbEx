@@ -1,8 +1,9 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 using System;
+using DbEx.Migration;
 
-namespace DbEx.Migration
+namespace DbEx
 {
     /// <summary>
     /// Represents the migration command, in that it controls the underlying migration tasks that are to be performed.
@@ -33,7 +34,7 @@ namespace DbEx.Migration
         /// <summary>
         /// Generates the likes of database <b>Schema</b> objects via code-generation (where applicable).
         /// </summary>
-        /// <remarks>The <see cref="DatabaseMigratorBase.IsCodeGenEnabled"/> must be set <c>true</c> to enable execution within the orchestration flow.</remarks>
+        /// <remarks>The <see cref="DatabaseMigrationBase.IsCodeGenEnabled"/> must be set <c>true</c> to enable execution within the orchestration flow.</remarks>
         CodeGen = 8,
 
         /// <summary>

@@ -1,34 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CoreEx.Database;
+﻿using CoreEx.Database;
 using CoreEx.Database.SqlServer;
-using DbEx.Console;
+using DbEx.Migration;
 using DbEx.Migration.Data;
 using DbEx.Migration.SqlServer;
-using DbUp.SqlServer;
-using DbUp.Support;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace DbEx.Test
 {
     [TestFixture]
     [NonParallelizable]
-    public class SqlServerMigratorTest
+    public class SqlServerMigrationTest
     {
         [Test]
         public async Task A100_MigrateAll_None()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("NoneDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var a = new MigratorConsoleArgs(Migration.MigrationCommand.DropAndAll, cs) { Logger = l };
-            var m = new SqlServerMigrator(a);
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l };
+            var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             Assert.IsTrue(r);
@@ -38,9 +33,9 @@ namespace DbEx.Test
         public async Task A110_MigrateAll_Empty()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("EmptyDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var a = new MigratorConsoleArgs(Migration.MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Empty.Test));
-            var m = new SqlServerMigrator(a);
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Empty.Test));
+            var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             Assert.IsTrue(r);
@@ -50,9 +45,9 @@ namespace DbEx.Test
         public async Task A120_MigrateAll_Error()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ErrorDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var a = new MigratorConsoleArgs(Migration.MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Error.TestError));
-            var m = new SqlServerMigrator(a);
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Error.TestError));
+            var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             Assert.IsFalse(r);
@@ -148,12 +143,12 @@ namespace DbEx.Test
             Assert.IsNull(row.GenderId);
         }
 
-        private static async Task<(string cs, ILogger l, SqlServerMigrator m)> CreateConsoleDb()
+        private static async Task<(string cs, ILogger l, SqlServerMigration m)> CreateConsoleDb()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var a = new MigratorConsoleArgs(Migration.MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Console.Program));
-            var m = new SqlServerMigrator(a);
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Console.Program));
+            var m = new SqlServerMigration(a);
 
             m.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
             m.Args.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
@@ -169,9 +164,9 @@ namespace DbEx.Test
         public async Task A140_Reset_None()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("NoneDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var a = new MigratorConsoleArgs(Migration.MigrationCommand.Reset, cs) { Logger = l };
-            var m = new SqlServerMigrator(a);
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.Reset, cs) { Logger = l };
+            var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             Assert.IsTrue(r);
@@ -188,8 +183,8 @@ namespace DbEx.Test
             Assert.That(c, Is.GreaterThanOrEqualTo(1));
 
             // Execute Reset.
-            var a = new MigratorConsoleArgs(Migration.MigrationCommand.Reset, cs) { Logger = l };
-            m = new SqlServerMigrator(a);
+            var a = new MigrationArgs(MigrationCommand.Reset, cs) { Logger = l };
+            m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
             Assert.IsTrue(r);
 
@@ -206,8 +201,8 @@ namespace DbEx.Test
         public async Task B100_Execute_Console_Success()
         {
             var c = await CreateConsoleDb().ConfigureAwait(false);
-            var a = new MigratorConsoleArgs(Migration.MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
-            var m = new SqlServerMigrator(a);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            var m = new SqlServerMigration(a);
 
             var r = await m.ExecuteSqlStatementsAsync(new string[] { "SELECT * FROM Test.Contact" }).ConfigureAwait(false);
             Assert.IsTrue(r);
@@ -217,8 +212,8 @@ namespace DbEx.Test
         public async Task B110_Execute_Console_Error()
         {
             var c = await CreateConsoleDb().ConfigureAwait(false);
-            var a = new MigratorConsoleArgs(Migration.MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
-            var m = new SqlServerMigrator(a);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            var m = new SqlServerMigration(a);
 
             var r = await m.ExecuteSqlStatementsAsync(new string[] { "SELECT * FROM Test.Contact", "SELECT BANANAS" }).ConfigureAwait(false);
             Assert.IsFalse(r);
@@ -228,8 +223,8 @@ namespace DbEx.Test
         public async Task B120_Execute_Console_Batch_Error()
         {
             var c = await CreateConsoleDb().ConfigureAwait(false);
-            var a = new MigratorConsoleArgs(Migration.MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
-            var m = new SqlServerMigrator(a);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            var m = new SqlServerMigration(a);
 
             var r = await m.ExecuteSqlStatementsAsync(new string[] { @"SELECT * FROM Test.ContactBad; /* end */ GO; SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
             Assert.IsFalse(r);
@@ -239,8 +234,8 @@ namespace DbEx.Test
         public async Task B120_Execute_Console_Batch_Success()
         {
             var c = await CreateConsoleDb().ConfigureAwait(false);
-            var a = new MigratorConsoleArgs(Migration.MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
-            var m = new SqlServerMigrator(a);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            var m = new SqlServerMigration(a);
 
             var r = await m.ExecuteSqlStatementsAsync(new string[] { @"SELECT * FROM Test.Contact;
 /* end */ 
@@ -270,7 +265,7 @@ SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
         [Test]
         public void SqlServerSchemaScript_FunctionWithBrackets()
         {
-            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript("='stuf'", "X")); //CREATE FUNCTION [Sec].[fnGetUserHasPermission]( some, other='stuf', num = 1.3 );", "blah"));
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript("CREATE FUNCTION [Sec].[fnGetUserHasPermission]( some, other='stuf', num = 1.3 );", "blah"));
             Assert.That(ss.HasError, Is.False);
             Assert.That(ss.Schema, Is.EqualTo("Sec"));
             Assert.That(ss.Name, Is.EqualTo("fnGetUserHasPermission"));

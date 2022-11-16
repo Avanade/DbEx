@@ -1,5 +1,5 @@
 ﻿using CoreEx.Database.SqlServer;
-using DbEx.Console;
+using DbEx.Migration;
 using DbEx.Migration.SqlServer;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -17,9 +17,9 @@ namespace DbEx.Test
         public async Task SelectSchema()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var a = new MigratorConsoleArgs(Migration.MigrationCommand.Drop | Migration.MigrationCommand.Create | Migration.MigrationCommand.Migrate | Migration.MigrationCommand.Schema, cs) { Logger = l }.AddAssembly(typeof(Console.Program));
-            var m = new SqlServerMigrator(a);
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.Drop | MigrationCommand.Create | MigrationCommand.Migrate | MigrationCommand.Schema, cs) { Logger = l }.AddAssembly(typeof(Console.Program));
+            var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
             Assert.IsTrue(r);
 
@@ -278,6 +278,39 @@ namespace DbEx.Test
             Assert.IsNull(col.ForeignTable);
             Assert.IsNull(col.ForeignColumn);
             Assert.IsNull(col.DefaultValue);
+
+            // [Test].[Person]
+            tab = tables.Where(x => x.Name == "Person").SingleOrDefault();
+            Assert.IsNotNull(tab);
+            Assert.AreEqual("Test", tab.Schema);
+            Assert.AreEqual("Person", tab.Name);
+            Assert.AreEqual("p", tab.Alias);
+            Assert.AreEqual("[Test].[Person]", tab.QualifiedName);
+            Assert.IsFalse(tab.IsAView);
+            Assert.IsFalse(tab.IsRefData);
+            Assert.AreEqual(4, tab.Columns.Count);
+            Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
+
+            col = tab.Columns[0];
+            Assert.AreEqual("PersonId", col.Name);
+            Assert.AreEqual("uniqueidentifier", col.Type);
+            Assert.AreEqual("UNIQUEIDENTIFIER", col.SqlType);
+            Assert.IsNull(col.Length);
+            Assert.IsNull(col.Scale);
+            Assert.IsNull(col.Precision);
+            Assert.AreEqual("Guid", col.DotNetType);
+            Assert.IsFalse(col.IsNullable);
+            Assert.IsTrue(col.IsPrimaryKey);
+            Assert.IsTrue(col.IsIdentity);
+            Assert.IsNull(col.IdentitySeed);
+            Assert.IsNull(col.IdentityIncrement);
+            Assert.IsFalse(col.IsUnique);
+            Assert.IsFalse(col.IsComputed);
+            Assert.IsFalse(col.IsForeignRefData);
+            Assert.IsNull(col.ForeignSchema);
+            Assert.IsNull(col.ForeignTable);
+            Assert.IsNull(col.ForeignColumn);
+            Assert.IsNotNull(col.DefaultValue);
         }
     }
 }

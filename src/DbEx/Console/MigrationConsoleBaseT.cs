@@ -9,22 +9,22 @@ using System.Reflection;
 namespace DbEx.Console
 {
     /// <summary>
-    /// Base console that facilitates the <see cref="DatabaseMigratorBase"/> by managing the standard console command-line arguments/options.
+    /// Base console that facilitates the <see cref="DatabaseMigrationBase"/> by managing the standard console command-line arguments/options.
     /// </summary>
     /// <typeparam name="TSelf">The <see cref="Type"/> itself being implemented.</typeparam>
-    public abstract class MigratorConsoleBase<TSelf> : MigratorConsoleBase where TSelf : MigratorConsoleBase<TSelf>
+    public abstract class MigrationConsoleBase<TSelf> : MigrationConsoleBase where TSelf : MigrationConsoleBase<TSelf>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MigratorConsoleBase"/> class.
+        /// Initializes a new instance of the <see cref="MigrationConsoleBase"/> class.
         /// </summary>
-        /// <param name="args">The default <see cref="MigratorConsoleArgs"/> that will be overridden/updated by the command-line argument values.</param>
-        protected MigratorConsoleBase(MigratorConsoleArgsBase args) : base(args) { }
+        /// <param name="args">The default <see cref="MigrationArgs"/> that will be overridden/updated by the command-line argument values.</param>
+        protected MigrationConsoleBase(MigrationArgsBase args) : base(args) { }
 
         /// <summary>
         /// Enables fluent-style method-chaining configuration of <typeparamref name="TSelf"/>
         /// </summary>
-        /// <param name="action">The action to invoke to access the <see cref="MigratorConsoleBase.Args"/>.</param>
-        /// <returns>The current <see cref="MigratorConsoleBase{T}"/> instance to support fluent-style method-chaining.</returns>
+        /// <param name="action">The action to invoke to access the <see cref="MigrationConsoleBase.Args"/>.</param>
+        /// <returns>The current <see cref="MigrationConsoleBase{T}"/> instance to support fluent-style method-chaining.</returns>
         public TSelf Configure(Action<TSelf> action)
         {
             action?.Invoke((TSelf)this);
@@ -32,7 +32,7 @@ namespace DbEx.Console
         }
 
         /// <summary>
-        /// Adds the <paramref name="assemblies"/> containing the embedded resources (shortcut to the <see cref="MigratorConsoleBase.Args"/> <see cref="MigratorConsoleArgsBase.Assemblies"/>.)
+        /// Adds the <paramref name="assemblies"/> containing the embedded resources (shortcut to the <see cref="MigrationConsoleBase.Args"/> <see cref="MigrationArgsBase.Assemblies"/>.)
         /// </summary>
         /// <param name="assemblies">The assemblies containing the embedded resources.</param>
         /// <returns>The current instance to supported fluent-style method-chaining.</returns>
@@ -43,7 +43,7 @@ namespace DbEx.Console
         }
 
         /// <summary>
-        /// Adds the <paramref name="types"/> containing the embedded resources (shortcut to the <see cref="MigratorConsoleBase.Args"/> <see cref="MigratorConsoleArgsBase.Assemblies"/>.)
+        /// Adds the <paramref name="types"/> containing the embedded resources (shortcut to the <see cref="MigrationConsoleBase.Args"/> <see cref="MigrationArgsBase.Assemblies"/>.)
         /// </summary>
         /// <param name="types">The types to add (infers underlying <see cref="System.Reflection.Assembly"/>).</param>
         /// <returns>The current instance to supported fluent-style method-chaining.</returns>
@@ -60,7 +60,7 @@ namespace DbEx.Console
         }
 
         /// <summary>
-        /// Adds the <typeparamref name="T"/> <see cref="System.Reflection.Assembly"/> containing the embedded resources (shortcut to the <see cref="MigratorConsoleBase.Args"/> <see cref="MigratorConsoleArgsBase.Assemblies"/>.
+        /// Adds the <typeparamref name="T"/> <see cref="System.Reflection.Assembly"/> containing the embedded resources (shortcut to the <see cref="MigrationConsoleBase.Args"/> <see cref="MigrationArgsBase.Assemblies"/>.
         /// </summary>
         /// <typeparam name="T">The <see cref="Type"/> to infer <see cref="System.Reflection.Assembly"/>.</typeparam>
         /// <returns>The current instance to supported fluent-style method-chaining.</returns>
@@ -71,7 +71,7 @@ namespace DbEx.Console
         }
 
         /// <summary>
-        /// Adds the <typeparamref name="T1"/> and <typeparamref name="T2"/> <see cref="System.Reflection.Assembly"/> containing the embedded resources (shortcut to the <see cref="MigratorConsoleBase.Args"/> <see cref="MigratorConsoleArgsBase.Assemblies"/>.
+        /// Adds the <typeparamref name="T1"/> and <typeparamref name="T2"/> <see cref="System.Reflection.Assembly"/> containing the embedded resources (shortcut to the <see cref="MigrationConsoleBase.Args"/> <see cref="MigrationArgsBase.Assemblies"/>.
         /// </summary>
         /// <typeparam name="T1">The <see cref="Type"/> to infer <see cref="System.Reflection.Assembly"/>.</typeparam>
         /// <typeparam name="T2">The <see cref="Type"/> to infer <see cref="System.Reflection.Assembly"/>.</typeparam>
@@ -83,7 +83,7 @@ namespace DbEx.Console
         }
 
         /// <summary>
-        /// Adds the <typeparamref name="T1"/>, <typeparamref name="T2"/> and <typeparamref name="T3"/> <see cref="System.Reflection.Assembly"/> containing the embedded resources (shortcut to the <see cref="MigratorConsoleBase.Args"/> <see cref="MigratorConsoleArgsBase.Assemblies"/>.
+        /// Adds the <typeparamref name="T1"/>, <typeparamref name="T2"/> and <typeparamref name="T3"/> <see cref="System.Reflection.Assembly"/> containing the embedded resources (shortcut to the <see cref="MigrationConsoleBase.Args"/> <see cref="MigrationArgsBase.Assemblies"/>.
         /// </summary>
         /// <typeparam name="T1">The <see cref="Type"/> to infer <see cref="System.Reflection.Assembly"/>.</typeparam>
         /// <typeparam name="T2">The <see cref="Type"/> to infer <see cref="System.Reflection.Assembly"/>.</typeparam>
@@ -107,7 +107,7 @@ namespace DbEx.Console
         }
 
         /// <summary>
-        /// Sets (overrides) the <see cref="MigratorConsoleBase.SupportedCommands"/>.
+        /// Sets (overrides) the <see cref="MigrationConsoleBase.SupportedCommands"/>.
         /// </summary>
         /// <param name="supportedCommands">The supported <see cref="MigrationCommand"/>(s)</param>
         /// <returns>The current instance to supported fluent-style method-chaining.</returns>

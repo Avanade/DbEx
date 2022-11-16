@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace DbEx.Migration
 {
@@ -23,8 +24,8 @@ namespace DbEx.Migration
         /// <summary>
         /// Initializes a new instance of the <see cref="DatabaseJournal"/> class.
         /// </summary>
-        /// <param name="migrator">The <see cref="DatabaseMigratorBase"/>.</param>
-        public DatabaseJournal(DatabaseMigratorBase migrator) => Migrator = migrator ?? throw new ArgumentNullException(nameof(migrator));
+        /// <param name="migrator">The <see cref="DatabaseMigrationBase"/>.</param>
+        public DatabaseJournal(DatabaseMigrationBase migrator) => Migrator = migrator ?? throw new ArgumentNullException(nameof(migrator));
 
         /// <inheritdoc/>
         public string? Schema { get; set; }
@@ -33,9 +34,9 @@ namespace DbEx.Migration
         public string? Table { get; set; }
 
         /// <summary>
-        /// Gets the <see cref="DatabaseMigratorBase"/>.
+        /// Gets the <see cref="DatabaseMigrationBase"/>.
         /// </summary>
-        public DatabaseMigratorBase Migrator { get; }
+        public DatabaseMigrationBase Migrator { get; }
 
         /// <inheritdoc/>
         public async Task EnsureExistsAsync(CancellationToken cancellationToken = default)
@@ -43,7 +44,7 @@ namespace DbEx.Migration
             if (_journalExists)
                 return;
 
-            using var sr = StreamLocator.GetResourcesStreamReader($"{Migrator.Provider}.JournalExists.sql", Migrator.ArtefactResourceAssemblies).StreamReader!;
+            using var sr = StreamLocator.GetResourcesStreamReader($"{Migrator.Provider}.JournalExists.sql", Migrator.ArtefactResourceAssemblies.ToArray()).StreamReader!;
             var exists = await Migrator.Database.SqlStatement(ReplacePlacholders(sr.ReadToEnd())).ScalarAsync<int?>(cancellationToken).ConfigureAwait(false);
             if (exists.HasValue && exists.Value == 1)
             {
@@ -51,7 +52,7 @@ namespace DbEx.Migration
                 return;
             }
 
-            using var sr2 = StreamLocator.GetResourcesStreamReader($"{Migrator.Provider}.JournalCreate.sql", Migrator.ArtefactResourceAssemblies).StreamReader!;
+            using var sr2 = StreamLocator.GetResourcesStreamReader($"{Migrator.Provider}.JournalCreate.sql", Migrator.ArtefactResourceAssemblies.ToArray()).StreamReader!;
             await Migrator.Database.SqlStatement(ReplacePlacholders(sr2.ReadToEnd())).NonQueryAsync(cancellationToken).ConfigureAwait(false);
 
             Migrator.Logger.LogInformation("    *Journal table did not exist within the database and was automatically created.");
@@ -64,7 +65,7 @@ namespace DbEx.Migration
         {
             await EnsureExistsAsync(cancellationToken).ConfigureAwait(false);
 
-            using var sr = StreamLocator.GetResourcesStreamReader($"{Migrator.Provider}.JournalAudit.sql", Migrator.ArtefactResourceAssemblies).StreamReader!;
+            using var sr = StreamLocator.GetResourcesStreamReader($"{Migrator.Provider}.JournalAudit.sql", Migrator.ArtefactResourceAssemblies.ToArray()).StreamReader!;
             await Migrator.Database.SqlStatement(ReplacePlacholders(sr.ReadToEnd()))
                 .Param("@scriptname", script.Name)
                 .Param("@applied", DateTime.UtcNow)
@@ -76,7 +77,7 @@ namespace DbEx.Migration
         {
             await EnsureExistsAsync(cancellationToken).ConfigureAwait(false);
 
-            using var sr = StreamLocator.GetResourcesStreamReader($"{Migrator.Provider}.JournalPrevious.sql", Migrator.ArtefactResourceAssemblies).StreamReader!;
+            using var sr = StreamLocator.GetResourcesStreamReader($"{Migrator.Provider}.JournalPrevious.sql", Migrator.ArtefactResourceAssemblies.ToArray()).StreamReader!;
             return await Migrator.Database.SqlStatement(ReplacePlacholders(sr.ReadToEnd())).SelectQueryAsync(dr => dr.GetValue<string>("scriptname"), cancellationToken).ConfigureAwait(false);
         }
 

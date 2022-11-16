@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Resources\SqlServer\DatabaseTemporal.sql" />
     <None Remove="Resources\SqlServer\JournalCreate.sql" />
   </ItemGroup>
 

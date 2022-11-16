@@ -1,7 +1,6 @@
-﻿using CoreEx.Database;
-using CoreEx.Database.SqlServer;
+﻿using CoreEx.Database.SqlServer;
 using CoreEx.Events;
-using DbEx.Console;
+using DbEx.Migration;
 using DbEx.Migration.SqlServer;
 using DbEx.Test.OutboxConsole.Data;
 using Microsoft.Data.SqlClient;
@@ -23,8 +22,8 @@ namespace DbEx.Test
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerOutboxTest>();
-            var a = new MigratorConsoleArgs(Migration.MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Console.Program), typeof(DbEx.Test.OutboxConsole.Program));
-            var m = new SqlServerMigrator(a);
+            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Console.Program), typeof(DbEx.Test.OutboxConsole.Program));
+            var m = new SqlServerMigration(a);
             m.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
             m.Args.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => 1);
             await m.MigrateAsync().ConfigureAwait(false);
@@ -238,7 +237,7 @@ namespace DbEx.Test
         public async Task B120_EnqueueDequeue_PrimarySender_EventSendException()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
 
             using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);

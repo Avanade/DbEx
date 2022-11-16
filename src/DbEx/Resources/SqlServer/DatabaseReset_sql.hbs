@@ -12,7 +12,7 @@ DELETE FROM [{{Schema}}].[{{Name}}]
 -- Reset identity column (where any).
 {{#each .}}
   {{#each PrimaryKeyColumns}}
-    {{#if IsIdentity}}
+    {{#if IsIdentitySeeded}}
 DBCC CHECKIDENT ('{{DbTable.Schema}}.{{DbTable.Name}}', RESEED, {{add IdentitySeed -1}});
     {{/if}}
   {{/each}}

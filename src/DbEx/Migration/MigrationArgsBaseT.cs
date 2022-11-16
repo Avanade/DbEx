@@ -4,20 +4,20 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace DbEx.Console
+namespace DbEx.Migration
 {
     /// <summary>
-    /// Provides the base <see cref="MigratorConsoleBase"/> arguments.
+    /// Provides the base <see cref="DatabaseMigrationBase"/> arguments.
     /// </summary>
     /// <typeparam name="TSelf">The <see cref="Type"/> itself being implemented.</typeparam>
-    public abstract class MigratorConsoleArgsBase<TSelf> : MigratorConsoleArgsBase where TSelf : MigratorConsoleArgsBase<TSelf>
+    public abstract class MigrationArgsBase<TSelf> : MigrationArgsBase where TSelf : MigrationArgsBase<TSelf>
     {
         /// <summary>
-        /// Adds (inserts) one or more <paramref name="assemblies"/> to <see cref="MigratorConsoleArgsBase.Assemblies"/> (before any existing values).
+        /// Adds (inserts) one or more <paramref name="assemblies"/> to <see cref="MigrationArgsBase.Assemblies"/> (before any existing values).
         /// </summary>
         /// <param name="assemblies">The assemblies to add.</param>
         /// <remarks>The order in which they are specified is the order in which they will be probed for embedded resources.</remarks>
-        /// <returns>The current <see cref="MigratorConsoleArgsBase{TSelf}"/> instance to support fluent-style method-chaining.</returns>
+        /// <returns>The current <see cref="MigrationArgsBase{TSelf}"/> instance to support fluent-style method-chaining.</returns>
         public new TSelf AddAssembly(params Assembly[] assemblies)
         {
             base.AddAssembly(assemblies);
@@ -25,12 +25,12 @@ namespace DbEx.Console
         }
 
         /// <summary>
-        /// Adds (inserts) one or more <paramref name="types"/> (being their underlying <see cref="System.Type.Assembly"/>) to <see cref="MigratorConsoleArgsBase.Assemblies"/> (before any existing values).
+        /// Adds (inserts) one or more <paramref name="types"/> (being their underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/> (before any existing values).
         /// </summary>
         /// <param name="types">The types to add.</param>
         /// <remarks>The order in which they are specified is the order in which they will be probed for embedded resources.</remarks>
-        /// <returns>The current <see cref="MigratorConsoleArgs"/> instance to support fluent-style method-chaining.</returns>
-        public TSelf AddAssembly(params System.Type[] types)
+        /// <returns>The current <see cref="MigrationArgs"/> instance to support fluent-style method-chaining.</returns>
+        public TSelf AddAssembly(params Type[] types)
         {
             var list = new List<Assembly>();
             foreach (var t in types)
@@ -42,10 +42,10 @@ namespace DbEx.Console
         }
 
         /// <summary>
-        /// Adds one or more <paramref name="schemas"/> to the <see cref="MigratorConsoleArgsBase.SchemaOrder"/>.
+        /// Adds one or more <paramref name="schemas"/> to the <see cref="MigrationArgsBase.SchemaOrder"/>.
         /// </summary>
         /// <param name="schemas">The schemas to add.</param>
-        /// <returns>The current <see cref="MigratorConsoleArgsBase{TSelf}"/> instance to support fluent-style method-chaining.</returns>
+        /// <returns>The current <see cref="MigrationArgsBase{TSelf}"/> instance to support fluent-style method-chaining.</returns>
         public TSelf AddSchemaOrder(params string[] schemas)
         {
             SchemaOrder.AddRange(schemas);
