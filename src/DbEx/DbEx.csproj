@@ -18,16 +18,10 @@
     <EmbeddedResource Include="Resources\**\*" />
     <EmbeddedResource Include="Migrations\**\*" />
     <EmbeddedResource Include="Data\**\*" />
-    <EmbeddedResource Include="Templates\**\*" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Resources\SqlServer\DatabaseTemporal.sql" />
-    <None Remove="Resources\SqlServer\JournalCreate.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="CoreEx.Database" Version="1.0.11" />
+    <PackageReference Include="CoreEx.Database" Version="1.0.12" />
     <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
     <PackageReference Include="OnRamp" Version="1.0.6" />
   </ItemGroup>

@@ -1,4 +1,4 @@
-﻿using DbEx.Console.SqlServer;
+﻿using DbEx.SqlServer.Console;
 using System.Threading.Tasks;
 
 namespace DbEx.Test.Console

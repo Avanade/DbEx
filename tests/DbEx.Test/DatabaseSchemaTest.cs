@@ -1,6 +1,6 @@
 ﻿using CoreEx.Database.SqlServer;
 using DbEx.Migration;
-using DbEx.Migration.SqlServer;
+using DbEx.SqlServer.Migration;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;

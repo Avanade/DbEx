@@ -1,7 +1,7 @@
 ﻿using CoreEx.Database.SqlServer;
 using CoreEx.Events;
 using DbEx.Migration;
-using DbEx.Migration.SqlServer;
+using DbEx.SqlServer.Migration;
 using DbEx.Test.OutboxConsole.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;

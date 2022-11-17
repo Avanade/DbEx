@@ -13,7 +13,7 @@ namespace DbEx.Migration
     public abstract class MigrationArgsBase<TSelf> : MigrationArgsBase where TSelf : MigrationArgsBase<TSelf>
     {
         /// <summary>
-        /// Adds (inserts) one or more <paramref name="assemblies"/> to <see cref="MigrationArgsBase.Assemblies"/> (before any existing values).
+        /// Adds (inserts) one or more <paramref name="assemblies"/> to <see cref="MigrationArgsBase.Assemblies"/> (before any existing values; i.e. last in first out/probed).
         /// </summary>
         /// <param name="assemblies">The assemblies to add.</param>
         /// <remarks>The order in which they are specified is the order in which they will be probed for embedded resources.</remarks>
@@ -25,7 +25,7 @@ namespace DbEx.Migration
         }
 
         /// <summary>
-        /// Adds (inserts) one or more <paramref name="types"/> (being their underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/> (before any existing values).
+        /// Adds (inserts) one or more <paramref name="types"/> (being the underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/> (before any existing values; i.e. last in first out/probed).
         /// </summary>
         /// <param name="types">The types to add.</param>
         /// <remarks>The order in which they are specified is the order in which they will be probed for embedded resources.</remarks>
@@ -40,6 +40,11 @@ namespace DbEx.Migration
 
             return AddAssembly(list.ToArray());
         }
+
+        /// <summary>
+        /// Adds (inserts) the <typeparamref name="TAssembly"/> (being the underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/> (before any existing values; i.e. last in first out/probed).
+        /// </summary>
+        public TSelf AddAssembly<TAssembly>() => AddAssembly(typeof(TAssembly));
 
         /// <summary>
         /// Adds one or more <paramref name="schemas"/> to the <see cref="MigrationArgsBase.SchemaOrder"/>.

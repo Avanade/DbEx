@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using DbEx.Migration;
 using DbUp.SqlServer;
 using DbUp.Support;
 using System;
@@ -7,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace DbEx.Migration.SqlServer
+namespace DbEx.SqlServer.Migration
 {
     /// <summary>
     /// Provides the SQL Server database schema script functionality.

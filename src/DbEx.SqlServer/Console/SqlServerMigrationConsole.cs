@@ -1,11 +1,12 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using DbEx.Console;
 using DbEx.Migration;
-using DbEx.Migration.SqlServer;
+using DbEx.SqlServer.Migration;
 using System;
 using System.Reflection;
 
-namespace DbEx.Console.SqlServer
+namespace DbEx.SqlServer.Console
 {
     /// <summary>
     /// Console that facilitates the <see cref="SqlServerMigration"/> by managing the standard console command-line arguments/options.

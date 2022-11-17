@@ -3,6 +3,7 @@
 using CoreEx.Database;
 using CoreEx.Database.SqlServer;
 using DbEx.DbSchema;
+using DbEx.Migration;
 using DbUp.Support;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
@@ -13,7 +14,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DbEx.Migration.SqlServer
+namespace DbEx.SqlServer.Migration
 {
     /// <summary>
     /// Provides the <see href="https://docs.microsoft.com/en-us/sql/connect/ado-net/microsoft-ado-net-sql-server">SQL Server</see> migration orchestration.
@@ -81,7 +82,7 @@ namespace DbEx.Migration.SqlServer
         {
             // Filter out temporal tables.
             Logger.LogInformation("  Querying database to find and filter all temporal table(s)...");
-            using var sr = StreamLocator.GetResourcesStreamReader($"{Provider}.DatabaseTemporal.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
+            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseTemporal.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
             await Database.SqlStatement(sr.ReadToEnd()).SelectQueryAsync(dr =>
             {
                 _resetBypass.Add($"[{dr.GetValue<string>("schema")}].[{dr.GetValue<string>("table")}]");

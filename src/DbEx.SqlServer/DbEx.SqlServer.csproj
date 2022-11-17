@@ -1,0 +1,63 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>DbEx.SqlServer</RootNamespace>
+    <Product>DbEx</Product>
+    <Title>DbEx Database Migration Tool.</Title>
+    <Description>DbEX Database Migration tool for SQL Server.</Description>
+    <PackageTags>dbex database dbup db-up sqlserver sql</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\**\*" />
+    <EmbeddedResource Include="Migrations\**\*" />
+    <EmbeddedResource Include="Data\**\*" />
+    <EmbeddedResource Include="Templates\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\DatabaseCreate.sql" />
+    <None Remove="Resources\DatabaseData_sql.hbs" />
+    <None Remove="Resources\DatabaseDrop.sql" />
+    <None Remove="Resources\DatabaseReset_sql.hbs" />
+    <None Remove="Resources\DatabaseTemporal.sql" />
+    <None Remove="Resources\JournalAudit.sql" />
+    <None Remove="Resources\JournalCreate.sql" />
+    <None Remove="Resources\JournalExists.sql" />
+    <None Remove="Resources\JournalPrevious.sql" />
+    <None Remove="Resources\ScriptAlter_sql.hbs" />
+    <None Remove="Resources\ScriptCdcDb_sql.hbs" />
+    <None Remove="Resources\ScriptCdc_sql.hbs" />
+    <None Remove="Resources\ScriptCreate_sql.hbs" />
+    <None Remove="Resources\ScriptDefault_sql.hbs" />
+    <None Remove="Resources\ScriptRefData_sql.hbs" />
+    <None Remove="Resources\ScriptSchema_sql.hbs" />
+    <None Remove="Templates\EventOutboxDequeue_cs.hbs" />
+    <None Remove="Templates\EventOutboxEnqueue_cs.hbs" />
+    <None Remove="Templates\SchemaEventOutbox_sql.hbs" />
+    <None Remove="Templates\SpEventOutboxDequeue_sql.hbs" />
+    <None Remove="Templates\SpEventOutboxEnqueue_sql.hbs" />
+    <None Remove="Templates\TableEventOutboxData_sql.hbs" />
+    <None Remove="Templates\TableEventOutbox_sql.hbs" />
+    <None Remove="Templates\UdtEventOutbox_sql.hbs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CoreEx.Database.SqlServer" Version="1.0.12" />
+    <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
+    <PackageReference Include="OnRamp" Version="1.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DbEx\DbEx.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\..\Common.targets" />
+
+</Project>

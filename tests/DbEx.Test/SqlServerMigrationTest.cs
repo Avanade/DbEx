@@ -2,7 +2,7 @@
 using CoreEx.Database.SqlServer;
 using DbEx.Migration;
 using DbEx.Migration.Data;
-using DbEx.Migration.SqlServer;
+using DbEx.SqlServer.Migration;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -55,6 +55,19 @@ namespace DbEx.Test
             using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             var res = await db.SqlStatement("IF (OBJECT_ID(N'Test.Gender') IS NULL) SELECT 0 ELSE SELECT 1").ScalarAsync<int>().ConfigureAwait(false);
             Assert.AreEqual(0, res, "Test.Gender script should not have been executed as prior should have failed.");
+        }
+
+        [Test]
+        public async Task A120_MigrateAll_With_Log_Output()
+        {
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ErrorDb");
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Error.TestError));
+            var m = new SqlServerMigration(a);
+            var r = await m.MigrateAndLogAsync().ConfigureAwait(false);
+
+            Assert.IsFalse(r.Success);
+            Assert.IsTrue(r.Output.Length > 0);
         }
 
         [Test]

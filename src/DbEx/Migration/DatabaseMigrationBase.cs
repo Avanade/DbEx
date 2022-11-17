@@ -121,6 +121,20 @@ namespace DbEx.Migration
         public bool IsCodeGenEnabled { get; protected set; }
 
         /// <summary>
+        /// Orchestrates the migration steps as specified by the <see cref="MigrationCommand"/> and returns the corresponding log output.
+        /// </summary>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+        /// <returns><c>true</c> indicates success; otherwise, <c>false</c>. Additionally, returns the log output.</returns>
+        /// <remarks>This will replace the <see cref="Args"/> <see cref="MigrationArgsBase.Logger"/> to enable return of log output as a string.</remarks>
+        public async Task<(bool Success, string Output)> MigrateAndLogAsync(CancellationToken cancellationToken = default)
+        {
+            var logger = new StringLogger();
+            Args.Logger = logger;
+            var result = await MigrateAsync(cancellationToken).ConfigureAwait(false);
+            return (result, logger.Output);
+        }
+
+        /// <summary>
         /// Orchestrates the migration steps as specified by the <see cref="MigrationCommand"/>.
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
@@ -200,8 +214,19 @@ namespace DbEx.Migration
             var list = (List<string>)Namespaces;
             Args.Assemblies.ForEach(x => list.Add(x.GetName().Name));
 
+            // Walk the assembly hierarchy.
+            var alist = new List<Assembly>();
+            var type = GetType();
+            do
+            {
+                if (!alist.Contains(type.Assembly))
+                    alist.Add(type.Assembly);
+
+                type = type.BaseType;
+            } while (type != typeof(object));
+
             var list2 = (List<Assembly>)ArtefactResourceAssemblies;
-            list2.AddRange(Args.Assemblies.Concat(new Assembly[] { GetType().Assembly, typeof(DatabaseMigrationBase).Assembly }).Distinct());
+            list2.AddRange(alist);
         }
 
         /// <summary>
@@ -338,7 +363,7 @@ namespace DbEx.Migration
         {
             Logger.LogInformation("  Drop database...");
 
-            using var sr = StreamLocator.GetResourcesStreamReader($"{Provider}.DatabaseDrop.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
+            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseDrop.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
             var message = await MasterDatabase.SqlStatement(sr.ReadToEnd().Replace("@DatabaseName", DatabaseName)).ScalarAsync<string>(cancellationToken);
 
             Logger.LogInformation("    {Content}", message);
@@ -356,7 +381,7 @@ namespace DbEx.Migration
         {
             Logger.LogInformation("  Create database...");
 
-            using var sr = StreamLocator.GetResourcesStreamReader($"{Provider}.DatabaseCreate.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
+            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseCreate.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
             var message = await MasterDatabase.SqlStatement(sr.ReadToEnd().Replace("@DatabaseName", DatabaseName)).ScalarAsync<string>(cancellationToken);
 
             Logger.LogInformation("    {Content}", message);
@@ -569,7 +594,7 @@ namespace DbEx.Migration
                 return true;
             }
 
-            using var sr = StreamLocator.GetResourcesStreamReader($"{Provider}.DatabaseReset_sql", ArtefactResourceAssemblies.ToArray(), StreamLocator.HandlebarsExtensions).StreamReader!;
+            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseReset_sql", ArtefactResourceAssemblies.ToArray(), StreamLocator.HandlebarsExtensions).StreamReader!;
             var cg = new HandlebarsCodeGenerator(sr);
             var sql = cg.Generate(delete);
 
@@ -599,7 +624,7 @@ namespace DbEx.Migration
             Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*.[sql|yaml]", true))}");
 
             var list = new List<(Assembly Assembly, string ResourceName)>();
-            foreach (var ass in Args.Assemblies)
+            foreach (var ass in Args.Assemblies.Reverse<Assembly>()) // Reversed as assumed data builds on top of earlier.
             {
                 foreach (var rn in ass.GetManifestResourceNames().OrderBy(x => x))
                 {
@@ -675,7 +700,7 @@ namespace DbEx.Migration
             // Cache the compiled code-gen template.
             if (_dataCodeGen == null)
             {
-                using var sr = StreamLocator.GetResourcesStreamReader($"{Provider}.DatabaseData_sql", ArtefactResourceAssemblies.ToArray(), StreamLocator.HandlebarsExtensions).StreamReader!;
+                using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseData_sql", ArtefactResourceAssemblies.ToArray(), StreamLocator.HandlebarsExtensions).StreamReader!;
                 _dataCodeGen = new HandlebarsCodeGenerator(await sr.ReadToEndAsync().ConfigureAwait(false));
             }
 
@@ -730,7 +755,7 @@ namespace DbEx.Migration
         private async Task<bool> CreateScriptInternalAsync(string? name, IDictionary<string, string?>? parameters, CancellationToken cancellationToken)
         {
             name ??= "Default";
-            var rn = $"{Provider}.Script{name}_sql";
+            var rn = $"Script{name}_sql";
 
             // Find the resource.
             using var sr = StreamLocator.GetResourcesStreamReader(rn, ArtefactResourceAssemblies.ToArray(), StreamLocator.HandlebarsExtensions).StreamReader;
