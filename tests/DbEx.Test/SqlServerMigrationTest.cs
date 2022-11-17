@@ -1,28 +1,29 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using CoreEx.Database;
+﻿using CoreEx.Database;
 using CoreEx.Database.SqlServer;
+using DbEx.Migration;
 using DbEx.Migration.Data;
-using DbEx.Migration.SqlServer;
+using DbEx.SqlServer.Migration;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace DbEx.Test
 {
     [TestFixture]
     [NonParallelizable]
-    public class SqlServerMigratorTest
+    public class SqlServerMigrationTest
     {
         [Test]
         public async Task A100_MigrateAll_None()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("NoneDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l);
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l };
+            var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             Assert.IsTrue(r);
@@ -32,8 +33,9 @@ namespace DbEx.Test
         public async Task A110_MigrateAll_Empty()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("EmptyDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Empty.Test).Assembly);
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Empty.Test));
+            var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             Assert.IsTrue(r);
@@ -43,8 +45,9 @@ namespace DbEx.Test
         public async Task A120_MigrateAll_Error()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ErrorDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Error.TestError).Assembly);
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Error.TestError));
+            var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             Assert.IsFalse(r);
@@ -52,6 +55,19 @@ namespace DbEx.Test
             using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             var res = await db.SqlStatement("IF (OBJECT_ID(N'Test.Gender') IS NULL) SELECT 0 ELSE SELECT 1").ScalarAsync<int>().ConfigureAwait(false);
             Assert.AreEqual(0, res, "Test.Gender script should not have been executed as prior should have failed.");
+        }
+
+        [Test]
+        public async Task A120_MigrateAll_With_Log_Output()
+        {
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ErrorDb");
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Error.TestError));
+            var m = new SqlServerMigration(a);
+            var r = await m.MigrateAndLogAsync().ConfigureAwait(false);
+
+            Assert.IsFalse(r.Success);
+            Assert.IsTrue(r.Output.Length > 0);
         }
 
         [Test]
@@ -110,14 +126,14 @@ namespace DbEx.Test
             var row2 = res2[0];
             Assert.AreEqual(DataValueConverter.IntToGuid(88), row2.PersonId);
             Assert.AreEqual("RUNTIME", row2.Name);
-            Assert.AreEqual(m.ParserArgs.UserName, row2.CreatedBy);
-            Assert.AreEqual(m.ParserArgs.DateTimeNow, row2.CreatedDate);
+            Assert.AreEqual(m.Args.DataParserArgs.UserName, row2.CreatedBy);
+            Assert.AreEqual(m.Args.DataParserArgs.DateTimeNow, row2.CreatedDate);
 
             row2 = res2[1];
             Assert.AreNotEqual(Guid.Empty, row2.PersonId);
             Assert.AreEqual("Bazza", row2.Name);
-            Assert.AreEqual(m.ParserArgs.UserName, row2.CreatedBy);
-            Assert.AreEqual(m.ParserArgs.DateTimeNow, row2.CreatedDate);
+            Assert.AreEqual(m.Args.DataParserArgs.UserName, row2.CreatedBy);
+            Assert.AreEqual(m.Args.DataParserArgs.DateTimeNow, row2.CreatedDate);
 
             // Check that the stored procedure script was migrated and works!
             res = (await db.StoredProcedure("[Test].[spGetContact]").Param("@ContactId", 2).SelectQueryAsync(dr => new
@@ -140,14 +156,15 @@ namespace DbEx.Test
             Assert.IsNull(row.GenderId);
         }
 
-        private static async Task<(string cs, ILogger l, SqlServerMigrator m)> CreateConsoleDb()
+        private static async Task<(string cs, ILogger l, SqlServerMigration m)> CreateConsoleDb()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Console.Program).Assembly);
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Console.Program));
+            var m = new SqlServerMigration(a);
 
-            m.ParserArgs.Parameters.Add("DefaultName", "Bazza");
-            m.ParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
+            m.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
+            m.Args.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
 
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
@@ -160,8 +177,9 @@ namespace DbEx.Test
         public async Task A140_Reset_None()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("NoneDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.Reset, l);
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.Reset, cs) { Logger = l };
+            var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             Assert.IsTrue(r);
@@ -178,7 +196,8 @@ namespace DbEx.Test
             Assert.That(c, Is.GreaterThanOrEqualTo(1));
 
             // Execute Reset.
-            m = new SqlServerMigrator(cs, Migration.MigrationCommand.Reset, l);
+            var a = new MigrationArgs(MigrationCommand.Reset, cs) { Logger = l };
+            m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
             Assert.IsTrue(r);
 
@@ -195,7 +214,8 @@ namespace DbEx.Test
         public async Task B100_Execute_Console_Success()
         {
             var c = await CreateConsoleDb().ConfigureAwait(false);
-            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            var m = new SqlServerMigration(a);
 
             var r = await m.ExecuteSqlStatementsAsync(new string[] { "SELECT * FROM Test.Contact" }).ConfigureAwait(false);
             Assert.IsTrue(r);
@@ -205,7 +225,8 @@ namespace DbEx.Test
         public async Task B110_Execute_Console_Error()
         {
             var c = await CreateConsoleDb().ConfigureAwait(false);
-            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            var m = new SqlServerMigration(a);
 
             var r = await m.ExecuteSqlStatementsAsync(new string[] { "SELECT * FROM Test.Contact", "SELECT BANANAS" }).ConfigureAwait(false);
             Assert.IsFalse(r);
@@ -215,9 +236,10 @@ namespace DbEx.Test
         public async Task B120_Execute_Console_Batch_Error()
         {
             var c = await CreateConsoleDb().ConfigureAwait(false);
-            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            var m = new SqlServerMigration(a);
 
-            var r = await m.ExecuteSqlStatementsAsync(new string[] { @"SELECT * FROM Test.Contact; /* end */ GO; SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
+            var r = await m.ExecuteSqlStatementsAsync(new string[] { @"SELECT * FROM Test.ContactBad; /* end */ GO; SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
             Assert.IsFalse(r);
         }
 
@@ -225,7 +247,8 @@ namespace DbEx.Test
         public async Task B120_Execute_Console_Batch_Success()
         {
             var c = await CreateConsoleDb().ConfigureAwait(false);
-            var m = new SqlServerMigrator(c.cs, Migration.MigrationCommand.Execute, c.l, typeof(Console.Program).Assembly);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            var m = new SqlServerMigration(a);
 
             var r = await m.ExecuteSqlStatementsAsync(new string[] { @"SELECT * FROM Test.Contact;
 /* end */ 
@@ -235,153 +258,41 @@ SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
         }
 
         [Test]
-        public void C100_CleanAndSplitSql()
+        public void SqlServerSchemaScript_SchemaAndObject()
         {
-            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader("SELECT * FROM Test.Contact; /* end */ GO; SELECT * FROM Test.Contact -- comment"));
-            Assert.That(stmts, Is.Not.Null);
-            Assert.That(stmts, Has.Count.EqualTo(1));
-            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT * FROM Test.Contact; /* end */ GO; SELECT * FROM Test.Contact -- comment
-"));
-            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT * FROM Test.Contact;  GO; SELECT * FROM Test.Contact 
-"));
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript("CREATE PROC [Ref].[USStates]", "blah"));
+            Assert.That(ss.HasError, Is.False);
+            Assert.That(ss.Schema, Is.EqualTo("Ref"));
+            Assert.That(ss.Name, Is.EqualTo("USStates"));
         }
 
         [Test]
-        public void C110_CleanAndSplitSql()
+        public void SqlServerSchemaScript_NoSchemaAndObject()
         {
-            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT * FROM Test.Contact;
-/* begin
-   end */
-GO 
-SELECT * FROM Test.Contact -- comment"));
-            Assert.That(stmts, Is.Not.Null);
-            Assert.That(stmts, Has.Count.EqualTo(2));
-            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT * FROM Test.Contact;
-/* begin
-   end */
-"));
-            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT * FROM Test.Contact;
-"));
-            Assert.That(stmts[1].OriginalSql, Is.EqualTo(@"SELECT * FROM Test.Contact -- comment
-"));
-            Assert.That(stmts[1].CleanSql, Is.EqualTo(@"SELECT * FROM Test.Contact 
-"));
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript("CREATE PROC [USStates]", "blah"));
+            Assert.That(ss.HasError, Is.False);
+            Assert.That(ss.Schema, Is.EqualTo("dbo"));
+            Assert.That(ss.Name, Is.EqualTo("USStates"));
         }
 
         [Test]
-        public void C120_CleanAndSplitSql()
+        public void SqlServerSchemaScript_FunctionWithBrackets()
         {
-            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT 'abc\  
-def' AS [ColumnResult];"));
-
-            Assert.That(stmts, Is.Not.Null);
-            Assert.That(stmts, Has.Count.EqualTo(1));
-            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT 'abc\  
-def' AS [ColumnResult];
-"));
-            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT 'abc\  
-def' AS [ColumnResult];
-"));
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript("CREATE FUNCTION [Sec].[fnGetUserHasPermission]( some, other='stuf', num = 1.3 );", "blah"));
+            Assert.That(ss.HasError, Is.False);
+            Assert.That(ss.Schema, Is.EqualTo("Sec"));
+            Assert.That(ss.Name, Is.EqualTo("fnGetUserHasPermission"));
         }
 
         [Test]
-        public void C130_CleanAndSplitSql()
+        public void SqlServerSchemaScript_FunctionWithBrackets2()
         {
-            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT * FROM Test.Contact;
-GO 
-"));
-            Assert.AreEqual(2, stmts.Count);
-            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT * FROM Test.Contact;
-"));
-            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT * FROM Test.Contact;
-"));
-            Assert.That(stmts[1].OriginalSql, Is.EqualTo(@""));
-            Assert.That(stmts[1].CleanSql, Is.EqualTo(@""));
-        }
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript(@"CREATE FUNCTION [Sec].[fnGetUserHasPermission]()
+some other stuf", "blah"));
 
-        [Test]
-        public void C140_CleanAndSplitSql()
-        {
-            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
-GO 
-SELECT COUNT(*) -- comment"));
-
-            Assert.AreEqual(2, stmts.Count);
-            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
-"));
-            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT  Test.Contact  WHERE;
-"));
-            Assert.That(stmts[1].OriginalSql, Is.EqualTo(@"SELECT COUNT(*) -- comment
-"));
-            Assert.That(stmts[1].CleanSql, Is.EqualTo(@"SELECT COUNT(*) 
-"));
-        }
-
-        [Test]
-        public void C150_CleanAndSplitSql()
-        {
-            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
-GO 
-GO
-SELECT COUNT(*) -- comment"));
-
-            Assert.AreEqual(3, stmts.Count);
-            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
-"));
-            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT  Test.Contact  WHERE;
-"));
-            Assert.That(stmts[1].OriginalSql, Is.EqualTo(@""));
-            Assert.That(stmts[1].CleanSql, Is.EqualTo(@""));
-            Assert.That(stmts[2].OriginalSql, Is.EqualTo(@"SELECT COUNT(*) -- comment
-"));
-            Assert.That(stmts[2].CleanSql, Is.EqualTo(@"SELECT COUNT(*) 
-"));
-        }
-
-        [Test]
-        public void C160_CleanAndSplitSql()
-        {
-            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
-GO 
--- Bananas
-GO
-SELECT COUNT(*) -- comment"));
-
-            Assert.AreEqual(3, stmts.Count);
-            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
-"));
-            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT  Test.Contact  WHERE;
-"));
-            Assert.That(stmts[1].OriginalSql, Is.EqualTo(@"-- Bananas
-"));
-            Assert.That(stmts[1].CleanSql, Is.EqualTo(@""));
-            Assert.That(stmts[2].OriginalSql, Is.EqualTo(@"SELECT COUNT(*) -- comment
-"));
-            Assert.That(stmts[2].CleanSql, Is.EqualTo(@"SELECT COUNT(*) 
-"));
-        }
-
-        [Test]
-        public void C170_CleanAndSplitSql()
-        {
-            var stmts = SqlServerMigrator.SplitAndCleanSql(new StringReader(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
-GO 
-/* */
-GO
-SELECT COUNT(*) -- comment"));
-
-            Assert.AreEqual(3, stmts.Count);
-            Assert.That(stmts[0].OriginalSql, Is.EqualTo(@"SELECT /* * FROM */ Test.Contact /* where */ WHERE;
-"));
-            Assert.That(stmts[0].CleanSql, Is.EqualTo(@"SELECT  Test.Contact  WHERE;
-"));
-            Assert.That(stmts[1].OriginalSql, Is.EqualTo(@"/* */
-"));
-            Assert.That(stmts[1].CleanSql, Is.EqualTo(@""));
-            Assert.That(stmts[2].OriginalSql, Is.EqualTo(@"SELECT COUNT(*) -- comment
-"));
-            Assert.That(stmts[2].CleanSql, Is.EqualTo(@"SELECT COUNT(*) 
-"));
+            Assert.That(ss.HasError, Is.False);
+            Assert.That(ss.Schema, Is.EqualTo("Sec"));
+            Assert.That(ss.Name, Is.EqualTo("fnGetUserHasPermission"));
         }
     }
 }

@@ -61,9 +61,14 @@ namespace DbEx.DbSchema
         public int? Scale { get; set; }
 
         /// <summary>
-        /// Indicates whether the column is an auto-generated identity.
+        /// Indicates whether the column is an auto-incremented identity (either Identity or Defaulted).
         /// </summary>
         public bool IsIdentity { get; set; }
+
+        /// <summary>
+        /// Indicates whether the column is an auto-incremented seeded identity.
+        /// </summary>
+        public bool IsIdentitySeeded => IsIdentity && IdentitySeed != null;
 
         /// <summary>
         /// Gets or sets the identity seed value.

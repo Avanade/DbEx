@@ -48,7 +48,8 @@ param(
     [switch]$DeleteFromlocalCache,
     [string]$NugetCacheFolder = "$($env:USERPROFILE)\.nuget\packages",
     [String[]]$ProjectsToPublish = @(
-        "src\DbEx")
+        "src\DbEx",
+        "src\DbEx.SqlServer")
     )
 
 $ShouldPublishRemote = (![string]::IsNullOrEmpty($apiKey) -and ![string]::IsNullOrEmpty($NugetServer))

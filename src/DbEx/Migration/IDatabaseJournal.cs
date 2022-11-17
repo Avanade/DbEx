@@ -12,6 +12,16 @@ namespace DbEx.Migration
     public interface IDatabaseJournal
     {
         /// <summary>
+        /// Gets or sets the journal schema name.
+        /// </summary>
+        string? Schema { get; set; }
+
+        /// <summary>
+        /// Gets or sets the journal table name.
+        /// </summary>
+        string? Table { get; set; }
+
+        /// <summary>
         /// Ensures that the <see cref="IDatabaseJournal"/> exists within the database.
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>

@@ -19,29 +19,28 @@ using System.Threading.Tasks;
 namespace DbEx.Console
 {
     /// <summary>
-    /// Base console that facilitates the <see cref="DatabaseMigratorBase"/> by managing the standard console command-line arguments/options.
+    /// Base console that facilitates the <see cref="DatabaseMigrationBase"/> by managing the standard console command-line arguments/options.
     /// </summary>
     /// <remarks>The standard console command-line arguments/options can be controlled via the constructor using the <see cref="SupportedOptions"/> flags. Additional capabilities can be added by inherting and overridding the
     /// <see cref="OnBeforeExecute(CommandLineApplication)"/>, <see cref="OnValidation(ValidationContext)"/> and <see cref="OnMigrateAsync"/>. Changes to the console output can be achieved by overridding
-    /// <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(MigratorConsoleArgs)"/> and <see cref="OnWriteFooter(double)"/>.
+    /// <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(DatabaseMigrationBase)"/> and <see cref="OnWriteFooter(double)"/>.
     /// <para>The underlying command line parsing is provided by <see href="https://natemcmaster.github.io/CommandLineUtils/"/>.</para></remarks>
-    public abstract class MigratorConsoleBase
+    public abstract class MigrationConsoleBase
     {
         private const string EntryAssemblyOnlyOptionName = "EO";
         private CommandArgument<MigrationCommand>? _commandArg;
         private CommandArgument? _additionalArgs;
-        private readonly Dictionary<string, CommandOption?> _options = new();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MigratorConsoleBase"/> class.
+        /// Initializes a new instance of the <see cref="MigrationConsoleBase"/> class.
         /// </summary>
-        /// <param name="args">The default <see cref="MigratorConsoleArgs"/> that will be overridden/updated by the command-line argument values.</param>
-        protected MigratorConsoleBase(MigratorConsoleArgs? args = null) => Args = args ?? new MigratorConsoleArgs();
+        /// <param name="args">The default <see cref="MigrationArgs"/> that will be overridden/updated by the command-line argument values.</param>
+        protected MigrationConsoleBase(MigrationArgsBase args) => Args = args ?? throw new ArgumentNullException(nameof(args));
 
         /// <summary>
-        /// Gets the <see cref="MigratorConsoleArgs"/>.
+        /// Gets the <see cref="MigrationArgsBase"/>.
         /// </summary>
-        public MigratorConsoleArgs Args { get; }
+        public MigrationArgsBase Args { get; }
 
         /// <summary>
         /// Gets the application/command name.
@@ -54,12 +53,17 @@ namespace DbEx.Console
         public virtual string AppTitle => $"{AppName} Database Tool.";
 
         /// <summary>
-        /// Gets the <see cref="Args"/> <see cref="MigratorConsoleArgs.Logger"/>.
+        /// Gets the <see cref="Args"/> <see cref="MigrationArgsBase.Logger"/>.
         /// </summary>
         protected ILogger? Logger => Args.Logger;
 
         /// <summary>
-        /// Indicates whether to bypass standard execution of <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(MigratorConsoleArgs)"/> and <see cref="OnWriteFooter(double)"/>.
+        /// Gets the console (command line) options.
+        /// </summary>
+        protected Dictionary<string, CommandOption?> ConsoleOptions { get; } = new();
+
+        /// <summary>
+        /// Indicates whether to bypass standard execution of <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(DatabaseMigrationBase)"/> and <see cref="OnWriteFooter(double)"/>.
         /// </summary>
         protected bool BypassOnWrites { get; set; }
 
@@ -72,6 +76,12 @@ namespace DbEx.Console
  ║║├┴┐║╣ ┌┴┬┘   ║║├─┤ │ ├─┤├┴┐├─┤└─┐├┤    ║ │ ││ ││  
 ═╩╝└─┘╚═╝┴ └─  ═╩╝┴ ┴ ┴ ┴ ┴└─┘┴ ┴└─┘└─┘   ╩ └─┘└─┘┴─┘
 ";
+
+        /// <summary>
+        /// Gets or sets the supported <see cref="MigrationCommand"/>(s); where executed with an unsupported command an error will occur.
+        /// </summary>
+        /// <remarks>Defaults to everything: <see cref="MigrationCommand.All"/>, <see cref="MigrationCommand.Reset"/>, <see cref="MigrationCommand.Drop"/>, <see cref="MigrationCommand.Execute"/> and <see cref="MigrationCommand.Script"/>.</remarks>
+        public MigrationCommand SupportedCommands { get; set; } = MigrationCommand.All | MigrationCommand.Reset | MigrationCommand.Drop | MigrationCommand.Execute | MigrationCommand.Script;
 
         /// <summary>
         /// Runs the code generation using the passed <paramref name="migrationCommand"/>.
@@ -105,12 +115,12 @@ namespace DbEx.Console
             app.HelpOption();
 
             _commandArg = app.Argument<MigrationCommand>("command", "Database migration command.").IsRequired();
-            _options.Add(nameof(OnRamp.CodeGeneratorDbArgsBase.ConnectionString), app.Option("-cs|--connection-string", "Database connection string.", CommandOptionType.SingleValue));
-            _options.Add(nameof(OnRamp.CodeGeneratorDbArgsBase.ConnectionStringEnvironmentVariableName), app.Option("-cv|--connection-varname", "Database connection string environment variable name.", CommandOptionType.SingleValue));
-            _options.Add(nameof(MigratorConsoleArgs.SchemaOrder), app.Option("-so|--schema-order", "Database schema name (multiple can be specified in priority order).", CommandOptionType.MultipleValue));
-            _options.Add(nameof(MigratorConsoleArgs.OutputDirectory), app.Option("-o|--output", "Output directory path.", CommandOptionType.MultipleValue).Accepts(v => v.ExistingDirectory("Output directory path does not exist.")));
-            _options.Add(nameof(MigratorConsoleArgs.Assemblies), app.Option("-a|--assembly", "Assembly containing embedded resources (multiple can be specified in probing order).", CommandOptionType.MultipleValue));
-            _options.Add(EntryAssemblyOnlyOptionName, app.Option("-eo|--entry-assembly-only", "Use the entry assembly only (ignore all other assemblies).", CommandOptionType.NoValue));
+            ConsoleOptions.Add(nameof(OnRamp.CodeGeneratorDbArgsBase.ConnectionString), app.Option("-cs|--connection-string", "Database connection string.", CommandOptionType.SingleValue));
+            ConsoleOptions.Add(nameof(OnRamp.CodeGeneratorDbArgsBase.ConnectionStringEnvironmentVariableName), app.Option("-cv|--connection-varname", "Database connection string environment variable name.", CommandOptionType.SingleValue));
+            ConsoleOptions.Add(nameof(MigrationArgs.SchemaOrder), app.Option("-so|--schema-order", "Database schema name (multiple can be specified in priority order).", CommandOptionType.MultipleValue));
+            ConsoleOptions.Add(nameof(MigrationArgs.OutputDirectory), app.Option("-o|--output", "Output directory path.", CommandOptionType.MultipleValue).Accepts(v => v.ExistingDirectory("Output directory path does not exist.")));
+            ConsoleOptions.Add(nameof(MigrationArgs.Assemblies), app.Option("-a|--assembly", "Assembly containing embedded resources (multiple can be specified in probing order).", CommandOptionType.MultipleValue));
+            ConsoleOptions.Add(EntryAssemblyOnlyOptionName, app.Option("-eo|--entry-assembly-only", "Use the entry assembly only (ignore all other assemblies).", CommandOptionType.NoValue));
             _additionalArgs = app.Argument("args", "Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each a SQL statement to invoke).", multipleValues: true);
 
             OnBeforeExecute(app);
@@ -119,18 +129,20 @@ namespace DbEx.Console
             app.OnValidate(ctx =>
             {
                 Args.MigrationCommand = _commandArg.ParsedValue;
+                if (!SupportedCommands.HasFlag(Args.MigrationCommand))
+                    return new ValidationResult($"The specified database migration command is not supported.");
 
                 // Update the options from command line.
-                var so = GetCommandOption(nameof(MigratorConsoleArgs.SchemaOrder));
+                var so = GetCommandOption(nameof(MigrationArgs.SchemaOrder));
                 if (so.HasValue())
                 {
                     Args.SchemaOrder.Clear();
                     Args.SchemaOrder.AddRange(so.Values.Where(x => !string.IsNullOrEmpty(x)).OfType<string>().Distinct());
                 }
 
-                UpdateStringOption(nameof(MigratorConsoleArgs.OutputDirectory), v => Args.OutputDirectory = new DirectoryInfo(v));
+                UpdateStringOption(nameof(MigrationArgs.OutputDirectory), v => Args.OutputDirectory = new DirectoryInfo(v));
 
-                var vr = ValidateMultipleValue(nameof(MigratorConsoleArgs.Assemblies), ctx, (ctx, co) => new AssemblyValidator(Args).GetValidationResult(co, ctx));
+                var vr = ValidateMultipleValue(nameof(MigrationArgs.Assemblies), ctx, (ctx, co) => new AssemblyValidator(Args).GetValidationResult(co, ctx));
                 if (vr != ValidationResult.Success)
                     return vr;
 
@@ -202,12 +214,14 @@ namespace DbEx.Console
         /// </summary>
         /// <param name="option">The option name.</param>
         /// <returns>The corresponding <see cref="CommandOption"/>.</returns>
-        protected CommandOption GetCommandOption(string option) => _options.GetValueOrDefault(option) ?? throw new InvalidOperationException($"Command option '{option}' does not exist.");
+        protected CommandOption GetCommandOption(string option) => ConsoleOptions.GetValueOrDefault(option) ?? throw new InvalidOperationException($"Command option '{option}' does not exist.");
 
         /// <summary>
         /// Updates the command option from a string option.
         /// </summary>
-        private void UpdateStringOption(string option, Action<string?> action)
+        /// <param name="option">The option name.</param>
+        /// <param name="action">The action to perform where <paramref name="option"/> is provided.</param>
+        protected void UpdateStringOption(string option, Action<string?> action)
         {
             var co = GetCommandOption(option);
             if (co != null && co.HasValue())
@@ -221,7 +235,9 @@ namespace DbEx.Console
         /// <summary>
         /// Updates the command option from a boolean option.
         /// </summary>
-        private void UpdateBooleanOption(string option, Action action)
+        /// <param name="option">The option name.</param>
+        /// <param name="action">The action to perform where <paramref name="option"/> is provided.</param>
+        protected void UpdateBooleanOption(string option, Action action)
         {
             var co = GetCommandOption(option);
             if (co != null && co.HasValue())
@@ -231,7 +247,10 @@ namespace DbEx.Console
         /// <summary>
         /// Validate multiple options.
         /// </summary>
-        private ValidationResult ValidateMultipleValue(string option, ValidationContext ctx, Func<ValidationContext, CommandOption, ValidationResult> func)
+        /// <param name="option">The option name.</param>
+        /// <param name="ctx">The <see cref="ValidationContext"/>.</param>
+        /// <param name="func">The function to perform where <paramref name="option"/> is provided.</param>
+        protected ValidationResult ValidateMultipleValue(string option, ValidationContext ctx, Func<ValidationContext, CommandOption, ValidationResult> func)
         {
             var co = GetCommandOption(option);
             if (co == null)
@@ -261,17 +280,20 @@ namespace DbEx.Console
         {
             try
             {
+                // Create the migrator.
+                var migrator = CreateMigrator();
+
                 // Write header, etc.
                 if (!BypassOnWrites)
                 {
                     OnWriteMasthead();
                     OnWriteHeader();
-                    OnWriteArgs(Args);
+                    OnWriteArgs(migrator);
                 }
 
                 // Run the code generator.
                 var sw = Stopwatch.StartNew();
-                if (!await OnMigrateAsync(cancellationToken).ConfigureAwait(false))
+                if (!await OnMigrateAsync(migrator, cancellationToken).ConfigureAwait(false))
                     return 3;
 
                 // Write footer and exit successfully.
@@ -297,11 +319,28 @@ namespace DbEx.Console
         }
 
         /// <summary>
-        /// Invoked to execute the <see cref="DatabaseMigratorBase"/>.
+        /// Invoked to execute the <see cref="DatabaseMigrationBase"/>.
         /// </summary>
+        /// <param name="migrator">The <see cref="DatabaseMigrationBase"/>.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
-        protected abstract Task<bool> OnMigrateAsync(CancellationToken cancellationToken);
+        protected virtual async Task<bool> OnMigrateAsync(DatabaseMigrationBase migrator, CancellationToken cancellationToken)
+        {
+            // Perform migration.
+            if (!await migrator.MigrateAsync(cancellationToken).ConfigureAwait(false))
+                return false;
+
+            Logger?.LogInformation("{Content}", string.Empty);
+            Logger?.LogInformation("{Content}", new string('-', 80));
+
+            return true;
+        }
+
+        /// <summary>
+        /// Creates the <see cref="DatabaseMigrationBase"/> that is used to perform the database migration orchestration.
+        /// </summary>
+        /// <returns></returns>
+        protected abstract DatabaseMigrationBase CreateMigrator();
 
         /// <summary>
         /// Invoked to write the <see cref="MastheadText"/> to the <see cref="Logger"/>.
@@ -325,25 +364,31 @@ namespace DbEx.Console
         /// <summary>
         /// Invoked to write the <see cref="Args"/> to the <see cref="Logger"/>.
         /// </summary>
-        /// <param name="args">The <see cref="MigratorConsoleArgs"/> to write.</param>
-        protected virtual void OnWriteArgs(MigratorConsoleArgs args) => WriteStandardizedArgs(args);
+        /// <param name="migrator">The <see cref="DatabaseMigrationBase"/> to write.</param>
+        protected virtual void OnWriteArgs(DatabaseMigrationBase migrator) => WriteStandardizedArgs(migrator);
 
         /// <summary>
-        /// Write the <see cref="Args"/> to the <see cref="Logger"/> in a standardized (reusable) manner.
+        /// Write the <paramref name="migrator"/> context to the <see cref="Logger"/> in a standardized (reusable) manner.
         /// </summary>
-        /// <param name="args">The <see cref="MigratorConsoleArgs"/> to write.</param>
-        public static void WriteStandardizedArgs(MigratorConsoleArgs args)
+        /// <param name="migrator">The <see cref="DatabaseMigrationBase"/> to write.</param>
+        /// <param name="additional">Provides an optional opportunity to log/write additional information.</param>
+        public static void WriteStandardizedArgs(DatabaseMigrationBase migrator, Action<ILogger>? additional = null)
         {
-            if (args == null || args.Logger == null)
+            if (migrator.Args.Logger == null)
                 return;
 
-            args.Logger.LogInformation("{Content}", $"Command = {args.MigrationCommand}");
-            args.Logger.LogInformation("{Content}", $"SchemaOrder = {string.Join(", ", args.SchemaOrder.ToArray())}");
-            args.Logger.LogInformation("{Content}", $"OutDir = {args.OutputDirectory?.FullName}");
-            args.Logger.LogInformation("{Content}", $"Assemblies{(args.Assemblies.Count == 0 ? " = none" : ":")}");
-            foreach (var a in args.Assemblies)
+            migrator.Args.Logger.LogInformation("{Content}", $"Command = {migrator.Args.MigrationCommand}");
+            migrator.Args.Logger.LogInformation("{Content}", $"Provider = {migrator.Provider}");
+            migrator.Args.Logger.LogInformation("{Content}", $"Database = {migrator.DatabaseName}");
+            migrator.Args.Logger.LogInformation("{Content}", $"SchemaOrder = {string.Join(", ", migrator.Args.SchemaOrder.ToArray())}");
+            migrator.Args.Logger.LogInformation("{Content}", $"OutDir = {migrator.Args.OutputDirectory?.FullName}");
+
+            additional?.Invoke(migrator.Args.Logger);
+
+            migrator.Args.Logger.LogInformation("{Content}", $"Assemblies{(migrator.Args.Assemblies.Count == 0 ? " = none" : ":")}");
+            foreach (var a in migrator.Args.Assemblies)
             {
-                args.Logger.LogInformation("{Content}", $"  {a.FullName}");
+                migrator.Args.Logger.LogInformation("{Content}", $"  {a.FullName}");
             }
         }
 

@@ -12,7 +12,13 @@ _DbEx_ provides database extensions for [DbUp-inspired](#DbUp-inspired) database
 
 ## Status
 
-[![CI](https://github.com/Avanade/DbEx/workflows/CI/badge.svg)](https://github.com/Avanade/DbEx/actions?query=workflow%3ACI) [![NuGet version](https://badge.fury.io/nu/DbEx.svg)](https://badge.fury.io/nu/DbEx)
+The build status is [![CI](https://github.com/Avanade/DbEx/workflows/CI/badge.svg)](https://github.com/Avanade/DbEx/actions?query=workflow%3ACI) with the NuGet package status as follows, including links to the underlying source code and documentation:
+
+Package | Status | Source & documentation
+-|-|-
+`DbEx` | [![NuGet version](https://badge.fury.io/nu/DbEx.svg)](https://badge.fury.io/nu/DbEx) | [Link](./src/DbEx)
+`DbEx.SqlServer` | [![NuGet version](https://badge.fury.io/nu/DbEx.SqlServer.svg)](https://badge.fury.io/nu/DbEx.SqlServer) | [Link](./src/DbEx.SqlServer)
+
 
 The included [change log](CHANGELOG.md) details all key changes per published version.
 
@@ -45,27 +51,31 @@ Currently, the easiest way of generating scripts from an existing database, is t
 
 ### Commands (functions)
 
-The _DbEx_ [`DatabaseMigratorBase`](./src/DbEx/Migration/DatabaseMigratorBase.cs) provides the base database provider agnostic capability, with the [`SqlServerMigrator`](./src/DbEx/Migration/SqlServer/SqlServerMigrator.cs) providing the specific Microsoft SQL Server implementation, that automates the functionality as specified by the [`MigrationCommand`](./src/DbEx/Migration/MigrationCommand.cs). One or more commands can be specified, and they will be executed in the order listed.
+The _DbEx_ [`DatabaseMigrationBase`](./src/DbEx/Migration/DatabaseMigrationBase.cs) provides the base database provider agnostic capability, with the [`SqlServerMigrator`](./src/DbEx.SqlServer/Migration/SqlServerMigration.cs) providing the specific Microsoft SQL Server implementation, that automates the functionality as specified by the [`MigrationCommand`](./src/DbEx/MigrationCommand.cs). One or more commands can be specified, and they will be executed in the order listed.
 
 Command | Description
 -|-
 `Drop` | Drop the existing database (where it already exists).
 `Create` | Create the database (where it does not already exist).
 [`Migrate`](#Migrate) | Being the upgrading of a database overtime using order-based migration scripts; the tool is consistent with the philosophy of [DbUp](https://dbup.readthedocs.io/en/latest/philosophy-behind-dbup/) to enable.
+`CodeGen` | Provides opportunity to integrate a code-generation step where applicable (none by default).
 [`Schema`](#Schema) | There are a number of database schema objects that can be managed outside of the above migrations, that are dropped and (re-)applied to the database using their native `Create` statement.
-`Reset` | Resets the database by deleting all existing data (excludes `dbo` and `cdc` schemas).
+`Reset` | Resets the database by deleting all existing data (exclusions can be configured).
 [`Data`](#Data) | There is data, for example *Reference Data* that needs to be applied to a database. This provides a simpler configuration than specifying the required SQL statements directly (which is also supported). This is _also_ useful for setting up Master and Transaction data for the likes of testing scenarios.
 
 Additional commands available are:
 
 Command | Description
 -|-
-`All` | Performs _all_ the primary commands as follows; `Create`, `Migrate`, `Schema` and `Data`.
+`All` | Performs _all_ the primary commands as follows; `Create`, `Migrate`, `CodeGen`, `Schema` and `Data`.
+`Database` | Performs `Create`, `Migrate`, `CodeGen` and `Data`.
 `Deploy` | Performs `Migrate` and `Schema`.
 `DeployWithData` | Performs `Deploy` and `Data`.
 `DropAndAll` | Performs `Drop` and `All`.
+`DropAndDatabase` | Performs `Drop` and `Database`.
 `ResetAndAll` | Performs `Reset` and `All` (designed primarily for testing).
 `ResetAndData` | Performs `Reset` and `Data` (designed primarily for testing).
+`ResetAndDatabase` | Performs `Reset` and `Database` (designed primarily for testing).
 `Execute` | Executes the SQL statement(s) passed as additional arguments.
 `Script` | Creates a new [`migration`](#Migrate) script file using the defined naming convention.
 
@@ -173,7 +183,7 @@ Demo:
 
 ### Console application
 
-[`DbEx`](./src/DbEx/Console/MigratorConsoleBase.cs) has been optimized so that a new console application can reference and inherit the underlying capabilities.
+[`DbEx`](./src/DbEx/Console/MigrationConsoleBase.cs) has been optimized so that a new console application can reference and inherit the underlying capabilities.
 
 Where executing directly the default command-line options are as follows.
 
@@ -230,17 +240,17 @@ _Tip:_ To ensure all files are included as embedded resources add the following 
 
 To simplify the process for the developer _DbEx_ enables the creation of new migration script files into the `Migrations` folder. This will name the script file correctly and output the basic SQL statements to perform the selected function. The date and time stamp will use [DateTime.UtcNow](https://docs.microsoft.com/en-us/dotnet/api/system.datetime.utcnow) as this should avoid conflicts where being co-developed across time zones. 
 
-This requires the usage of the `Script` command, plus zero or more optional arguments where the first is the sub-command (these are will depend on the script being created). The optional arguments must appear in the order listed; where not specified it will default within the script file.
+This requires the usage of the `Script` command, plus zero or more optional arguments where the first is the sub-command (these are will depend on the script being created). The optional arguments must appear in the order listed; where not specified it will default within the script file. Depending on the database provider not all of the following will be supported.
 
 Sub-command | Argument(s) | Description
 -|-|-
-[N/A](./src/DbEx/Resources/Default_sql.hbs) | N/A | Creates a new empty skeleton script file.
-[`Schema`](./src/DbEx/Resources/Schema_sql.hbs) | `Schema` and `Table` | Creates a new table create script file for the named schema and table.
-[`Create`](./src/DbEx/Resources/Create_sql.hbs) | `Schema` and `Table` | Creates a new table create script file for the named schema and table.
-[`RefData`](./src/DbEx/Resources/RefData_sql.hbs) | `Schema` and `Table` | Creates a new reference data table create script file for the named schema and table.
-[`Alter`](./src/DbEx/Resources/Alter_sql.hbs) | `Schema` and `Table` | Creates a new table alter script file for the named schema and table.
-[`CdcDb`](./src/DbEx/Resources/CdcDb_sql.hbs) | N/A | Creates a new `sys.sp_cdc_enable_db` script file for the database.
-[`Cdc`](./src/DbEx/Resources/Cdc_sql.hbs) | `Schema` and `Table` | Creates a new `sys.sp_cdc_enable_table` script file for the named schema and table.
+[N/A](./src/DbEx.SqlServer/Resources/ScriptDefault_sql.hbs) | N/A | Creates a new empty skeleton script file.
+[`Schema`](./src/DbEx.SqlServer/Resources/ScriptSchema_sql.hbs) | `Schema` and `Table` | Creates a new table create script file for the named schema and table.
+[`Create`](./src/DbEx.SqlServer/Resources/ScriptCreate_sql.hbs) | `Schema` and `Table` | Creates a new table create script file for the named schema and table.
+[`RefData`](./src/DbEx.SqlServer/Resources/ScriptRefData_sql.hbs) | `Schema` and `Table` | Creates a new reference data table create script file for the named schema and table.
+[`Alter`](./src/DbEx.SqlServer/Resources/ScriptAlter_sql.hbs) | `Schema` and `Table` | Creates a new table alter script file for the named schema and table.
+[`CdcDb`](./src/DbEx.SqlServer/Resources/ScriptCdcDb_sql.hbs) | N/A | Creates a new `sys.sp_cdc_enable_db` script file for the database.
+[`Cdc`](./src/DbEx.SqlServer/Resources/ScriptCdc_sql.hbs) | `Schema` and `Table` | Creates a new `sys.sp_cdc_enable_table` script file for the named schema and table.
 
 Examples as follows.
 

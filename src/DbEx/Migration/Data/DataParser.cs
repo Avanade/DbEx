@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
@@ -31,7 +32,7 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Gets the <see cref="DbTableSchema"/> list.
         /// </summary>
-        public List<DbTableSchema> DbTables { get; }
+        public IEnumerable<DbTableSchema> DbTables { get; private set; }
 
         /// <summary>
         /// Gets the <see cref="DataParserArgs"/>.
@@ -42,43 +43,48 @@ namespace DbEx.Migration.Data
         /// Reads and parses the database using the specified YAML <see cref="string"/>.
         /// </summary>
         /// <param name="yaml">The YAML <see cref="string"/>.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns>The resulting <see cref="DataTable"/> list.</returns>
-        public Task<List<DataTable>> ParseYamlAsync(string yaml)
+        public Task<List<DataTable>> ParseYamlAsync(string yaml, CancellationToken cancellationToken = default)
         {
             using var sr = new StringReader(yaml);
-            return ParseYamlAsync(sr);
+            return ParseYamlAsync(sr, cancellationToken);
         }
 
         /// <summary>
         /// Reads and parses the database using the specified YAML <see cref="Stream"/>.
         /// </summary>
         /// <param name="s">The YAML <see cref="Stream"/>.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns>The resulting <see cref="DataTable"/> list.</returns>
-        public Task<List<DataTable>> ParseYamlAsync(Stream s)
+        public Task<List<DataTable>> ParseYamlAsync(Stream s, CancellationToken cancellationToken = default)
         {
             using var sr = new StreamReader(s);
-            return ParseYamlAsync(sr);
+            return ParseYamlAsync(sr, cancellationToken);
         }
 
         /// <summary>
         /// Reads and parses the database using the specified <see cref="TextReader"/>.
         /// </summary>
         /// <param name="tr">The YAML <see cref="TextReader"/>.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns>The resulting <see cref="DataTable"/> list.</returns>
-        public Task<List<DataTable>> ParseYamlAsync(TextReader tr)
+        public Task<List<DataTable>> ParseYamlAsync(TextReader tr, CancellationToken cancellationToken = default)
         {
             var yaml = new DeserializerBuilder().Build().Deserialize(tr)!;
             var json = new SerializerBuilder().JsonCompatible().Build().Serialize(yaml);
-            return ParseJsonAsync(JObject.Parse(json));
+            return ParseJsonAsync(JObject.Parse(json), cancellationToken);
         }
 
         /// <summary>
         /// Reads and parses the database using the specified <see cref="JObject"/>.
         /// </summary>
-        /// <param name="json">The <see cref="JObject"/>.</param>
-        /// <returns>The resulting <see cref="DataTable"/> list.</returns>
-        private async Task<List<DataTable>> ParseJsonAsync(JObject json)
+        private async Task<List<DataTable>> ParseJsonAsync(JObject json, CancellationToken cancellationToken)
         {
+            // Further update/manipulate the schema.
+            if (Args.DbSchemaUpdaterAsync != null)
+                DbTables = await Args.DbSchemaUpdaterAsync(DbTables, cancellationToken).ConfigureAwait(false);
+
             // Parse table/row/column data.
             var tables = new List<DataTable>();
 
@@ -121,7 +127,7 @@ namespace DbEx.Migration.Data
                                     if (sdt.IsRefData && jro.Children().Count() == 1)
                                     {
                                         row.AddColumn(Args.RefDataCodeColumnName, GetColumnValue(jr.Name));
-                                        row.AddColumn("Text", GetColumnValue(jr.Value));
+                                        row.AddColumn(Args.RefDataTextColumnName, GetColumnValue(jr.Value));
                                     }
                                     else
                                         row.AddColumn(jr.Name, GetColumnValue(jr.Value));
@@ -133,7 +139,7 @@ namespace DbEx.Migration.Data
 
                         if (sdt.Columns.Count > 0)
                         {
-                            await sdt.PrepareAsync().ConfigureAwait(false);
+                            await sdt.PrepareAsync(cancellationToken).ConfigureAwait(false);
                             tables.Add(sdt);
                         }
                     }

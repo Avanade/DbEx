@@ -1,17 +1,18 @@
-﻿using DbEx.Console;
+﻿using DbEx.SqlServer.Console;
 using System.Threading.Tasks;
 
 namespace DbEx.Test.Console
 {
     public class Program 
     {
-        internal static Task<int> Main(string[] args) => SqlServerMigratorConsole
+        internal static Task<int> Main(string[] args) => SqlServerMigrationConsole
             .Create<Program>("Data Source=.;Initial Catalog=DbEx.Console;Integrated Security=True;TrustServerCertificate=true")
-            .ConsoleArgs(a =>
+            .Configure(c =>
             {
-                a.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
-                a.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
-                a.AddAssembly(typeof(DbEx.Test.OutboxConsole.Program).Assembly);
+                c.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
+                c.Args.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
+                c.Args.AddAssembly(typeof(DbEx.Test.OutboxConsole.Program).Assembly);
+                c.Args.AddSchemaOrder("Test", "Outbox");
             })
             .RunAsync(args);
     }

@@ -4,6 +4,7 @@ using DbEx.DbSchema;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DbEx.Migration.Data
@@ -157,7 +158,7 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Prepares the data.
         /// </summary>
-        internal async Task PrepareAsync()
+        internal async Task PrepareAsync(CancellationToken cancellationToken)
         {
             for (int i = 0; i < Rows.Count; i++)
             {
@@ -184,19 +185,19 @@ namespace DbEx.Migration.Data
                         switch (IdentifierType)
                         {
                             case DataTableIdentifierType.Guid:
-                                await AddColumnWhereNotSpecifiedAsync(row, pkc.Name!, async () => await Args.IdentifierGenerator.GenerateGuidIdentifierAsync().ConfigureAwait(false)).ConfigureAwait(false);
+                                await AddColumnWhereNotSpecifiedAsync(row, pkc.Name!, async () => await Args.IdentifierGenerator.GenerateGuidIdentifierAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                                 break;
 
                             case DataTableIdentifierType.String:
-                                await AddColumnWhereNotSpecifiedAsync(row, pkc.Name!, async () => await Args.IdentifierGenerator.GenerateStringIdentifierAsync().ConfigureAwait(false)).ConfigureAwait(false);
+                                await AddColumnWhereNotSpecifiedAsync(row, pkc.Name!, async () => await Args.IdentifierGenerator.GenerateStringIdentifierAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                                 break;
 
                             case DataTableIdentifierType.Int:
-                                await AddColumnWhereNotSpecifiedAsync(row, pkc.Name!, async () => await Args.IdentifierGenerator.GenerateInt32IdentifierAsync().ConfigureAwait(false)).ConfigureAwait(false);
+                                await AddColumnWhereNotSpecifiedAsync(row, pkc.Name!, async () => await Args.IdentifierGenerator.GenerateInt32IdentifierAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                                 break;
 
                             case DataTableIdentifierType.Long:
-                                await AddColumnWhereNotSpecifiedAsync (row, pkc.Name!, async () => await Args.IdentifierGenerator.GenerateInt64IdentifierAsync().ConfigureAwait(false)).ConfigureAwait(false);
+                                await AddColumnWhereNotSpecifiedAsync (row, pkc.Name!, async () => await Args.IdentifierGenerator.GenerateInt64IdentifierAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                                 break;
                         }
                     }

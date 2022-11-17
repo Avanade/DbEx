@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\DbEx.SqlServer\DbEx.SqlServer.csproj" />
     <ProjectReference Include="..\..\src\DbEx\DbEx.csproj" />
     <ProjectReference Include="..\DbEx.Test.Console\DbEx.Test.Console.csproj" />
     <ProjectReference Include="..\DbEx.Test.Empty\DbEx.Test.Empty.csproj" />

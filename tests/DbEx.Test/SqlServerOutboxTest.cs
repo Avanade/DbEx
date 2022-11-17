@@ -1,7 +1,7 @@
-﻿using CoreEx.Database;
-using CoreEx.Database.SqlServer;
+﻿using CoreEx.Database.SqlServer;
 using CoreEx.Events;
-using DbEx.Migration.SqlServer;
+using DbEx.Migration;
+using DbEx.SqlServer.Migration;
 using DbEx.Test.OutboxConsole.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -22,9 +22,10 @@ namespace DbEx.Test
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerOutboxTest>();
-            var m = new SqlServerMigrator(cs, Migration.MigrationCommand.DropAndAll, l, typeof(Console.Program).Assembly, typeof(DbEx.Test.OutboxConsole.Program).Assembly);
-            m.ParserArgs.Parameters.Add("DefaultName", "Bazza");
-            m.ParserArgs.RefDataColumnDefaults.Add("SortOrder", i => 1);
+            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Console.Program), typeof(DbEx.Test.OutboxConsole.Program));
+            var m = new SqlServerMigration(a);
+            m.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
+            m.Args.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => 1);
             await m.MigrateAsync().ConfigureAwait(false);
         }
 
@@ -236,7 +237,7 @@ namespace DbEx.Test
         public async Task B120_EnqueueDequeue_PrimarySender_EventSendException()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
-            var l = UnitTest.GetLogger<SqlServerMigratorTest>();
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
 
             using var db = new SqlServerDatabase(() => new SqlConnection(cs));
             await db.SqlStatement("DELETE FROM [Outbox].[EventOutbox]").NonQueryAsync().ConfigureAwait(false);

@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using DbEx.Migration;
 using McMaster.Extensions.CommandLineUtils;
 using McMaster.Extensions.CommandLineUtils.Validation;
 using System;
@@ -16,13 +17,13 @@ namespace DbEx.Console
     /// </summary>
     public class AssemblyValidator : IOptionValidator
     {
-        private readonly MigratorConsoleArgs _args;
+        private readonly MigrationArgsBase _args;
 
         /// <summary>
         /// Initilizes a new instance of the <see cref="AssemblyValidator"/> class.
         /// </summary>
-        /// <param name="args">The <see cref="MigratorConsoleArgs"/> to update.</param>
-        public AssemblyValidator(MigratorConsoleArgs args) => _args = args ?? throw new ArgumentNullException(nameof(args));
+        /// <param name="args">The <see cref="MigrationArgs"/> to update.</param>
+        public AssemblyValidator(MigrationArgsBase args) => _args = args ?? throw new ArgumentNullException(nameof(args));
 
         /// <summary>
         /// Performs the validation.
