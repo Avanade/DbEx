@@ -2,7 +2,6 @@
 
 using System;
 using System.Diagnostics;
-using System.Text;
 
 namespace DbEx.DbSchema
 {
@@ -12,6 +11,9 @@ namespace DbEx.DbSchema
     [DebuggerDisplay("{Name} {SqlType} ({DotNetType})")]
     public class DbColumnSchema
     {
+        private string? _dotNetType;
+        private string? _sqlType;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DbColumnSchema"/> class.
         /// </summary>
@@ -48,17 +50,17 @@ namespace DbEx.DbSchema
         /// <summary>
         /// Gets or sets the length.
         /// </summary>
-        public int? Length { get; set; }
+        public ulong? Length { get; set; }
 
         /// <summary>
         /// Gets or sets the precision.
         /// </summary>
-        public int? Precision { get; set; }
+        public ulong? Precision { get; set; }
 
         /// <summary>
         /// Gets or sets the scale.
         /// </summary>
-        public int? Scale { get; set; }
+        public ulong? Scale { get; set; }
 
         /// <summary>
         /// Indicates whether the column is an auto-incremented identity (either Identity or Defaulted).
@@ -121,34 +123,27 @@ namespace DbEx.DbSchema
         public bool IsForeignRefData { get; set; }
 
         /// <summary>
+        /// Gets or sets the foreign key reference data column name.
+        /// </summary>
+        public string? ForeignRefDataCodeColumn { get; set; }
+
+        /// <summary>
         /// Gets the corresponding .NET <see cref="System.Type"/> name.
         /// </summary>
-        public string DotNetType => string.IsNullOrEmpty(Type) ? "string" : DbTypeMapper.GetDotNetTypeName(Type);
+        public string DotNetType => _dotNetType ?? throw new InvalidOperationException($"The {nameof(Prepare)} must be invoked before the {nameof(DotNetType)} property can be accessed.");
 
         /// <summary>
         /// Gets the fully defined SQL type.
         /// </summary>
-        public string SqlType
+        public string SqlType => _sqlType ?? throw new InvalidOperationException($"The {nameof(Prepare)} must be invoked before the {nameof(DotNetType)} property can be accessed.");
+
+        /// <summary>
+        /// Prepares the schema by updating the calcuated properties: <see cref="DotNetType"/> and <see cref="SqlType"/>.
+        /// </summary>
+        public void Prepare()
         {
-            get
-            {
-                var sb = new StringBuilder(Type!.ToUpperInvariant());
-                if (DbTypeMapper.TypeIsString(Type))
-                    sb.Append(Length.HasValue && Length.Value > 0 ? $"({Length.Value})" : "(MAX)");
-
-                sb.Append(Type.ToUpperInvariant() switch
-                {
-                    "DECIMAL" => $"({Precision}, {Scale})",
-                    "NUMERIC" => $"({Precision}, {Scale})",
-                    "TIME" => Scale.HasValue && Scale.Value > 0 ? $"({Scale})" : string.Empty,
-                    _ => string.Empty
-                });
-
-                if (IsNullable)
-                    sb.Append(" NULL");
-
-                return sb.ToString();
-            }
+            _dotNetType = DbTable.Config.GetDotNetTypeName(Type);
+            _sqlType = DbTable.Config.GetFormattedSqlType(this);
         }
 
         /// <summary>
@@ -183,6 +178,8 @@ namespace DbEx.DbSchema
             ForeignSchema = column.ForeignSchema;
             ForeignColumn = column.ForeignColumn;
             IsForeignRefData = column.IsForeignRefData;
+            ForeignRefDataCodeColumn = column.ForeignRefDataCodeColumn;
+            Prepare();
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using DbEx.DbSchema;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,11 +50,11 @@ namespace DbEx.Migration.Data
             if (col == null)
             {
                 // Check and see if it is a reference data id.
-                col = Table.DbTable.Columns.Where(c => c.Name == column.Name + "Id").SingleOrDefault();
+                col = Table.DbTable.Columns.Where(c => c.Name == column.Name + (Table.Parser.Args.IdColumnNameSuffix ?? Table.Parser.DatabaseSchemaConfig.IdColumnNameSuffix)).SingleOrDefault();
                 if (col == null || !col.IsForeignRefData)
-                    throw new DataParserException($"Table '{Table.Schema}.{Table.Name}' does not have a column named '{column.Name}' or '{column.Name}Id'; or was not identified as a foreign key to Reference Data.");
+                    throw new DataParserException($"Table {Table.SchemaTableName} does not have a column named '{column.Name}' or '{column.Name}{Table.Parser.Args.IdColumnNameSuffix ?? Table.Parser.DatabaseSchemaConfig.IdColumnNameSuffix}'; or was not identified as a foreign key to Reference Data.");
 
-                column.Name += "Id";
+                column.Name += Table.Parser.Args.IdColumnNameSuffix ?? Table.Parser.DatabaseSchemaConfig.IdColumnNameSuffix;
             }
 
             if (Columns.Any(x => x.Name == column.Name))
@@ -72,7 +71,7 @@ namespace DbEx.Migration.Data
             {
                 str = column.Value is DateTime time ? time.ToString(Table.Parser.Args.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture) : column.Value.ToString()!;
 
-                switch (DbTypeMapper.GetDotNetTypeName(col.Type))
+                switch (col.DotNetType)
                 {
                     case "string": column.Value = str; break;
                     case "decimal": column.Value = decimal.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;

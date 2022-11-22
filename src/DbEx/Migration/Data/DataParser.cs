@@ -21,13 +21,20 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Initializes a new instance of the <see cref="DataParser"/> class.
         /// </summary>
+        /// <param name="databaseSchemaConfig">The <see cref="DbDatabaseSchemaConfig"/>.</param>
         /// <param name="dbTables">The <see cref="DbTableSchema"/> list.</param>
         /// <param name="args">The optional <see cref="DataParserArgs"/> (will use defaults where not specified).</param>
-        public DataParser(List<DbTableSchema> dbTables, DataParserArgs? args = null)
+        public DataParser(DbDatabaseSchemaConfig databaseSchemaConfig, List<DbTableSchema> dbTables, DataParserArgs? args = null)
         {
+            DatabaseSchemaConfig = databaseSchemaConfig ?? throw new ArgumentNullException(nameof(databaseSchemaConfig));
             DbTables = dbTables ?? throw new ArgumentNullException(nameof(dbTables));
             Args = args ?? new DataParserArgs();
         }
+
+        /// <summary>
+        /// Gets the <see cref="DbDatabaseSchemaConfig"/>.
+        /// </summary>
+        public DbDatabaseSchemaConfig DatabaseSchemaConfig { get; }
 
         /// <summary>
         /// Gets the <see cref="DbTableSchema"/> list.
@@ -96,7 +103,7 @@ namespace DbEx.Migration.Data
                 {
                     foreach (var jt in jto.Children<JProperty>())
                     {
-                        var sdt = new DataTable(this, js.Name, jt.Name);
+                        var sdt = new DataTable(this, DatabaseSchemaConfig.SupportsSchema ? js.Name : string.Empty, jt.Name);
                         if (tables.Any(t => t.Schema == sdt.Schema && t.Name == sdt.Name))
                             throw new DataParserException($"Table '{sdt.Schema}.{sdt.Name}' has been specified more than once.");
 
@@ -111,7 +118,7 @@ namespace DbEx.Migration.Data
                                 {
                                     foreach (var jc in jro.Children<JProperty>())
                                     {
-                                        var col = sdt.IsRefData ? Args.RefDataCodeColumnName : sdt.DbTable.Columns.Where(x => x.IsPrimaryKey).Select(x => x.Name).SingleOrDefault();
+                                        var col = sdt.IsRefData ? (Args.RefDataCodeColumnName ?? DatabaseSchemaConfig.RefDataCodeColumnName) : sdt.DbTable.Columns.Where(x => x.IsPrimaryKey).Select(x => x.Name).SingleOrDefault();
                                         if (!string.IsNullOrEmpty(col))
                                         {
                                             row.AddColumn(col, GetColumnValue(jc.Name));
@@ -126,8 +133,8 @@ namespace DbEx.Migration.Data
                                 {
                                     if (sdt.IsRefData && jro.Children().Count() == 1)
                                     {
-                                        row.AddColumn(Args.RefDataCodeColumnName, GetColumnValue(jr.Name));
-                                        row.AddColumn(Args.RefDataTextColumnName, GetColumnValue(jr.Value));
+                                        row.AddColumn(Args.RefDataCodeColumnName ?? DatabaseSchemaConfig.RefDataCodeColumnName, GetColumnValue(jr.Name));
+                                        row.AddColumn(Args.RefDataTextColumnName ?? DatabaseSchemaConfig.RefDataTextColumnName, GetColumnValue(jr.Value));
                                     }
                                     else
                                         row.AddColumn(jr.Name, GetColumnValue(jr.Value));

@@ -39,14 +39,22 @@ namespace DbEx.DbSchema
         /// <summary>
         /// Initializes a new instance of the <see cref="DbTableSchema"/> class.
         /// </summary>
-        /// <param name="schema">The schema.</param>
+        /// <param name="config">The database schema configuration.</param>
+        /// <param name="schema">The schema name.</param>
         /// <param name="name">The table name.</param>
-        public DbTableSchema(string schema, string name)
+        public DbTableSchema(DbDatabaseSchemaConfig config, string schema, string name)
         {
-            Schema = schema ?? throw new ArgumentNullException(nameof(schema));
+            Config = config ?? throw new ArgumentNullException(nameof(config));
+            Schema = config.SupportsSchema ? (schema ?? throw new ArgumentNullException(nameof(schema))) : string.Empty;
             Name = name ?? throw new ArgumentNullException(nameof(name));
+            QualifiedName = config.GetFullyQualifiedTableName(schema, name);
             Alias = CreateAlias(Name);
         }
+
+        /// <summary>
+        /// Gets the <see cref="DbDatabaseSchemaConfig"/>.
+        /// </summary>
+        public DbDatabaseSchemaConfig Config { get; }
 
         /// <summary>
         /// Gets the table name.
@@ -54,7 +62,7 @@ namespace DbEx.DbSchema
         public string Name { get; }
 
         /// <summary>
-        /// Gets the schema.
+        /// Gets the schema name.
         /// </summary>
         public string Schema { get; }
 
@@ -64,9 +72,9 @@ namespace DbEx.DbSchema
         public string? Alias { get; set; }
 
         /// <summary>
-        /// Gets the fully qualified name '<c>[schema].[table]</c>' name.
+        /// Gets the fully qualified name for the database.
         /// </summary>
-        public string? QualifiedName => $"[{Schema}].[{Name}]";
+        public string? QualifiedName { get; }
 
         /// <summary>
         /// Indicates whether the Table is actually a View.

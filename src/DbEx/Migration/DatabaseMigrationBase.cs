@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 using CoreEx.Database;
+using DbEx.DbSchema;
 using DbEx.Migration.Data;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -70,6 +71,11 @@ namespace DbEx.Migration
         /// </summary>
         /// <remarks>Returns the <see cref="Database"/> by default (unless specifically overridden).</remarks>
         public virtual IDatabase MasterDatabase => Database;
+
+        /// <summary>
+        /// Gets the <see cref="DbDatabaseSchemaConfig"/>.
+        /// </summary>
+        public abstract DbDatabaseSchemaConfig DatabaseSchemaConfig { get; }
 
         /// <summary>
         /// Gets the <see cref="IDatabaseJournal"/>.
@@ -353,6 +359,19 @@ namespace DbEx.Migration
         protected abstract Task ExecuteScriptAsync(DatabaseMigrationScript script, CancellationToken cancellationToken);
 
         /// <summary>
+        /// Determines whether the database exists; used by the <see cref="MigrationCommand.Drop"/> and <see cref="MigrationCommand.Create"/> commands.
+        /// </summary>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+        /// <returns><c>true</c> indicates that the database exists; otherwise, <c>false</c>.</returns>
+        /// <remarks>The <c>@DatabaseName</c> literal within the resulting (embedded resource) command is replaced by the <see cref="DatabaseName"/> using a <see cref="string.Replace(string, string)"/> (i.e. not database parameterized as not all databases support).</remarks>
+        protected virtual async Task<bool> DatabaseExistsAsync(CancellationToken cancellationToken = default)
+        {
+            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseExists.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
+            var name = await MasterDatabase.SqlStatement(sr.ReadToEnd().Replace("{{DatabaseName}}", DatabaseName)).ScalarAsync<string?>(cancellationToken);
+            return name != null;
+        }
+
+        /// <summary>
         /// Performs the <see cref="MigrationCommand.Drop"/> command.
         /// </summary>
         /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
@@ -363,10 +382,17 @@ namespace DbEx.Migration
         {
             Logger.LogInformation("  Drop database...");
 
-            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseDrop.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
-            var message = await MasterDatabase.SqlStatement(sr.ReadToEnd().Replace("@DatabaseName", DatabaseName)).ScalarAsync<string>(cancellationToken);
+            var exists = await DatabaseExistsAsync(cancellationToken).ConfigureAwait(false);
+            if (!exists)
+            {
+                Logger.LogInformation("    {Content}", $"Database '{DatabaseName}' does not exist and therefore not dropped.");
+                return true;
+            }
 
-            Logger.LogInformation("    {Content}", message);
+            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseDrop.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
+            await MasterDatabase.SqlStatement(sr.ReadToEnd().Replace("{{DatabaseName}}", DatabaseName)).NonQueryAsync(cancellationToken);
+
+            Logger.LogInformation("    {Content}", $"Database '{DatabaseName}' dropped.");
             return true;
         }
 
@@ -381,10 +407,17 @@ namespace DbEx.Migration
         {
             Logger.LogInformation("  Create database...");
 
-            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseCreate.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
-            var message = await MasterDatabase.SqlStatement(sr.ReadToEnd().Replace("@DatabaseName", DatabaseName)).ScalarAsync<string>(cancellationToken);
+            var exists = await DatabaseExistsAsync(cancellationToken).ConfigureAwait(false);
+            if (exists)
+            {
+                Logger.LogInformation("    {Content}", $"Database '{DatabaseName}' already exists and therefore not created.");
+                return true;
+            }
 
-            Logger.LogInformation("    {Content}", message);
+            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseCreate.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
+            await MasterDatabase.SqlStatement(sr.ReadToEnd().Replace("{{DatabaseName}}", DatabaseName)).NonQueryAsync(cancellationToken);
+
+            Logger.LogInformation("    {Content}", $"Database '{DatabaseName}' did not exist and was created.");
             return true;
         }
 
@@ -581,7 +614,7 @@ namespace DbEx.Migration
         {
             Logger.LogInformation("  Querying database to infer table(s) schema...");
 
-            var tables = await Database.SelectSchemaAsync(null, cancellationToken).ConfigureAwait(false);
+            var tables = await Database.SelectSchemaAsync(DatabaseSchemaConfig, Args.DataParserArgs, cancellationToken).ConfigureAwait(false);
             var query = tables.Where(DataResetFilterPredicate);
             if (Args.DataResetFilterPredicate != null)
                 query = query.Where(Args.DataResetFilterPredicate);
@@ -645,10 +678,10 @@ namespace DbEx.Migration
 
             // Infer database schema.
             Logger.LogInformation("  Querying database to infer table(s)/column(s) schema...");
-            var dbTables = await Database.SelectSchemaAsync(Args.DataParserArgs.CreateRefDataPredicate(), cancellationToken).ConfigureAwait(false);
+            var dbTables = await Database.SelectSchemaAsync(DatabaseSchemaConfig, Args.DataParserArgs, cancellationToken).ConfigureAwait(false);
 
             // Iterate through each resource - parse the data, then insert/merge as requested.
-            var parser = new DataParser(dbTables, Args.DataParserArgs);
+            var parser = new DataParser(DatabaseSchemaConfig, dbTables, Args.DataParserArgs);
             foreach (var item in list)
             {
                 using var sr = new StreamReader(item.Assembly.GetManifestResourceStream(item.ResourceName)!);
@@ -671,7 +704,7 @@ namespace DbEx.Migration
                         Logger.LogInformation("{Content}", string.Empty);
                         Logger.LogInformation("{Content}", $"** Parsing and executing: {item.ResourceName}");
 
-                        var tables = await parser.ParseYamlAsync(sr);
+                        var tables = await parser.ParseYamlAsync(sr, cancellationToken).ConfigureAwait(false);
 
                         if (!await DatabaseDataAsync(tables, cancellationToken).ConfigureAwait(false))
                             return false;
@@ -707,12 +740,12 @@ namespace DbEx.Migration
             foreach (var table in dataTables)
             {
                 Logger.LogInformation("");
-                Logger.LogInformation("{Content}", $"---- Executing {table.Schema}.{table.Name} SQL:");
+                Logger.LogInformation("{Content}", $"---- Executing {table.Schema}{(table.Schema == string.Empty ? "" : ".")}{table.Name} SQL:");
 
                 var sql = _dataCodeGen.Generate(table);
                 Logger.LogInformation("{Content}", sql);
 
-                var rows = await Database.SqlStatement(sql).ScalarAsync<int>(cancellationToken).ConfigureAwait(false);
+                var rows = await Database.SqlStatement(sql).ScalarAsync<object>(cancellationToken).ConfigureAwait(false);
                 Logger.LogInformation("{Content}", $"Result: {rows} rows affected.");
             }
 

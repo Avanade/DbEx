@@ -39,9 +39,11 @@ namespace DbEx.Migration.Data
                 name = name[1..];
             }
 
-            DbTable = Parser.DbTables.Where(t => t.Schema == schema && t.Name == name).SingleOrDefault();
+            SchemaTableName = $"'{(schema == string.Empty ? name : $"{schema}.{name}")}'";
+
+            DbTable = Parser.DbTables.Where(t => (!Parser.DatabaseSchemaConfig.SupportsSchema || t.Schema == schema) && t.Name == name).SingleOrDefault();
             if (DbTable == null)
-                throw new DataParserException($"Table '{schema}.{name}' does not exist within the specified database.");
+                throw new DataParserException($"Table {SchemaTableName} does not exist within the specified database.");
 
             // Check that an identifier generator can be used.
             if (UseIdentifierGenerator)
@@ -49,7 +51,7 @@ namespace DbEx.Migration.Data
                 if (DbTable.PrimaryKeyColumns.Count == 1 && Enum.TryParse<DataTableIdentifierType>(DbTable.PrimaryKeyColumns[0].DotNetType, true, out var igType))
                     IdentifierType = igType;
                 else
-                    throw new DataParserException($"Table '{schema}.{name}' specifies usage of {nameof(IIdentifierGenerator)}; either there is more than one column representing the primary key or the underlying type is not supported.");
+                    throw new DataParserException($"Table {SchemaTableName} specifies usage of {nameof(IIdentifierGenerator)}; either there is more than one column representing the primary key or the underlying type is not supported.");
             }
         }
 
@@ -72,6 +74,11 @@ namespace DbEx.Migration.Data
         /// Gets the table name.
         /// </summary>
         public string Name => DbTable.Name;
+
+        /// <summary>
+        /// Gets the full formatted schema and table name.
+        /// </summary>
+        public string SchemaTableName { get; }
 
         /// <summary>
         /// Gets the underlying <see cref="DbTableSchema"/>.
@@ -163,10 +170,10 @@ namespace DbEx.Migration.Data
             for (int i = 0; i < Rows.Count; i++)
             {
                 var row = Rows[i];
-                await AddColumnWhereNotSpecifiedAsync(row, Args.CreatedDateColumnName, () => Task.FromResult<object?>(Args.DateTimeNow)).ConfigureAwait(false);
-                await AddColumnWhereNotSpecifiedAsync(row, Args.CreatedByColumnName, () => Task.FromResult<object?>(Args.UserName)).ConfigureAwait(false);
-                await AddColumnWhereNotSpecifiedAsync(row, Args.UpdatedDateColumnName, () => Task.FromResult<object?>(Args.DateTimeNow)).ConfigureAwait(false);
-                await AddColumnWhereNotSpecifiedAsync(row, Args.UpdatedByColumnName, () => Task.FromResult<object?>(Args.UserName)).ConfigureAwait(false);
+                await AddColumnWhereNotSpecifiedAsync(row, Args.CreatedDateColumnName ?? Parser.DatabaseSchemaConfig.CreatedDateColumnName, () => Task.FromResult<object?>(Args.DateTimeNow)).ConfigureAwait(false);
+                await AddColumnWhereNotSpecifiedAsync(row, Args.CreatedByColumnName ?? Parser.DatabaseSchemaConfig.CreatedByColumnName, () => Task.FromResult<object?>(Args.UserName)).ConfigureAwait(false);
+                await AddColumnWhereNotSpecifiedAsync(row, Args.UpdatedDateColumnName ?? Parser.DatabaseSchemaConfig.UpdatedDateColumnName, () => Task.FromResult<object?>(Args.DateTimeNow)).ConfigureAwait(false);
+                await AddColumnWhereNotSpecifiedAsync(row, Args.UpdatedByColumnName ?? Parser.DatabaseSchemaConfig.UpdatedByColumnName, () => Task.FromResult<object?>(Args.UserName)).ConfigureAwait(false);
 
                 if (IsRefData && Args.RefDataColumnDefaults != null)
                 {

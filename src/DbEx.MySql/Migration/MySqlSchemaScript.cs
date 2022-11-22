@@ -1,28 +1,28 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 using DbEx.Migration;
-using DbUp.SqlServer;
+using DbUp.MySql;
 using DbUp.Support;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace DbEx.SqlServer.Migration
+namespace DbEx.MySql.Migration
 {
     /// <summary>
-    /// Provides the SQL Server database schema script functionality.
+    /// Provides the MySQL database schema script functionality.
     /// </summary>
-    public class SqlServerSchemaScript : DatabaseSchemaScriptBase
+    public class MySqlSchemaScript : DatabaseSchemaScriptBase
     {
         /// <summary>
-        /// Creates the <see cref="SqlServerSchemaScript"/> from the <see cref="DatabaseMigrationScript"/>.
+        /// Creates the <see cref="MySqlSchemaScript"/> from the <see cref="DatabaseMigrationScript"/>.
         /// </summary>
         /// <param name="migrationScript">The <see cref="DatabaseMigrationScript"/>.</param>
-        /// <returns>The <see cref="SqlServerSchemaScript"/>.</returns>
-        public static SqlServerSchemaScript Create(DatabaseMigrationScript migrationScript)
+        /// <returns>The <see cref="MySqlSchemaScript"/>.</returns>
+        public static MySqlSchemaScript Create(DatabaseMigrationScript migrationScript)
         {
-            var script = new SqlServerSchemaScript(migrationScript);
+            var script = new MySqlSchemaScript(migrationScript);
 
             using var sr = script.MigrationScript.GetStreamReader();
             var sql = sr.ReadToEnd();
@@ -38,18 +38,8 @@ namespace DbEx.SqlServer.Migration
                     script.Type = tokens[i + 1];
                     script.FullyQualifiedName = tokens[i + 2];
 
-                    var parser = new SqlServerObjectParser();
-                    var index = script.FullyQualifiedName.IndexOf('.');
-                    if (index < 0)
-                    {
-                        script.Schema = "dbo";
-                        script.Name = parser.UnquoteIdentifier(script.FullyQualifiedName);
-                    }
-                    else
-                    {
-                        script.Schema = parser.UnquoteIdentifier(script.FullyQualifiedName[..index]);
-                        script.Name = parser.UnquoteIdentifier(script.FullyQualifiedName[(index + 1)..]);
-                    }
+                    var parser = new MySqlObjectParser();
+                    script.Name = parser.UnquoteIdentifier(script.FullyQualifiedName);
 
                     return script;
                 }
@@ -60,16 +50,16 @@ namespace DbEx.SqlServer.Migration
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SqlServerSchemaScript"/> class.
+        /// Initializes a new instance of the <see cref="MySqlSchemaScript"/> class.
         /// </summary>
         /// <param name="migrationScript">The parent <see cref="DatabaseMigrationScript"/>.</param>
-        private SqlServerSchemaScript(DatabaseMigrationScript migrationScript) : base(migrationScript) { }
+        private MySqlSchemaScript(DatabaseMigrationScript migrationScript) : base(migrationScript) { }
 
         /// <inheritdoc/>
-        public override string SqlDropStatement => $"DROP {Type.ToUpperInvariant()} IF EXISTS [{Schema}].[{Name}]";
+        public override string SqlDropStatement => $"DROP {Type.ToUpperInvariant()} IF EXISTS `{Name}`";
 
         /// <inheritdoc/>
-        public override string SqlCreateStatement => $"CREATE {Type.ToUpperInvariant()} [{Schema}].[{Name}]";
+        public override string SqlCreateStatement => $"CREATE {Type.ToUpperInvariant()} `{Name}`";
 
         private class SqlCommandTokenizer : SqlCommandReader
         {

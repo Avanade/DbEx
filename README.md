@@ -17,6 +17,7 @@ The build status is [![CI](https://github.com/Avanade/DbEx/workflows/CI/badge.sv
 Package | Status | Source & documentation
 -|-|-
 `DbEx` | [![NuGet version](https://badge.fury.io/nu/DbEx.svg)](https://badge.fury.io/nu/DbEx) | [Link](./src/DbEx)
+`DbEx.MySql` | [![NuGet version](https://badge.fury.io/nu/DbEx.MySql.svg)](https://badge.fury.io/nu/DbEx.MySql) | [Link](./src/DbEx.MySql)
 `DbEx.SqlServer` | [![NuGet version](https://badge.fury.io/nu/DbEx.SqlServer.svg)](https://badge.fury.io/nu/DbEx.SqlServer) | [Link](./src/DbEx.SqlServer)
 
 
@@ -30,7 +31,7 @@ The included [change log](CHANGELOG.md) details all key changes per published ve
 
 Traditionally, a [Data-tier Application (DAC)](https://docs.microsoft.com/en-us/sql/relational-databases/data-tier-applications/data-tier-applications) is used to provide a logical means to define all of the SQL Server objects - like tables, views, and instance objects, including logins - associated with a database. A DAC is a self-contained unit of SQL Server database deployment that enables data-tier developers and database administrators to package SQL Server objects into a portable artifact called a DAC package, also known as a DACPAC. This is largely specific to Microsoft SQL Server. Alternatively, there are other tools such as [redgate](https://www.red-gate.com/products/sql-development/sql-toolbelt-essentials/) that may be used. DbUp provides a more explicit approach, one that Microsoft similarily adopts with the likes of [EF Migrations](https://docs.microsoft.com/en-us/ef/core/managing-schemas/migrations/).
 
-_DbEx_ provides additional functionality to improve the end-to-end experience of managing database migrations/updates leveraging the concepts of DbUp. _DbEx_ prior to version `1.0.14` leveraged DbUb; however, due to the slow uptake of pull requests by the maintainers of DbUp that was starting to impose limitations on `DbEx` the decision was made to emulate functionality internally to achieve the functionality goals of `DbEx.` The changes are compatible with the underlying [journaling](./src/DbEx/Migration/SqlServer/SqlServerJournal.cs) that DbUp leverages (i.e. simulates the same).
+_DbEx_ provides additional functionality to improve the end-to-end experience of managing database migrations/updates leveraging the concepts of DbUp. _DbEx_ prior to version `1.0.14` exclusively leveraged DbUb; however, due to the slow uptake of some key pull requests by the maintainers of DbUp which was starting to impose limitations on `DbEx`. The decision was made to emulate some functionality internally to achieve the functionality goals of `DbEx.` The changes are compatible with the underlying [journaling](./src/DbEx/Migration/IDatabaseJournal.cs) that DbUp leverages (i.e. simulates the same).
 
 <br/>
 
@@ -51,7 +52,7 @@ Currently, the easiest way of generating scripts from an existing database, is t
 
 ### Commands (functions)
 
-The _DbEx_ [`DatabaseMigrationBase`](./src/DbEx/Migration/DatabaseMigrationBase.cs) provides the base database provider agnostic capability, with the [`SqlServerMigrator`](./src/DbEx.SqlServer/Migration/SqlServerMigration.cs) providing the specific Microsoft SQL Server implementation, that automates the functionality as specified by the [`MigrationCommand`](./src/DbEx/MigrationCommand.cs). One or more commands can be specified, and they will be executed in the order listed.
+The _DbEx_ [`DatabaseMigrationBase`](./src/DbEx/Migration/DatabaseMigrationBase.cs) provides the base database provider agnostic capability, with the likes of the [`SqlServerMigrator`](./src/DbEx.SqlServer/Migration/SqlServerMigration.cs) providing the specific Microsoft SQL Server implementation. This automates the functionality as specified by the [`MigrationCommand`](./src/DbEx/MigrationCommand.cs). One or more commands can be specified, and they will be executed in the order listed.
 
 Command | Description
 -|-

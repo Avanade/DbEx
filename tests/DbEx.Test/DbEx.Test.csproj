@@ -21,11 +21,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\DbEx.MySql\DbEx.MySql.csproj" />
     <ProjectReference Include="..\..\src\DbEx.SqlServer\DbEx.SqlServer.csproj" />
     <ProjectReference Include="..\..\src\DbEx\DbEx.csproj" />
     <ProjectReference Include="..\DbEx.Test.Console\DbEx.Test.Console.csproj" />
     <ProjectReference Include="..\DbEx.Test.Empty\DbEx.Test.Empty.csproj" />
     <ProjectReference Include="..\DbEx.Test.Error\DbEx.Test.Error.csproj" />
+    <ProjectReference Include="..\DbEx.Test.MySqlConsole\DbEx.Test.MySqlConsole.csproj" />
     <ProjectReference Include="..\DbEx.Test.OutboxConsole\DbEx.Test.OutboxConsole.csproj" />
   </ItemGroup>
 
