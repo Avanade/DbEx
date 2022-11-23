@@ -124,5 +124,26 @@ namespace DbEx.DbSchema
         /// <param name="schema">The <see cref="DbColumnSchema"/>.</param>
         /// <returns>The long-form formatted SQL type.</returns>
         public abstract string GetFormattedSqlType(DbColumnSchema schema);
+
+        /// <summary>
+        /// Inidicates whether the <paramref name="dbType"/> is considered an integer.
+        /// </summary>
+        /// <param name="dbType">The database type.</param>
+        /// <returns><c>true</c> indicates it is; otherwise, <c>false</c>.</returns>
+        public abstract bool IsDbTypeInteger(string? dbType);
+
+        /// <summary>
+        /// Inidicates whether the <paramref name="dbType"/> is considered a decimal.
+        /// </summary>
+        /// <param name="dbType">The database type.</param>
+        /// <returns><c>true</c> indicates it is; otherwise, <c>false</c>.</returns>
+        public abstract bool IsDbTypeDecimal(string? dbType);
+
+        /// <summary>
+        /// Inidicates whether the <paramref name="dbType"/> is considered a string.
+        /// </summary>
+        /// <param name="dbType">The database type.</param>
+        /// <returns><c>true</c> indicates it is; otherwise, <c>false</c>.</returns>
+        public abstract bool IsDbTypeString(string? dbType);
     }
 }

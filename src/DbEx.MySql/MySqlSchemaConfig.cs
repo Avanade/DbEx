@@ -131,5 +131,26 @@ namespace DbEx.MySql
 
             return sb.ToString();
         }
+
+        /// <inheritdoc/>
+        public override bool IsDbTypeInteger(string? dbType) => dbType != null && dbType.ToUpperInvariant() switch
+        {
+            "INT" or "BIGINT" or "SMALLINT" or "TINYINT" => true,
+            _ => false
+        };
+
+        /// <inheritdoc/>
+        public override bool IsDbTypeDecimal(string? dbType) => dbType != null && dbType.ToUpperInvariant() switch
+        {
+            "DECIMAL" => true,
+            _ => false
+        };
+
+        /// <inheritdoc/>
+        public override bool IsDbTypeString(string? dbType) => dbType != null && dbType.ToUpperInvariant() switch
+        {
+            "CHAR" or "VARCHAR" or "TINYTEXT" or "TEXT" or "MEDIUMTEXT" or "LONGTEXT" or "SET" or "ENUM" or "NCHAR" or "NVARCHAR" or "JSON" => true,
+            _ => false
+        };
     }
 }

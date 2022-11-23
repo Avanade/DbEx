@@ -84,6 +84,6 @@ namespace DbEx.Migration
         /// <summary>
         /// Replace the placeholders.
         /// </summary>
-        private string ReplacePlacholders(string sql) => string.IsNullOrEmpty(sql) ? sql : sql.Replace("{{JournalSchema}}", Schema).Replace("{{JournalTable}}", Table);
+        private string ReplacePlacholders(string sql) => string.IsNullOrEmpty(sql) ? sql : sql.Replace("{{DatabaseName}}", Migrator.DatabaseName).Replace("{{JournalSchema}}", Schema).Replace("{{JournalTable}}", Table);
     }
 }

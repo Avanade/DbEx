@@ -163,5 +163,26 @@ namespace DbEx.SqlServer
 
             return sb.ToString();
         }
+
+        /// <inheritdoc/>
+        public override bool IsDbTypeInteger(string? dbType) => dbType != null && dbType.ToUpperInvariant() switch
+        {
+            "INT" or "BIGINT" or "SMALLINT" or "TINYINT" => true,
+            _ => false
+        };
+
+        /// <inheritdoc/>
+        public override bool IsDbTypeDecimal(string? dbType) => dbType != null && dbType.ToUpperInvariant() switch
+        {
+            "DECIMAL" or "MONEY" or "NUMERIC" or "SMALLMONEY" => true,
+            _ => false
+        };
+
+        /// <inheritdoc/>
+        public override bool IsDbTypeString(string? dbType) => dbType != null && dbType.ToUpperInvariant() switch
+        {
+            "NCHAR" or "CHAR" or "NVARCHAR" or "VARCHAR" or "TEXT" or "NTEXT" => true,
+            _ => false
+        };
     }
 }
