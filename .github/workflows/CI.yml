@@ -35,7 +35,7 @@ jobs:
       run: docker pull mysql
 
     - name: Start MySQL
-      run: docker run --name db-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=yourStrong(!)Password -d mysql
+      run: docker run --name db-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=yourStrong#!Password -d mysql
       
     - name: Sleep (allow SqlServer and MySQL to complete startup)
       run: sleep 10
@@ -46,7 +46,7 @@ jobs:
         echo "DbEx_ConnectionStrings__ErrorDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Error;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
         echo "DbEx_ConnectionStrings__EmptyDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Empty;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
         echo "DbEx_ConnectionStrings__ConsoleDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Console;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
-        echo "DbEx_ConnectionStrings__MySqlDb=Server=localhost; Port=3306; Database=dbex_test; Uid=root; Pwd=yourStrong(!)Password;" >> $GITHUB_ENV
+        echo "DbEx_ConnectionStrings__MySqlDb=Server=localhost; Port=3306; Database=dbex_test; Uid=root; Pwd=yourStrong#!Password;" >> $GITHUB_ENV
         
     - name: Test
       run: dotnet test --no-build --verbosity normal
