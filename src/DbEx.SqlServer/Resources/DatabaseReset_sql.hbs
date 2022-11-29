@@ -1,12 +1,12 @@
 ﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
 -- Disable all constraints.
 {{#each .}}
-ALTER TABLE [{{Schema}}].[{{Name}}] NOCHECK CONSTRAINT ALL
+ALTER TABLE {{QualifiedName}} NOCHECK CONSTRAINT ALL
 {{/each}}
 
 -- Delete data from all tables.
 {{#each .}}
-DELETE FROM [{{Schema}}].[{{Name}}]
+DELETE FROM {{QualifiedName}}
 {{/each}}
 
 -- Reset identity column (where any).
@@ -20,5 +20,5 @@ DBCC CHECKIDENT ('{{DbTable.Schema}}.{{DbTable.Name}}', RESEED, {{add IdentitySe
 
 -- Re-enable all constraints.
 {{#each .}}
-ALTER TABLE [{{Schema}}].[{{Name}}] CHECK CONSTRAINT ALL
+ALTER TABLE {{QualifiedName}} CHECK CONSTRAINT ALL
 {{/each}}

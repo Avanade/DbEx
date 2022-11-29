@@ -1,0 +1,11 @@
+﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
+{{! FILENAME:alter-[lookup Parameters 'Param1']-table }}
+{{! PARAM:Param1=Name }}
+-- Alter table: `{{lookup Parameters 'Param1'}}`
+
+START TRANSACTION;
+
+ALTER TABLE `{{lookup Parameters 'Param1'}}`
+  ADD `Column` VARCHAR(50) NULL;
+
+COMMIT WORK;

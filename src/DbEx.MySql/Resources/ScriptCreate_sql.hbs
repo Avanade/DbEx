@@ -1,0 +1,21 @@
+﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
+{{! FILENAME:create-[lookup Parameters 'Param1']-table }}
+{{! PARAM:Param1=Name }}
+-- Create table: `{{lookup Parameters 'Param1'}}`
+
+START TRANSACTION;
+
+CREATE TABLE `{{lookup Parameters 'Param1'}}` (
+  `{{lookup Parameters 'Param1'}}_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  -- `code` VARCHAR(50) NULL UNIQUE,
+  -- `text` VARCHAR(250) NULL,
+  -- `bool` BOOL NULL,
+  -- `date` DATE NULL,
+  `row_version` TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `created_by` VARCHAR(250) NULL,
+  `created_date` DATETIME(6) NULL,
+  `updated_by` VARCHAR(250) NULL,
+  `updated_date` DATETIME(6) NULL
+);
+
+COMMIT WORK;

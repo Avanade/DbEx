@@ -1,0 +1,26 @@
+﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
+-- Disable all constraints.
+SET FOREIGN_KEY_CHECKS = 0;
+{{#each .}}
+ALTER TABLE {{QualifiedName}} DISABLE KEYS;
+{{/each}}
+
+-- Delete data from all tables.
+{{#each .}}
+DELETE FROM {{QualifiedName}};
+{{/each}}
+
+-- Reset identity column (where any).
+{{#each .}}
+  {{#each PrimaryKeyColumns}}
+    {{#if IsIdentitySeeded}}
+ALTER TABLE {{DbTable.QualifiedName}} auto_increment = {{add IdentitySeed -1}};
+    {{/if}}
+  {{/each}}
+{{/each}}
+
+-- Re-enable all constraints.
+{{#each .}}
+ALTER TABLE {{QualifiedName}} ENABLE KEYS;
+{{/each}}
+SET FOREIGN_KEY_CHECKS = 1;

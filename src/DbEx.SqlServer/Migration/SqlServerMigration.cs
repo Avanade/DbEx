@@ -75,6 +75,9 @@ namespace DbEx.SqlServer.Migration
         public override IDatabase MasterDatabase => _masterDatabase;
 
         /// <inheritdoc/>
+        public override DatabaseSchemaConfig DatabaseSchemaConfig => new SqlServerSchemaConfig(DatabaseName);
+
+        /// <inheritdoc/>
         protected override DatabaseSchemaScriptBase CreateSchemaScript(DatabaseMigrationScript migrationScript) => SqlServerSchemaScript.Create(migrationScript);
 
         /// <inheritdoc/>

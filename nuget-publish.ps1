@@ -49,6 +49,7 @@ param(
     [string]$NugetCacheFolder = "$($env:USERPROFILE)\.nuget\packages",
     [String[]]$ProjectsToPublish = @(
         "src\DbEx",
+        "src\DbEx.MySql",
         "src\DbEx.SqlServer")
     )
 

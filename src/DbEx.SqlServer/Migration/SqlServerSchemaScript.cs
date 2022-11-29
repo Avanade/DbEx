@@ -114,9 +114,9 @@ namespace DbEx.SqlServer.Migration
                             case CharacterType.SlashStarComment:
                             case CharacterType.DashComment:
                             case CharacterType.CustomStatement:
-                                break;
                             case CharacterType.Delimiter:
                                 break;
+
                             default:
                                 throw new ArgumentOutOfRangeException(nameof(type), type, null);
                         }

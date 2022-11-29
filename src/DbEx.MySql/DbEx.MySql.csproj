@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>DbEx.MySql</RootNamespace>
+    <Product>DbEx</Product>
+    <Title>DbEx MySQL Migration Tool.</Title>
+    <Description>DbEX Database Migration tool for MySQL.</Description>
+    <PackageTags>dbex database dbup db-up mysql sql</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\**\*" />
+    <EmbeddedResource Include="Migrations\**\*" />
+    <EmbeddedResource Include="Data\**\*" />
+    <EmbeddedResource Include="Templates\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\DatabaseCreate.sql" />
+    <None Remove="Resources\DatabaseData_sql.hbs" />
+    <None Remove="Resources\DatabaseDrop.sql" />
+    <None Remove="Resources\DatabaseExists.sql" />
+    <None Remove="Resources\DatabaseReset_sql.hbs" />
+    <None Remove="Resources\JournalAudit.sql" />
+    <None Remove="Resources\JournalCreate.sql" />
+    <None Remove="Resources\JournalExists.sql" />
+    <None Remove="Resources\JournalPrevious.sql" />
+    <None Remove="Resources\ScriptAlter_sql.hbs" />
+    <None Remove="Resources\ScriptCreate_sql.hbs" />
+    <None Remove="Resources\ScriptDefault_sql.hbs" />
+    <None Remove="Resources\ScriptRefData_sql.hbs" />
+    <None Remove="Resources\SelectTableForeignKeys.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CoreEx.Database.MySql" Version="2.0.0" />
+    <PackageReference Include="dbup-mysql" Version="4.6.0" />
+    <PackageReference Include="OnRamp" Version="1.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DbEx\DbEx.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\..\Common.targets" />
+
+</Project>

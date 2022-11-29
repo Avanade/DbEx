@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx.Entities;
+using CoreEx.RefData;
 using DbEx.DbSchema;
 using System;
 using System.Collections.Generic;
@@ -27,46 +29,47 @@ namespace DbEx.Migration.Data
         public DateTime DateTimeNow { get; set; } = DateTime.UtcNow;
 
         /// <summary>
-        /// Gets or sets the name of the <i>CreatedDate</i> column (where it exists).
+        /// Gets or sets the suffix of the identifier column where not fully specified.
         /// </summary>
-        /// <remarks>Defaults to '<c>CreatedDate</c>'.</remarks>
-        public string CreatedDateColumnName { get; set; } = "CreatedDate";
+        /// <remarks>Where matching columns and the specified column is not found, then the suffix will be appended to the specified column name and an additional match will be performed.
+        /// <para>Defaults to <see cref="DatabaseSchemaConfig.IdColumnNameSuffix"/> where not specified (i.e. <c>null</c>).</para></remarks>
+        public string? IdColumnNameSuffix { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the <i>CreatedBy</i> column (where it exists).
+        /// Gets or sets the name of the <see cref="IChangeLogAudit.CreatedDate"/> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to '<c>CreatedBy</c>'.</remarks>
-        public string CreatedByColumnName { get; set; } = "CreatedBy";
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.CreatedDateColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        public string? CreatedDateColumnName { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the <i>UpdatedDate</i> column (where it exists).
+        /// Gets or sets the name of the <see cref="IChangeLogAudit.CreatedBy"/> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to '<c>UpdatedDate</c>'.</remarks>
-        public string UpdatedDateColumnName { get; set; } = "UpdatedDate";
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.CreatedByColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        public string? CreatedByColumnName { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the <i>UpdatedBy</i> column (where it exists).
+        /// Gets or sets the name of the <see cref="IChangeLogAudit.UpdatedDate"/> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to '<c>UpdatedBy</c>'.</remarks>
-        public string UpdatedByColumnName { get; set; } = "UpdatedBy";
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.UpdatedDateColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        public string? UpdatedDateColumnName { get; set; }
 
         /// <summary>
-        /// Gets or sets the reference data <i>Code</i> column (where it is supported).
+        /// Gets or sets the name of the <see cref="IChangeLogAudit.UpdatedBy"/> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to '<c>Code</c>'.</remarks>
-        public string RefDataCodeColumnName { get; set; } = "Code";
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.UpdatedByColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        public string? UpdatedByColumnName { get; set; }
 
         /// <summary>
-        /// Gets or sets the reference data <i>Text</i> column (where it is supported).
+        /// Gets or sets the name of the <see cref="IReferenceData.Code"/> column.
         /// </summary>
-        /// <remarks>Defaults to '<c>Text</c>'.</remarks>
-        public string RefDataTextColumnName { get; set; } = "Text";
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.RefDataCodeColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        public string? RefDataCodeColumnName { get; set; }
 
         /// <summary>
-        /// Gets or sets the reference data alternate schema name; used where attempting to infer reference data relationship after using same schema as the first option.
+        /// Gets or sets the name of the <see cref="IReferenceData.Text"/> column.
         /// </summary>
-        /// <remarks>Defaults to '<c>Ref</c>'.</remarks>
-        public string? RefDataAlternateSchema { get; set; } = "Ref";
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.RefDataTextColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        public string? RefDataTextColumnName { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="IIdentifierGenerator"/>.
@@ -92,17 +95,9 @@ namespace DbEx.Migration.Data
         public Dictionary<string, object?> Parameters { get; } = new Dictionary<string, object?>();
 
         /// <summary>
-        /// Creates a predicate that uses the <see cref="RefDataCodeColumnName"/> and <see cref="RefDataTextColumnName"/> as the means to identify tables as being <see cref="DbTableSchema.IsRefData"/>.
-        /// </summary>
-        /// <returns>The predicate.</returns>
-        /// <remarks>Both the <see cref="RefDataCodeColumnName"/> and <see cref="RefDataTextColumnName"/> must exist, must not be <see cref="DbColumnSchema.IsPrimaryKey"/>, and have a corresponding <see cref="DbColumnSchema.DotNetType"/> of '<c>string</c>'.</remarks>
-        public Func<DbTableSchema, bool>? CreateRefDataPredicate()
-            => t => t.Columns.Any(c => c.Name == RefDataCodeColumnName && !c.IsPrimaryKey && c.DotNetType == "string") && t.Columns.Any(c => c.Name == RefDataTextColumnName && !c.IsPrimaryKey && c.DotNetType == "string");
-
-        /// <summary>
         /// Gets or sets the <see cref="DbTableSchema"/> updater.
         /// </summary>
-        /// <remarks>This is invoked offering an opportunity to further update (manipulate) the <see cref="DbTableSchema"/> selected from the database using the <see cref="DatabaseExtensions.SelectSchemaAsync(CoreEx.Database.IDatabase, Func{DbTableSchema, bool}?, System.Threading.CancellationToken)"/>.</remarks>
+        /// <remarks>This is invoked offering an opportunity to further update (manipulate) the <see cref="DbTableSchema"/> selected from the database using the <see cref="DatabaseExtensions.SelectSchemaAsync"/>.</remarks>
         public Func<IEnumerable<DbTableSchema>, CancellationToken, Task<IEnumerable<DbTableSchema>>>? DbSchemaUpdaterAsync { get; set; }
 
         /// <summary>

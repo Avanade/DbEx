@@ -45,8 +45,8 @@ namespace DbEx.Migration
                 return;
 
             using var sr = StreamLocator.GetResourcesStreamReader($"JournalExists.sql", Migrator.ArtefactResourceAssemblies.ToArray()).StreamReader!;
-            var exists = await Migrator.Database.SqlStatement(ReplacePlacholders(sr.ReadToEnd())).ScalarAsync<int?>(cancellationToken).ConfigureAwait(false);
-            if (exists.HasValue && exists.Value == 1)
+            var exists = await Migrator.Database.SqlStatement(ReplacePlacholders(sr.ReadToEnd())).ScalarAsync<object?>(cancellationToken).ConfigureAwait(false);
+            if (exists != null)
             {
                 _journalExists = true;
                 return;
@@ -84,6 +84,6 @@ namespace DbEx.Migration
         /// <summary>
         /// Replace the placeholders.
         /// </summary>
-        private string ReplacePlacholders(string sql) => string.IsNullOrEmpty(sql) ? sql : sql.Replace("{{JournalSchema}}", Schema).Replace("{{JournalTable}}", Table);
+        private string ReplacePlacholders(string sql) => string.IsNullOrEmpty(sql) ? sql : sql.Replace("{{DatabaseName}}", Migrator.DatabaseName).Replace("{{JournalSchema}}", Schema).Replace("{{JournalTable}}", Table);
     }
 }
