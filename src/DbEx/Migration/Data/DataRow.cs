@@ -58,7 +58,7 @@ namespace DbEx.Migration.Data
             }
 
             if (Columns.Any(x => x.Name == column.Name))
-                throw new DataParserException($"Table '{Table.Schema}.{Table.Name}' column '{column.Name}' has been specified more than once.");
+                throw new DataParserException($"Table {Table.SchemaTableName} column '{column.Name}' has been specified more than once.");
 
             column.DbColumn = col;
             Columns.Add(column);
@@ -93,7 +93,7 @@ namespace DbEx.Migration.Data
                             column.UseForeignKeyQueryForId = true;
                         }
                         else
-                            throw new DataParserException($"Table '{Table.Schema}.{Table.Name}' column '{column.Name}' value '{str}' is not of Type '{typeof(int).Name}' or column is not a reference data foreign key.");
+                            throw new DataParserException($"Table {Table.SchemaTableName} column '{column.Name}' value '{str}' is not of Type '{typeof(int).Name}' or column is not a reference data foreign key.");
 
                         break;
 
@@ -106,7 +106,7 @@ namespace DbEx.Migration.Data
                             column.UseForeignKeyQueryForId = true;
                         }
                         else
-                            throw new DataParserException($"Table '{Table.Schema}.{Table.Name}' column '{column.Name}' value '{str}' is not of Type '{typeof(long).Name}' or column is not a reference data foreign key.");
+                            throw new DataParserException($"Table {Table.SchemaTableName} column '{column.Name}' value '{str}' is not of Type '{typeof(long).Name}' or column is not a reference data foreign key.");
 
                         break;
 
@@ -123,13 +123,13 @@ namespace DbEx.Migration.Data
                                 column.UseForeignKeyQueryForId = true;
                             }
                             else
-                                throw new DataParserException($"Table '{Table.Schema}.{Table.Name}' column '{column.Name}' value '{str}' is not of Type '{typeof(Guid).Name}' or column is not a reference data foreign key.");
+                                throw new DataParserException($"Table {Table.SchemaTableName} column '{column.Name}' value '{str}' is not of Type '{typeof(Guid).Name}' or column is not a reference data foreign key.");
                         }
 
                         break;
 
                     default:
-                        throw new DataParserException($"Table '{Table.Schema}.{Table.Name}' column '{column.Name}' type '{col.Type}' is not supported.");
+                        throw new DataParserException($"Table {Table.SchemaTableName} column '{column.Name}' type '{col.Type}' is not supported.");
                 }
             }
             catch (FormatException fex)
@@ -140,7 +140,7 @@ namespace DbEx.Migration.Data
                     column.UseForeignKeyQueryForId = true;
                 }
                 else
-                    throw new DataParserException($"'{Table.Schema}.{Table.Name}' column '{column.Name}' type '{col.Type}' cannot parse value '{column.Value}': {fex.Message}");
+                    throw new DataParserException($"{Table.SchemaTableName} column '{column.Name}' type '{col.Type}' cannot parse value '{column.Value}': {fex.Message}");
             }
         }
     }

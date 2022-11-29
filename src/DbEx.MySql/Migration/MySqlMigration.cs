@@ -67,7 +67,7 @@ namespace DbEx.MySql.Migration
         public override IDatabase MasterDatabase => _masterDatabase;
 
         /// <inheritdoc/>
-        public override DbDatabaseSchemaConfig DatabaseSchemaConfig => new MySqlSchemaConfig(DatabaseName);
+        public override DatabaseSchemaConfig DatabaseSchemaConfig => new MySqlSchemaConfig(DatabaseName);
 
         /// <inheritdoc/>
         protected override DatabaseSchemaScriptBase CreateSchemaScript(DatabaseMigrationScript migrationScript) => MySqlSchemaScript.Create(migrationScript);

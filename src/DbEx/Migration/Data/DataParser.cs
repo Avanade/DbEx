@@ -21,20 +21,20 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Initializes a new instance of the <see cref="DataParser"/> class.
         /// </summary>
-        /// <param name="databaseSchemaConfig">The <see cref="DbDatabaseSchemaConfig"/>.</param>
+        /// <param name="databaseSchemaConfig">The <see cref="DbEx.DatabaseSchemaConfig"/>.</param>
         /// <param name="dbTables">The <see cref="DbTableSchema"/> list.</param>
         /// <param name="args">The optional <see cref="DataParserArgs"/> (will use defaults where not specified).</param>
-        public DataParser(DbDatabaseSchemaConfig databaseSchemaConfig, List<DbTableSchema> dbTables, DataParserArgs? args = null)
+        public DataParser(DatabaseSchemaConfig databaseSchemaConfig, List<DbTableSchema> dbTables, DataParserArgs? args = null)
         {
             DatabaseSchemaConfig = databaseSchemaConfig ?? throw new ArgumentNullException(nameof(databaseSchemaConfig));
             DbTables = dbTables ?? throw new ArgumentNullException(nameof(dbTables));
-            Args = args ?? new DataParserArgs();
+            databaseSchemaConfig.PrepareDataParserArgs(Args = args ?? new DataParserArgs());
         }
 
         /// <summary>
-        /// Gets the <see cref="DbDatabaseSchemaConfig"/>.
+        /// Gets the <see cref="DbEx.DatabaseSchemaConfig"/>.
         /// </summary>
-        public DbDatabaseSchemaConfig DatabaseSchemaConfig { get; }
+        public DatabaseSchemaConfig DatabaseSchemaConfig { get; }
 
         /// <summary>
         /// Gets the <see cref="DbTableSchema"/> list.

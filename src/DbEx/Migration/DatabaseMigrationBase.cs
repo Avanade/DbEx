@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 using CoreEx.Database;
-using DbEx.DbSchema;
 using DbEx.Migration.Data;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -73,9 +72,9 @@ namespace DbEx.Migration
         public virtual IDatabase MasterDatabase => Database;
 
         /// <summary>
-        /// Gets the <see cref="DbDatabaseSchemaConfig"/>.
+        /// Gets the <see cref="DbEx.DatabaseSchemaConfig"/>.
         /// </summary>
-        public abstract DbDatabaseSchemaConfig DatabaseSchemaConfig { get; }
+        public abstract DatabaseSchemaConfig DatabaseSchemaConfig { get; }
 
         /// <summary>
         /// Gets the <see cref="IDatabaseJournal"/>.

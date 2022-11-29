@@ -2,6 +2,7 @@
 
 using CoreEx.Database;
 using DbEx.DbSchema;
+using DbEx.Migration.Data;
 using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace DbEx.SqlServer
     /// <summary>
     /// Provides SQL Server specific configuration and capabilities.
     /// </summary>
-    public class SqlServerSchemaConfig : DbDatabaseSchemaConfig
+    public class SqlServerSchemaConfig : DatabaseSchemaConfig
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlServerSchemaConfig"/> class.
@@ -53,10 +54,23 @@ namespace DbEx.SqlServer
         public override string RefDataTextColumnName => "Text";
 
         /// <inheritdoc/>
-        public override string GetFullyQualifiedTableName(string schema, string table) => $"[{schema}].[{table}]";
+        public override string ToFullyQualifiedTableName(string schema, string table) => $"[{schema}].[{table}]";
 
         /// <inheritdoc/>
-        public override DbColumnSchema CreateColumnFromInformationSchema(DbTableSchema table, DatabaseRecord dr) => new DbColumnSchema(table, dr.GetValue<string>("COLUMN_NAME"), dr.GetValue<string>("DATA_TYPE"))
+        public override void PrepareDataParserArgs(DataParserArgs dataParserArgs)
+        {
+            if (dataParserArgs == null)
+                return;
+
+            if (dataParserArgs.RefDataColumnDefaults.Count == 0)
+            {
+                dataParserArgs.RefDataColumnDefaults.TryAdd("IsActive", _ => true);
+                dataParserArgs.RefDataColumnDefaults.TryAdd("SortOrder", i => i);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override DbColumnSchema CreateColumnFromInformationSchema(DbTableSchema table, DatabaseRecord dr) => new(table, dr.GetValue<string>("COLUMN_NAME"), dr.GetValue<string>("DATA_TYPE"))
         {
             IsNullable = dr.GetValue<string>("IS_NULLABLE").ToUpperInvariant() == "YES",
             Length = (ulong?)dr.GetValue<int?>("CHARACTER_MAXIMUM_LENGTH"),
@@ -66,8 +80,38 @@ namespace DbEx.SqlServer
         };
 
         /// <inheritdoc/>
-        public override async Task LoadAdditionalInformationSchema(IDatabase database, List<DbTableSchema> tables, CancellationToken cancellationToken)
+        public override async Task LoadAdditionalInformationSchema(IDatabase database, List<DbTableSchema> tables, DataParserArgs? dataParserArgs, CancellationToken cancellationToken)
         {
+            // Configure all the single column foreign keys.
+            using var sr3 = StreamLocator.GetResourcesStreamReader("SelectTableForeignKeys.sql", new Assembly[] { typeof(SqlServerSchemaConfig).Assembly }).StreamReader!;
+            var fks = await database.SqlStatement(await sr3.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr => new
+            {
+                ConstraintName = dr.GetValue<string>("FK_CONSTRAINT_NAME"),
+                TableSchema = dr.GetValue<string>("FK_SCHEMA_NAME"),
+                TableName = dr.GetValue<string>("FK_TABLE_NAME"),
+                TableColumnName = dr.GetValue<string>("FK_COLUMN_NAME"),
+                ForeignSchema = dr.GetValue<string>("UQ_SCHEMA_NAME"),
+                ForeignTable = dr.GetValue<string>("UQ_TABLE_NAME"),
+                ForiegnColumn = dr.GetValue<string>("UQ_COLUMN_NAME")
+            }, cancellationToken).ConfigureAwait(false);
+
+            foreach (var grp in fks.GroupBy(x => new { x.ConstraintName, x.TableSchema, x.TableName }).Where(x => x.Count() == 1))
+            {
+                var fk = grp.Single();
+                var r = (from t in tables
+                         from c in t.Columns
+                         where (t.Schema == fk.TableSchema && t.Name == fk.TableName && c.Name == fk.TableColumnName)
+                         select (t, c)).SingleOrDefault();
+
+                if (r == default)
+                    continue;
+
+                r.c.ForeignSchema = fk.ForeignSchema;
+                r.c.ForeignTable = fk.ForeignTable;
+                r.c.ForeignColumn = fk.ForiegnColumn;
+                r.c.IsForeignRefData = (from t in tables where (t.Schema == fk.ForeignSchema && t.Name == fk.ForeignTable) select t.IsRefData).FirstOrDefault();
+            }
+
             // Select the table identity columns.
             using var sr4 = StreamLocator.GetResourcesStreamReader("SelectTableIdentityColumns.sql", new Assembly[] { typeof(SqlServerSchemaConfig).Assembly }).StreamReader!;
             await database.SqlStatement(await sr4.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr =>
@@ -111,8 +155,9 @@ namespace DbEx.SqlServer
         }
 
         /// <inheritdoc/>
-        public override string GetDotNetTypeName(string? dbType)
+        public override string ToDotNetTypeName(DbColumnSchema schema)
         {
+            var dbType = (schema ?? throw new ArgumentNullException(nameof(schema))).Type;
             if (string.IsNullOrEmpty(dbType))
                 return "string";
 
@@ -144,7 +189,7 @@ namespace DbEx.SqlServer
         }
 
         /// <inheritdoc/>
-        public override string GetFormattedSqlType(DbColumnSchema schema)
+        public override string ToFormattedSqlType(DbColumnSchema schema, bool includeNullability = true)
         {
             var sb = new StringBuilder(schema.Type!.ToUpperInvariant());
 
@@ -158,11 +203,23 @@ namespace DbEx.SqlServer
                 _ => string.Empty
             });
 
-            if (schema.IsNullable)
+            if (includeNullability && schema.IsNullable)
                 sb.Append(" NULL");
 
             return sb.ToString();
         }
+
+        /// <inheritdoc/>
+        public override string ToFormattedSqlStatementValue(DataParserArgs dataParserArgs, object? value) => value switch
+        {
+            null => "NULL",
+            string str => $"'{str.Replace("'", "''", StringComparison.Ordinal)}'",
+            bool b => b ? "1" : "0",
+            Guid => $"'{value}'",
+            DateTime dt => $"'{dt.ToString(dataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
+            DateTimeOffset dto => $"'{dto.ToString(dataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
+            _ => value.ToString()
+        };
 
         /// <inheritdoc/>
         public override bool IsDbTypeInteger(string? dbType) => dbType != null && dbType.ToUpperInvariant() switch

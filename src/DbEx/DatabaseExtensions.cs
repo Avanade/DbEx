@@ -22,11 +22,11 @@ namespace DbEx
         /// Selects all the table and column schema details from the database.
         /// </summary>
         /// <param name="database">The <see cref="IDatabase"/>.</param>
-        /// <param name="databaseSchemaConfig">The <see cref="DbDatabaseSchemaConfig"/>.</param>
+        /// <param name="databaseSchemaConfig">The <see cref="DatabaseSchemaConfig"/>.</param>
         /// <param name="dataParserArgs">The optional <see cref="DataParserArgs"/>.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns>A list of all the table and column schema details.</returns>
-        public static async Task<List<DbTableSchema>> SelectSchemaAsync(this IDatabase database, DbDatabaseSchemaConfig databaseSchemaConfig, DataParserArgs? dataParserArgs = null, CancellationToken cancellationToken = default)
+        public static async Task<List<DbTableSchema>> SelectSchemaAsync(this IDatabase database, DatabaseSchemaConfig databaseSchemaConfig, DataParserArgs? dataParserArgs = null, CancellationToken cancellationToken = default)
         {
             var tables = new List<DbTableSchema>();
             DbTableSchema? table = null;
@@ -65,6 +65,8 @@ namespace DbEx
             foreach (var t in tables)
             {
                 t.IsRefData = refDataPredicate(t);
+                if (t.IsRefData)
+                    t.RefDataCodeColumn = t.Columns.Where(x => x.Name == refDataCodeColumn).SingleOrDefault();
             }
 
             // Configure all the single column primary and unique constraints.
@@ -77,6 +79,9 @@ namespace DbEx
                 TableColumnName = dr.GetValue<string>("COLUMN_NAME"),
                 IsPrimaryKey = dr.GetValue<string>("CONSTRAINT_TYPE").StartsWith("PRIMARY", StringComparison.InvariantCultureIgnoreCase)
             }, cancellationToken).ConfigureAwait(false);
+
+            if (!databaseSchemaConfig.SupportsSchema)
+                pks = pks.Where(x => x.TableSchema == databaseSchemaConfig.DatabaseName).ToArray();
 
             foreach (var grp in pks.GroupBy(x => new { x.ConstraintName, x.TableSchema, x.TableName }))
             {
@@ -106,45 +111,22 @@ namespace DbEx
                 }
             }
 
-            // Configure all the single column foreign keys.
-            using var sr3 = StreamLocator.GetResourcesStreamReader("SelectTableForeignKeys.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
-            var fks = await database.SqlStatement(await sr3.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr => new
-            {
-                ConstraintName = dr.GetValue<string>("FK_CONSTRAINT_NAME"),
-                TableSchema = dr.GetValue<string>("FK_SCHEMA_NAME"),
-                TableName = dr.GetValue<string>("FK_TABLE_NAME"),
-                TableColumnName = dr.GetValue<string>("FK_COLUMN_NAME"),
-                ForeignSchema = dr.GetValue<string>("UQ_SCHEMA_NAME"),
-                ForeignTable = dr.GetValue<string>("UQ_TABLE_NAME"),
-                ForiegnColumn = dr.GetValue<string>("UQ_COLUMN_NAME")
-            }, cancellationToken).ConfigureAwait(false);
-
-            foreach (var grp in fks.GroupBy(x => new { x.ConstraintName, x.TableSchema, x.TableName }).Where(x => x.Count() == 1))
-            {
-                var fk = grp.Single();
-                var r = (from t in tables
-                         from c in t.Columns
-                         where (!databaseSchemaConfig.SupportsSchema || t.Schema == fk.TableSchema) && t.Name == fk.TableName && c.Name == fk.TableColumnName
-                         select (t, c)).SingleOrDefault();
-
-                if (r == default)
-                    continue;
-
-                r.c.ForeignSchema = fk.ForeignSchema;
-                r.c.ForeignTable = fk.ForeignTable;
-                r.c.ForeignColumn = fk.ForiegnColumn;
-                r.c.IsForeignRefData = (from t in tables where (!databaseSchemaConfig.SupportsSchema || t.Schema == fk.ForeignSchema) && t.Name == fk.ForeignTable select t.IsRefData).FirstOrDefault();
-                r.c.ForeignRefDataCodeColumn = r.c.IsForeignRefData ? refDataCodeColumn : null;
-            }
-
             // Load any additional configuration specific to the database provider.
-            await databaseSchemaConfig.LoadAdditionalInformationSchema(database, tables, cancellationToken).ConfigureAwait(false);
+            await databaseSchemaConfig.LoadAdditionalInformationSchema(database, tables, dataParserArgs, cancellationToken).ConfigureAwait(false);
 
             // Attempt to infer foreign key reference data relationship where not explicitly specified. 
             foreach (var t in tables)
             {
-                foreach (var c in t.Columns.Where(x => !x.IsPrimaryKey && x.ForeignTable == null))
+                foreach (var c in t.Columns.Where(x => !x.IsPrimaryKey))
                 {
+                    if (c.ForeignTable != null)
+                    {
+                        if (c.IsForeignRefData)
+                            c.ForeignRefDataCodeColumn = refDataCodeColumn;
+
+                        continue;
+                    }
+
                     if (!c.Name.EndsWith(idColumnNameSuffix, StringComparison.InvariantCultureIgnoreCase))
                         continue;
 

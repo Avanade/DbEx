@@ -24,12 +24,13 @@
   <ItemGroup>
     <None Remove="Resources\DatabaseExists.sql" />
     <None Remove="Resources\SelectTableAlwaysGeneratedColumns.sql" />
+    <None Remove="Resources\SelectTableForeignKeys.sql" />
     <None Remove="Resources\SelectTableGeneratedColumns.sql" />
     <None Remove="Resources\SelectTableIdentityColumns.sql" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database.SqlServer" Version="1.0.13" />
+    <PackageReference Include="CoreEx.Database.SqlServer" Version="2.0.0" />
     <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
     <PackageReference Include="OnRamp" Version="1.0.6" />
   </ItemGroup>

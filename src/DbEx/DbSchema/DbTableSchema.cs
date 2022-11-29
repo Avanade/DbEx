@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx.RefData;
 using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
@@ -42,19 +43,19 @@ namespace DbEx.DbSchema
         /// <param name="config">The database schema configuration.</param>
         /// <param name="schema">The schema name.</param>
         /// <param name="name">The table name.</param>
-        public DbTableSchema(DbDatabaseSchemaConfig config, string schema, string name)
+        public DbTableSchema(DatabaseSchemaConfig config, string schema, string name)
         {
             Config = config ?? throw new ArgumentNullException(nameof(config));
             Schema = config.SupportsSchema ? (schema ?? throw new ArgumentNullException(nameof(schema))) : string.Empty;
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            QualifiedName = config.GetFullyQualifiedTableName(schema, name);
+            QualifiedName = config.ToFullyQualifiedTableName(schema, name);
             Alias = CreateAlias(Name);
         }
 
         /// <summary>
-        /// Gets the <see cref="DbDatabaseSchemaConfig"/>.
+        /// Gets the <see cref="DatabaseSchemaConfig"/>.
         /// </summary>
-        public DbDatabaseSchemaConfig Config { get; }
+        public DatabaseSchemaConfig Config { get; }
 
         /// <summary>
         /// Gets the table name.
@@ -95,5 +96,10 @@ namespace DbEx.DbSchema
         /// Gets the primary key <see cref="DbColumnSchema"/> list.
         /// </summary>
         public List<DbColumnSchema> PrimaryKeyColumns => Columns?.Where(x => x.IsPrimaryKey).ToList() ?? new List<DbColumnSchema>();
+
+        /// <summary>
+        /// Gets or sets the <see cref="IReferenceData.Code"/> <see cref="DbColumnSchema"/>.
+        /// </summary>
+        public DbColumnSchema? RefDataCodeColumn { get; set; }
     }
 }

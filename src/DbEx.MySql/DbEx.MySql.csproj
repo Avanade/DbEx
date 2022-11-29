@@ -35,10 +35,11 @@
     <None Remove="Resources\ScriptCreate_sql.hbs" />
     <None Remove="Resources\ScriptDefault_sql.hbs" />
     <None Remove="Resources\ScriptRefData_sql.hbs" />
+    <None Remove="Resources\SelectTableForeignKeys.sql" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database.MySql" Version="1.0.13" />
+    <PackageReference Include="CoreEx.Database.MySql" Version="2.0.0" />
     <PackageReference Include="dbup-mysql" Version="4.6.0" />
     <PackageReference Include="OnRamp" Version="1.0.6" />
   </ItemGroup>

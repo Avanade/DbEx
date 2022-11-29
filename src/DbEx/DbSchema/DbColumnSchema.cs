@@ -142,8 +142,8 @@ namespace DbEx.DbSchema
         /// </summary>
         public void Prepare()
         {
-            _dotNetType = DbTable.Config.GetDotNetTypeName(Type);
-            _sqlType = DbTable.Config.GetFormattedSqlType(this);
+            _dotNetType = DbTable.Config.ToDotNetTypeName(this);
+            _sqlType = DbTable.Config.ToFormattedSqlType(this);
         }
 
         /// <summary>

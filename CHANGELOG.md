@@ -2,8 +2,9 @@
 
 Represents the **NuGet** versions.
 
-## v.1.2
-- *Enhancement:* Added for MySQL database migrations.
+## v2.0.0
+- *Enhancement:* Added MySQL database migrations.
+- *Note:* Given the extent of this and previous change a major version change is warranted (published version `v1.1.1` should be considered as deprecated as a result).
 
 ## v1.1.1
 - *Enhancement:* **Breaking change:** Refactored the implementation/internals/naming to be largely database agnostic, have improved extensibility, to simplify introduction of additional databases (beyond current SQL Server implementation). As part of this exercise `DbUp` was re-introduced to provide the likes of SQL command parsing. The database connection management and implementation of `IDatabaseJournal` remains custom (using `DbUp` convention to enable). The `SqlServerMigrationConsole` implementation moved to `DbEx.Console.SqlServer` for separation and consistency.

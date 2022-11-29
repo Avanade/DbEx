@@ -32,50 +32,44 @@ namespace DbEx.Migration.Data
         /// Gets or sets the suffix of the identifier column where not fully specified.
         /// </summary>
         /// <remarks>Where matching columns and the specified column is not found, then the suffix will be appended to the specified column name and an additional match will be performed.
-        /// <para>Defaults to <see cref="DbDatabaseSchemaConfig.IdColumnNameSuffix"/> where not specified (i.e. <c>null</c>).</para></remarks>
+        /// <para>Defaults to <see cref="DatabaseSchemaConfig.IdColumnNameSuffix"/> where not specified (i.e. <c>null</c>).</para></remarks>
         public string? IdColumnNameSuffix { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the <see cref="IChangeLogAudit.CreatedDate"/> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to <see cref="DbDatabaseSchemaConfig.CreatedDateColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.CreatedDateColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
         public string? CreatedDateColumnName { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the <see cref="IChangeLogAudit.CreatedBy"/> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to <see cref="DbDatabaseSchemaConfig.CreatedByColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.CreatedByColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
         public string? CreatedByColumnName { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the <see cref="IChangeLogAudit.UpdatedDate"/> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to <see cref="DbDatabaseSchemaConfig.UpdatedDateColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.UpdatedDateColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
         public string? UpdatedDateColumnName { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the <see cref="IChangeLogAudit.UpdatedBy"/> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to <see cref="DbDatabaseSchemaConfig.UpdatedByColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.UpdatedByColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
         public string? UpdatedByColumnName { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the <see cref="IReferenceData.Code"/> column.
         /// </summary>
-        /// <remarks>Defaults to <see cref="DbDatabaseSchemaConfig.RefDataCodeColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.RefDataCodeColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
         public string? RefDataCodeColumnName { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the <see cref="IReferenceData.Text"/> column.
         /// </summary>
-        /// <remarks>Defaults to <see cref="DbDatabaseSchemaConfig.RefDataTextColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.RefDataTextColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
         public string? RefDataTextColumnName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the reference data alternate schema name; used where attempting to infer reference data relationship after using same schema as the first option.
-        /// </summary>
-        /// <remarks>Defaults to '<c>Ref</c>'.</remarks>
-        public string? RefDataAlternateSchema { get; set; } = "Ref";
 
         /// <summary>
         /// Gets or sets the <see cref="IIdentifierGenerator"/>.

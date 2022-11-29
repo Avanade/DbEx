@@ -1,5 +1,6 @@
 ﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
 -- Disable all constraints.
+SET FOREIGN_KEY_CHECKS = 0;
 {{#each .}}
 ALTER TABLE {{QualifiedName}} DISABLE KEYS;
 {{/each}}
@@ -22,3 +23,4 @@ ALTER TABLE {{DbTable.QualifiedName}} auto_increment = {{add IdentitySeed -1}};
 {{#each .}}
 ALTER TABLE {{QualifiedName}} ENABLE KEYS;
 {{/each}}
+SET FOREIGN_KEY_CHECKS = 1;

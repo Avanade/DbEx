@@ -3,29 +3,30 @@
 using CoreEx.Database;
 using CoreEx.Entities;
 using CoreEx.RefData;
+using DbEx.DbSchema;
+using DbEx.Migration.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DbEx.DbSchema
+namespace DbEx
 {
     /// <summary>
     /// Enables database provider specific configuration and capabilities.
     /// </summary>
-    public abstract class DbDatabaseSchemaConfig
+    public abstract class DatabaseSchemaConfig
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="DbDatabaseSchemaConfig"/> class.
+        /// Initializes a new instance of the <see cref="DatabaseSchemaConfig"/> class.
         /// </summary>
         /// <param name="databaseName">The database name.</param>
         /// <param name="supportsSchema">Indicates whether the database supports per-database schema-based separation.</param>
-        protected DbDatabaseSchemaConfig(string databaseName, bool supportsSchema = true)
+        protected DatabaseSchemaConfig(string databaseName, bool supportsSchema = true)
         {
             DatabaseName = databaseName;
             SupportsSchema = supportsSchema;
-
             RefDataPredicate = new Func<DbTableSchema, bool>(t => t.Columns.Any(c => c.Name == RefDataCodeColumnName && !c.IsPrimaryKey && c.DotNetType == "string") && t.Columns.Any(c => c.Name == RefDataTextColumnName && !c.IsPrimaryKey && c.DotNetType == "string"));
         }
 
@@ -88,6 +89,12 @@ namespace DbEx.DbSchema
         public abstract string IdColumnNameSuffix { get; }
 
         /// <summary>
+        /// Prepares the <paramref name="dataParserArgs"/> prior to parsing as a final opportunity to finalize any standard defaults.
+        /// </summary>
+        /// <param name="dataParserArgs">The <see cref="DataParserArgs"/>.</param>
+        public abstract void PrepareDataParserArgs(DataParserArgs dataParserArgs);
+
+        /// <summary>
         /// Creates the <see cref="DbColumnSchema"/> from the `InformationSchema.Columns` <see cref="DatabaseRecord"/>.
         /// </summary>
         /// <param name="table">The corresponding <see cref="DbTableSchema"/>.</param>
@@ -100,8 +107,9 @@ namespace DbEx.DbSchema
         /// </summary>
         /// <param name="database">The <see cref="IDatabase"/>.</param>
         /// <param name="tables">The <see cref="DbTableSchema"/> list to load addtional data into.</param>
+        /// <param name="dataParserArgs">The <see cref="DataParserArgs"/>.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
-        public virtual Task LoadAdditionalInformationSchema(IDatabase database, List<DbTableSchema> tables, CancellationToken cancellationToken) => Task.CompletedTask;
+        public virtual Task LoadAdditionalInformationSchema(IDatabase database, List<DbTableSchema> tables, DataParserArgs? dataParserArgs, CancellationToken cancellationToken) => Task.CompletedTask;
 
         /// <summary>
         /// Gets the <paramref name="schema"/> and <paramref name="table"/> formatted as the fully qualified name.
@@ -109,21 +117,30 @@ namespace DbEx.DbSchema
         /// <param name="schema">The schema name.</param>
         /// <param name="table">The table name.</param>
         /// <returns>The fully qualified name.</returns>
-        public abstract string GetFullyQualifiedTableName(string schema, string table);
+        public abstract string ToFullyQualifiedTableName(string schema, string table);
 
         /// <summary>
-        /// Gets the corresponding .NET <see cref="Type"/> name for the database type.
+        /// Gets the corresponding .NET <see cref="Type"/> name for the specified <see cref="DbColumnSchema"/>.
         /// </summary>
-        /// <param name="dbType">The database type.</param>
+        /// <param name="schema">The <see cref="DbColumnSchema"/>.</param>
         /// <returns>The .NET <see cref="Type"/> name.</returns>
-        public abstract string GetDotNetTypeName(string? dbType);
+        public abstract string ToDotNetTypeName(DbColumnSchema schema);
 
         /// <summary>
         /// Gets the long-form formatted SQL type; includes size, precision, etc.
         /// </summary>
         /// <param name="schema">The <see cref="DbColumnSchema"/>.</param>
+        /// <param name="includeNullability">Indicates whether to include the nullability within the formatted value.</param>
         /// <returns>The long-form formatted SQL type.</returns>
-        public abstract string GetFormattedSqlType(DbColumnSchema schema);
+        public abstract string ToFormattedSqlType(DbColumnSchema schema, bool includeNullability = true);
+
+        /// <summary>
+        /// Gets the formatted SQL statement representation of the <paramref name="value"/>.
+        /// </summary>
+        /// <param name="dataParserArgs">The <see cref="DataParserArgs"/>.</param>
+        /// <param name="value">The value.</param>
+        /// <returns>The formatted SQL statement representation.</returns>
+        public abstract string ToFormattedSqlStatementValue(DataParserArgs dataParserArgs, object? value);
 
         /// <summary>
         /// Inidicates whether the <paramref name="dbType"/> is considered an integer.
