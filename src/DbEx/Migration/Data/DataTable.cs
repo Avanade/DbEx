@@ -167,14 +167,19 @@ namespace DbEx.Migration.Data
         /// </summary>
         internal async Task PrepareAsync(CancellationToken cancellationToken)
         {
+            var cds = Args.ColumnDefaults.GetDefaultsForTable(DbTable);
+
             for (int i = 0; i < Rows.Count; i++)
             {
                 var row = Rows[i];
+
+                // Apply the configured auditing defaults.
                 await AddColumnWhereNotSpecifiedAsync(row, Args.CreatedDateColumnName ?? Parser.DatabaseSchemaConfig.CreatedDateColumnName, () => Task.FromResult<object?>(Args.DateTimeNow)).ConfigureAwait(false);
                 await AddColumnWhereNotSpecifiedAsync(row, Args.CreatedByColumnName ?? Parser.DatabaseSchemaConfig.CreatedByColumnName, () => Task.FromResult<object?>(Args.UserName)).ConfigureAwait(false);
                 await AddColumnWhereNotSpecifiedAsync(row, Args.UpdatedDateColumnName ?? Parser.DatabaseSchemaConfig.UpdatedDateColumnName, () => Task.FromResult<object?>(Args.DateTimeNow)).ConfigureAwait(false);
                 await AddColumnWhereNotSpecifiedAsync(row, Args.UpdatedByColumnName ?? Parser.DatabaseSchemaConfig.UpdatedByColumnName, () => Task.FromResult<object?>(Args.UserName)).ConfigureAwait(false);
 
+                // Apply an reference data defaults.
                 if (IsRefData && Args.RefDataColumnDefaults != null)
                 {
                     foreach (var rdd in Args.RefDataColumnDefaults)
@@ -183,6 +188,7 @@ namespace DbEx.Migration.Data
                     }
                 }
 
+                // Generate the identifier where specified to do so.
                 if (UseIdentifierGenerator)
                 {
                     var pkc = DbTable.PrimaryKeyColumns[0];
@@ -208,6 +214,12 @@ namespace DbEx.Migration.Data
                                 break;
                         }
                     }
+                }
+
+                // Apply any configured column defaults.
+                foreach (var cd in cds)
+                {
+                    await AddColumnWhereNotSpecifiedAsync(row, cd.Column, () => Task.FromResult(cd.Default(i + 1))).ConfigureAwait(false);
                 }
             }
         }

@@ -3,6 +3,7 @@
 using DbEx.Console;
 using DbEx.Migration;
 using DbEx.MySql.Migration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Reflection;
 
@@ -40,5 +41,20 @@ namespace DbEx.MySql.Console
 
         /// <inheritdoc/>
         protected override DatabaseMigrationBase CreateMigrator() => new MySqlMigration(Args);
+
+        /// <inheritdoc/>
+        public override string AppTitle => base.AppTitle + " [MySQL]";
+
+        /// <inheritdoc/>
+        protected override void OnWriteHelp()
+        {
+            base.OnWriteHelp();
+            Logger?.LogInformation("{help}", "Script command and argument(s):");
+            Logger?.LogInformation("{help}", "  script [default]         Creates a default (empty) SQL script.");
+            Logger?.LogInformation("{help}", "  script alter <table>     Creates a SQL script to perform an ALTER TABLE.");
+            Logger?.LogInformation("{help}", "  script create <table>    Creates a SQL script to perform a CREATE TABLE.");
+            Logger?.LogInformation("{help}", "  script refdata <table>   Creates a SQL script to perform a CREATE TABLE as reference data.");
+            Logger?.LogInformation("{help}", string.Empty);
+        }
     }
 }

@@ -90,9 +90,53 @@ namespace DbEx.Migration.Data
         public Dictionary<string, Func<int, object?>> RefDataColumnDefaults { get; } = new Dictionary<string, Func<int, object?>>();
 
         /// <summary>
+        /// Adds a reference data column default to the <see cref="RefDataColumnDefaults"/>.
+        /// </summary>
+        /// <param name="column">The column name.</param>
+        /// <param name="default">The function that provides the default value.</param>
+        /// <returns>The <see cref="DataParserArgs"/> to support fluent-style method-chaining.</returns>
+        public DataParserArgs RefDataColumnDefault(string column, Func<int, object?> @default)
+        {
+            RefDataColumnDefaults.Add(column, @default);
+            return this;
+        }
+
+        /// <summary>
+        /// Gets or sets the column defaults collection.
+        /// </summary>
+        /// <remarks>The list should contain the column name and function that returns the default value (the input to the function is the corresponding row count as specified).</remarks>
+        public DataParserColumnDefaultCollection ColumnDefaults { get; } = new DataParserColumnDefaultCollection();
+
+        /// <summary>
+        /// Adds a <see cref="DataParserColumnDefault"/> to the <see cref="ColumnDefaults"/>.
+        /// </summary>
+        /// <param name="schema">The schema name; a '<c>*</c>' denotes any schema.</param>
+        /// <param name="table">The table name; a '<c>*</c>' denotes any table.</param>
+        /// <param name="column">The name of the column to be updated.</param>
+        /// <param name="default">The function that provides the default value.</param>
+        /// <returns>The <see cref="DataParserArgs"/> to support fluent-style method-chaining.</returns>
+        public DataParserArgs ColumnDefault(string schema, string table, string column, Func<int, object?> @default)
+        {
+            ColumnDefaults.Add(new DataParserColumnDefault(schema, table, column, @default));
+            return this;
+        }
+
+        /// <summary>
         /// Gets the runtime parameters.
         /// </summary>
         public Dictionary<string, object?> Parameters { get; } = new Dictionary<string, object?>();
+
+        /// <summary>
+        /// Adds a parameter to the <see cref="Parameters"/>.
+        /// </summary>
+        /// <param name="key">The parameter key.</param>
+        /// <param name="value">The parameter value.</param>
+        /// <returns>The <see cref="DataParserArgs"/> to support fluent-style method-chaining.</returns>
+        public DataParserArgs Parameter(string key, object? value)
+        {
+            Parameters.Add(key, value);
+            return this;
+        }
 
         /// <summary>
         /// Gets or sets the <see cref="DbTableSchema"/> updater.
@@ -122,6 +166,8 @@ namespace DbEx.Migration.Data
             DbSchemaUpdaterAsync = args.DbSchemaUpdaterAsync;
             RefDataColumnDefaults.Clear();
             args.RefDataColumnDefaults.ForEach(x => RefDataColumnDefaults.Add(x.Key, x.Value));
+            ColumnDefaults.Clear();
+            args.ColumnDefaults.ForEach(ColumnDefaults.Add);
             Parameters.Clear();
             args.Parameters.ForEach(x => Parameters.Add(x.Key, x.Value));
         }

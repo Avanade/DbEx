@@ -84,7 +84,8 @@ namespace DbEx.Test
                 Phone = dr.GetValue<string>("Phone"),
                 DateOfBirth = dr.GetValue<DateTime?>("DateOfBirth"),
                 ContactTypeId = dr.GetValue<int>("ContactTypeId"),
-                GenderId = dr.GetValue<int?>("GenderId")
+                GenderId = dr.GetValue<int?>("GenderId"),
+                TenantId = dr.GetValue<string>("TenantId")
             }).ConfigureAwait(false)).ToList();
 
             Assert.AreEqual(3, res.Count);
@@ -96,6 +97,7 @@ namespace DbEx.Test
             Assert.AreEqual(new DateTime(2001, 10, 22), row.DateOfBirth);
             Assert.AreEqual(1, row.ContactTypeId);
             Assert.AreEqual(2, row.GenderId);
+            Assert.AreEqual("test-tenant", row.TenantId);
 
             row = res[1];
             Assert.AreEqual(2, row.ContactId);
@@ -104,6 +106,7 @@ namespace DbEx.Test
             Assert.AreEqual(null, row.DateOfBirth);
             Assert.AreEqual(2, row.ContactTypeId);
             Assert.IsNull(row.GenderId);
+            Assert.AreEqual("test-tenant", row.TenantId);
 
             row = res[2];
             Assert.AreEqual(3, row.ContactId);
@@ -112,6 +115,7 @@ namespace DbEx.Test
             Assert.AreEqual(new DateTime(2001, 10, 22), row.DateOfBirth);
             Assert.AreEqual(1, row.ContactTypeId);
             Assert.AreEqual(2, row.GenderId);
+            Assert.IsNull(row.TenantId); // Must be set within SQL script itself; the column default does not extend to SQL scripts themselves.
 
             // Check that the person data was updated as expected - converted and auto-assigned id, plus createdby and createddate columns, and finally runtime variable.
             var res2 = (await db.SqlStatement("SELECT * FROM [Test].[Person]").SelectQueryAsync(dr => new
@@ -143,7 +147,8 @@ namespace DbEx.Test
                 Phone = dr.GetValue<string>("Phone"),
                 DateOfBirth = dr.GetValue<DateTime?>("DateOfBirth"),
                 ContactTypeId = dr.GetValue<int>("ContactTypeId"),
-                GenderId = dr.GetValue<int?>("GenderId")
+                GenderId = dr.GetValue<int?>("GenderId"),
+                TenantId = dr.GetValue<string>("TenantId")
             }).ConfigureAwait(false)).ToList();
 
             Assert.AreEqual(1, res.Count);
@@ -165,6 +170,7 @@ namespace DbEx.Test
 
             m.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
             m.Args.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
+            m.Args.DataParserArgs.ColumnDefaults.Add(new DataParserColumnDefault("*", "*", "TenantId", _ => "test-tenant"));
 
             var r = await m.MigrateAsync().ConfigureAwait(false);
 

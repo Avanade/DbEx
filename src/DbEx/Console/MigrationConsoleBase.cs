@@ -30,6 +30,7 @@ namespace DbEx.Console
         private const string EntryAssemblyOnlyOptionName = "EO";
         private CommandArgument<MigrationCommand>? _commandArg;
         private CommandArgument? _additionalArgs;
+        private CommandOption? _helpOption;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MigrationConsoleBase"/> class.
@@ -112,9 +113,9 @@ namespace DbEx.Console
 
             // Set up the app.
             using var app = new CommandLineApplication(PhysicalConsole.Singleton) { Name = AppName, Description = AppTitle };
-            app.HelpOption();
+            _helpOption = app.HelpOption();
 
-            _commandArg = app.Argument<MigrationCommand>("command", "Database migration command.").IsRequired();
+            _commandArg = app.Argument<MigrationCommand>("command", "Database migration command (see https://github.com/Avanade/dbex#commands-functions).").IsRequired();
             ConsoleOptions.Add(nameof(OnRamp.CodeGeneratorDbArgsBase.ConnectionString), app.Option("-cs|--connection-string", "Database connection string.", CommandOptionType.SingleValue));
             ConsoleOptions.Add(nameof(OnRamp.CodeGeneratorDbArgsBase.ConnectionStringEnvironmentVariableName), app.Option("-cv|--connection-varname", "Database connection string environment variable name.", CommandOptionType.SingleValue));
             ConsoleOptions.Add(nameof(MigrationArgs.SchemaOrder), app.Option("-so|--schema-order", "Database schema name (multiple can be specified in priority order).", CommandOptionType.MultipleValue));
@@ -199,7 +200,12 @@ namespace DbEx.Console
             // Execute the command-line app.
             try
             {
-                return await app.ExecuteAsync(args, cancellationToken).ConfigureAwait(false);
+                var result = await app.ExecuteAsync(args, cancellationToken).ConfigureAwait(false);
+
+                if (result == 0 && _helpOption.HasValue())
+                    OnWriteHelp();
+
+                return result;
             }
             catch (CommandParsingException cpex)
             {
@@ -402,5 +408,10 @@ namespace DbEx.Console
             Logger?.LogInformation("{Content}", $"{AppName} Complete. [{totalMilliseconds}ms]");
             Logger?.LogInformation("{Content}", string.Empty);
         }
+
+        /// <summary>
+        /// Invoked to write additional help information to the <see cref="Logger"/>.
+        /// </summary>
+        protected virtual void OnWriteHelp() { }
     }
 }

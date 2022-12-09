@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v2.1.0
+- *Enhancement:* Added `DataParserArgs.ColumnDefaults` so that _any_ table column(s) can be defaulted where required (where not directly specified).
+- *Enhancement:* Improved help text to include the schema command and arguments.
+
 ## v2.0.0
 - *Enhancement:* Added MySQL database migrations.
 - *Note:* Given the extent of this and previous change a major version change is warranted (published version `v1.1.1` should be considered as deprecated as a result).
