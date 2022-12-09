@@ -101,7 +101,7 @@ namespace DbEx.Test
             Assert.AreEqual("[Test].[Contact]", tab.QualifiedName);
             Assert.IsFalse(tab.IsAView);
             Assert.IsFalse(tab.IsRefData);
-            Assert.AreEqual(6, tab.Columns.Count);
+            Assert.AreEqual(7, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
 
             col = tab.Columns[0];
@@ -188,6 +188,9 @@ namespace DbEx.Test
             Assert.AreEqual("Gender", col.ForeignTable);
             Assert.AreEqual("GenderId", col.ForeignColumn);
             Assert.IsNull(col.DefaultValue);
+
+            col = tab.Columns[6];
+            Assert.AreEqual("TenantId", col.Name);
 
             // [Test].[MultiPk]
             tab = tables.Where(x => x.Name == "MultiPk").SingleOrDefault();
