@@ -49,12 +49,20 @@ namespace DbEx.MySql.Console
         protected override void OnWriteHelp()
         {
             base.OnWriteHelp();
+            WriteScriptHelp();
+            Logger?.LogInformation("{help}", string.Empty);
+        }
+
+        /// <summary>
+        /// Writes the supported <see cref="MigrationCommand.Script"/> help content.
+        /// </summary>
+        public void WriteScriptHelp()
+        {
             Logger?.LogInformation("{help}", "Script command and argument(s):");
             Logger?.LogInformation("{help}", "  script [default]         Creates a default (empty) SQL script.");
             Logger?.LogInformation("{help}", "  script alter <table>     Creates a SQL script to perform an ALTER TABLE.");
             Logger?.LogInformation("{help}", "  script create <table>    Creates a SQL script to perform a CREATE TABLE.");
             Logger?.LogInformation("{help}", "  script refdata <table>   Creates a SQL script to perform a CREATE TABLE as reference data.");
-            Logger?.LogInformation("{help}", string.Empty);
         }
     }
 }

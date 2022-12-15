@@ -49,6 +49,15 @@ namespace DbEx.SqlServer.Console
         protected override void OnWriteHelp()
         {
             base.OnWriteHelp();
+            WriteScriptHelp();
+            Logger?.LogInformation("{help}", string.Empty);
+        }
+
+        /// <summary>
+        /// Writes the supported <see cref="MigrationCommand.Script"/> help content.
+        /// </summary>
+        public void WriteScriptHelp()
+        { 
             Logger?.LogInformation("{help}", "Script command and argument(s):");
             Logger?.LogInformation("{help}", "  script [default]                  Creates a default (empty) SQL script.");
             Logger?.LogInformation("{help}", "  script alter <Schema> <Table>     Creates a SQL script to perform an ALTER TABLE.");
@@ -57,7 +66,6 @@ namespace DbEx.SqlServer.Console
             Logger?.LogInformation("{help}", "  script create <Schema> <Table>    Creates a SQL script to perform a CREATE TABLE.");
             Logger?.LogInformation("{help}", "  script refdata <Schema> <Table>   Creates a SQL script to perform a CREATE TABLE as reference data.");
             Logger?.LogInformation("{help}", "  script schema <Schema>            Creates a SQL script to perform a CREATE SCHEMA.");
-            Logger?.LogInformation("{help}", string.Empty);
         }
     }
 }
