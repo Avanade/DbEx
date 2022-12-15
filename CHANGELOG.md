@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v2.1.1
+- *Fixed:* Multibyte support added to the `DataParser` insert and merge for SQL Server strings using the `N` prefix.
+
 ## v2.1.0
 - *Enhancement:* Added `DataParserArgs.ColumnDefaults` so that _any_ table column(s) can be defaulted where required (where not directly specified).
 - *Enhancement:* Improved help text to include the schema command and arguments.

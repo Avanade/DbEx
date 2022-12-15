@@ -213,7 +213,7 @@ namespace DbEx.SqlServer
         public override string ToFormattedSqlStatementValue(DataParserArgs dataParserArgs, object? value) => value switch
         {
             null => "NULL",
-            string str => $"'{str.Replace("'", "''", StringComparison.Ordinal)}'",
+            string str => $"N'{str.Replace("'", "''", StringComparison.Ordinal)}'",
             bool b => b ? "1" : "0",
             Guid => $"'{value}'",
             DateTime dt => $"'{dt.ToString(dataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
