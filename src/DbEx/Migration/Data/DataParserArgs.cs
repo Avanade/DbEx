@@ -17,6 +17,17 @@ namespace DbEx.Migration.Data
     public class DataParserArgs
     {
         /// <summary>
+        /// Initializes a new instance of the <see cref="DataParserArgs"/> class.
+        /// </summary>
+        public DataParserArgs() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DataParserArgs"/> class with a pre-existing <paramref name="parameters"/> reference.
+        /// </summary>
+        /// <param name="parameters">The parameters reference.</param>
+        public DataParserArgs(Dictionary<string, object?> parameters) => Parameters = parameters;
+
+        /// <summary>
         /// Gets or sets the user name.
         /// </summary>
         /// <remarks>Defaults to '<c><see cref="Environment.UserDomainName"/>/<see cref="Environment.UserName"/></c>'.</remarks>
@@ -127,14 +138,17 @@ namespace DbEx.Migration.Data
         public Dictionary<string, object?> Parameters { get; } = new Dictionary<string, object?>();
 
         /// <summary>
-        /// Adds a parameter to the <see cref="Parameters"/>.
+        /// Adds a parameter to the <see cref="MigrationArgsBase.Parameters"/> where it does not already exist; unless <paramref name="overrideExisting"/> is selected then it will add or override.
         /// </summary>
         /// <param name="key">The parameter key.</param>
         /// <param name="value">The parameter value.</param>
+        /// <param name="overrideExisting">Indicates whether to override the existing value where it is pre-existing; otherwise, will not add/update.</param>
         /// <returns>The <see cref="DataParserArgs"/> to support fluent-style method-chaining.</returns>
-        public DataParserArgs Parameter(string key, object? value)
+        public DataParserArgs Parameter(string key, object? value, bool overrideExisting = false)
         {
-            Parameters.Add(key, value);
+            if (!Parameters.TryAdd(key, value) && overrideExisting)
+                Parameters[key] = value;
+
             return this;
         }
 

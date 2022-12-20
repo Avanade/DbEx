@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -366,7 +367,7 @@ namespace DbEx.Migration
         protected virtual async Task<bool> DatabaseExistsAsync(CancellationToken cancellationToken = default)
         {
             using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseExists.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
-            var name = await MasterDatabase.SqlStatement(sr.ReadToEnd().Replace("{{DatabaseName}}", DatabaseName)).ScalarAsync<string?>(cancellationToken);
+            var name = await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).ScalarAsync<string?>(cancellationToken);
             return name != null;
         }
 
@@ -389,7 +390,7 @@ namespace DbEx.Migration
             }
 
             using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseDrop.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
-            await MasterDatabase.SqlStatement(sr.ReadToEnd().Replace("{{DatabaseName}}", DatabaseName)).NonQueryAsync(cancellationToken);
+            await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).NonQueryAsync(cancellationToken);
 
             Logger.LogInformation("    {Content}", $"Database '{DatabaseName}' dropped.");
             return true;
@@ -414,7 +415,7 @@ namespace DbEx.Migration
             }
 
             using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseCreate.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
-            await MasterDatabase.SqlStatement(sr.ReadToEnd().Replace("{{DatabaseName}}", DatabaseName)).NonQueryAsync(cancellationToken);
+            await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).NonQueryAsync(cancellationToken);
 
             Logger.LogInformation("    {Content}", $"Database '{DatabaseName}' did not exist and was created.");
             return true;
@@ -637,7 +638,7 @@ namespace DbEx.Migration
                 Logger.LogInformation("{Content}", $"    {line}");
             }
 
-            await Database.SqlStatement(sql).SelectQueryAsync(dr => { Logger.LogInformation("{Content}", $"    {dr.GetValue<string>("FQN")}"); return 0; }, cancellationToken).ConfigureAwait(false);
+            await Database.SqlStatement(ReplaceSqlRuntimeParameters(sql)).SelectQueryAsync(dr => { Logger.LogInformation("{Content}", $"    {dr.GetValue<string>("FQN")}"); return 0; }, cancellationToken).ConfigureAwait(false);
 
             return true;
         }
@@ -744,7 +745,7 @@ namespace DbEx.Migration
                 var sql = _dataCodeGen.Generate(table);
                 Logger.LogInformation("{Content}", sql);
 
-                var rows = await Database.SqlStatement(sql).ScalarAsync<object>(cancellationToken).ConfigureAwait(false);
+                var rows = await Database.SqlStatement(ReplaceSqlRuntimeParameters(sql)).ScalarAsync<object>(cancellationToken).ConfigureAwait(false);
                 Logger.LogInformation("{Content}", $"Result: {rows} rows affected.");
             }
 
@@ -883,5 +884,14 @@ namespace DbEx.Migration
 
             return await ExecuteScriptsAsync(scripts, false, cancellationToken).ConfigureAwait(false);
         }
+
+        /// <summary>
+        /// Performs a SQL command text runtime parameters (see <see cref="MigrationArgsBase.Parameters"/>) replacement.
+        /// </summary>
+        /// <param name="sql">The SQL command.</param>
+        /// <returns>The resulting SQL command with runtime replacements make.</returns>
+        protected string ReplaceSqlRuntimeParameters(string sql) => Args.Parameters.Count == 0 
+            ? sql : Regex.Replace(sql, "(" + string.Join("|", Args.Parameters.Select(x => $"{{{{{x.Key}}}}}").ToArray()) + ")", m => Args.Parameters.TryGetValue(m.Value[2..^2], out var pv) 
+                ? pv?.ToString()  : throw new InvalidOperationException($"Runtime Parameter '{m.Value}' found within SQL command; a corresponding Parameter value has not been configured."));
     }
 }

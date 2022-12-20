@@ -5,12 +5,9 @@ using CoreEx.Database.MySql;
 using DbEx.DbSchema;
 using DbEx.Migration;
 using DbUp.Support;
-using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
-using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,7 +25,7 @@ namespace DbEx.MySql.Migration
         private readonly string _databaseName;
         private readonly IDatabase _database;
         private readonly IDatabase _masterDatabase;
-        private List<string> _resetBypass = new List<string>();
+        private readonly List<string> _resetBypass = new();
 
         /// <summary>
         /// Initializes an instance of the <see cref="MySqlMigration"/> class.
@@ -50,8 +47,10 @@ namespace DbEx.MySql.Migration
             if (SchemaObjectTypes.Length == 0)
                 SchemaObjectTypes = new string[] { "FUNCTION", "VIEW", "PROCEDURE" };
 
-            Journal.Schema = null;
-            Journal.Table = "schemaversions";
+            // Add/set standard parameters.
+            Args.Parameter(MigrationArgsBase.DatabaseNameParamName, _databaseName, true);
+            Args.Parameter(MigrationArgsBase.JournalSchemaParamName, null, true);
+            Args.Parameter(MigrationArgsBase.JournalTableParamName, "schemaversions");
         }
 
         /// <inheritdoc/>
@@ -92,7 +91,7 @@ namespace DbEx.MySql.Migration
 
             foreach (var sql in new SqlCommandSplitter().SplitScriptIntoCommands(sr.ReadToEnd()))
             {
-                await Database.SqlStatement(sql).NonQueryAsync(cancellationToken).ConfigureAwait(false);
+                await Database.SqlStatement(ReplaceSqlRuntimeParameters(sql)).NonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
     }

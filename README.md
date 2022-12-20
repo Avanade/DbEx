@@ -90,6 +90,8 @@ Over time there will be more than one script updating a single object, for examp
 
 The migration scripts must be marked as embedded resources, and reside under the `Migrations` folder within the c# project. A naming convention should be used to ensure they are to be executed in the correct order; it is recommended that the name be prefixed by the date and time, followed by a brief description of the purpose. For example: `20181218-081540-create-demo-person-table.sql`
 
+A migration script can contain basic moustache value replacement syntax such as `{{Company}}`, this will then be replaced at runtime by the corresponding `Company` parameter value; see [`MigrationArgs.Parameters`](./src/DbEx/Migration/MigrationArgsBase.cs). These parameters (`Name=Value` pairs) can also be command-line specified.
+
 It is recommended that each script be enclosed by a transaction that can be rolled back in the case of error; otherwise, a script could be partially applied and will then need manual intervention to resolve.
 
 _Note_: There are _special case_ scripts that will be executed pre- and post- migrations. In that any scripts ending with `.pre.deploy.sql` will always be executed before the migrations are attempted, and any scripts ending with `.post.deploy.sql` will always be executed after all the migrations have successfully executed.
@@ -107,6 +109,8 @@ The currently supported objects are (order specified implies order in which they
 4. [Procedure](https://docs.microsoft.com/en-us/sql/t-sql/statements/create-procedure-transact-sql)
 
 The schema scripts must be marked as embedded resources, and reside under the `Schema` folder within the c# project. Each script should only contain a single `Create` statement. Each script will be parsed to determine type so that the appropriate order can be applied.
+
+A schema script script can contain basic moustache value replacement syntax such as `{{Company}}`, this will then be replaced at runtime by the corresponding `Company` parameter value; see [`MigrationArgs.Parameters`](./src/DbEx/Migration/MigrationArgsBase.cs). These parameters (`Name=Value` pairs) can also be command-line specified.
 
 The `Schema` folder is used to encourage the usage of database schemas. Therefore, directly under should be the schema name, for example `dbo` or `Ref`. Then sub-folders for the object types as per [Azure Data Studio](https://docs.microsoft.com/en-au/sql/azure-data-studio/what-is), for example `Functions`, `Stored Procedures` or `Types\User-Defined Table Types`. 
 
@@ -171,7 +175,7 @@ Demo:
     - { FirstName: Wendy, LastName: Jones, Gender: F, Birthday: 1985-03-18 }
 ```
 
-Finally, runtime values can be used within the YAML using the value lookup notation; this notation is `^(Key)`. This will either reference the [`DataParserArgs`](./src/DbEx/Migration/Data/DataParserArgs.cs) `RuntimeParameters` property using the specified key. There are two special parameters, being `UserName` and `DateTimeNow`, that reference the same named `DataParserArgs` properties. Where not found the extended notation `^(Namespace.Type.Property.Method().etc, AssemblyName)` is used. Where the `AssemblyName` is not specified then the default `mscorlib` is assumed. The `System` root namespace is optional, i.e. it will be attempted by default. The initial property or method for a `Type` must be `static`, in that the `Type` will not be instantiated. Example as follows.
+Finally, runtime values can be used within the YAML using the value lookup notation; this notation is `^(Key)`. This will either reference the [`DataParserArgs`](./src/DbEx/Migration/Data/DataParserArgs.cs) `Parameters` property using the specified key. There are two special parameters, being `UserName` and `DateTimeNow`, that reference the same named `DataParserArgs` properties. Where not found the extended notation `^(Namespace.Type.Property.Method().etc, AssemblyName)` is used. Where the `AssemblyName` is not specified then the default `mscorlib` is assumed. The `System` root namespace is optional, i.e. it will be attempted by default. The initial property or method for a `Type` must be `static`, in that the `Type` will not be instantiated. Example as follows. These parameters (`Name=Value` pairs) can also be command-line specified.
 
 ``` yaml
 Demo:
@@ -194,8 +198,9 @@ Xxx Database Tool.
 Usage: Xxx [options] <command> <args>
 
 Arguments:
-  command                    Database migration command.
-                             Allowed values are: None, Drop, Create, Migrate, Schema, Deploy, Reset, Data, DeployWithData, All, DropAndAll, ResetAndData, ResetAndAll, Execute, Script.
+  command                    Database migration command (see https://github.com/Avanade/dbex#commands-functions).
+                             Allowed values are: None, Drop, Create, Migrate, CodeGen, Schema, Deploy, Reset, Data, DeployWithData, Database, DropAndDatabase, All, DropAndAll,
+                             ResetAndData, ResetAndDatabase, ResetAndAll, Execute, Script.
   args                       Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each a SQL statement to invoke).
 
 Options:
@@ -205,7 +210,9 @@ Options:
   -so|--schema-order         Database schema name (multiple can be specified in priority order).
   -o|--output                Output directory path.
   -a|--assembly              Assembly containing embedded resources (multiple can be specified in probing order).
+  -p|--param                 Parameter expressed as a 'Name=Value' pair (multiple can be specified).
   -eo|--entry-assembly-only  Use the entry assembly only (ignore all other assemblies).
+  --accept-prompts           Accept prompts; command should _not_ stop and wait for user confirmation (DROP or RESET commands).
 ```
 
 The [`DbEx.Test.Console`](./tests/DbEx.Test.Console) demonstrates how this can be leveraged. The command-line arguments need to be passed through to support the standard options. Additional methods exist to specify defaults or change behaviour as required. An example [`Program.cs`](./tests/DbEx.Test.Console/Program.cs) is as follows.
@@ -242,6 +249,8 @@ _Tip:_ To ensure all files are included as embedded resources add the following 
 To simplify the process for the developer _DbEx_ enables the creation of new migration script files into the `Migrations` folder. This will name the script file correctly and output the basic SQL statements to perform the selected function. The date and time stamp will use [DateTime.UtcNow](https://docs.microsoft.com/en-us/dotnet/api/system.datetime.utcnow) as this should avoid conflicts where being co-developed across time zones. 
 
 This requires the usage of the `Script` command, plus zero or more optional arguments where the first is the sub-command (these are will depend on the script being created). The optional arguments must appear in the order listed; where not specified it will default within the script file. Depending on the database provider not all of the following will be supported.
+
+The following shows the `Script` sub-commands for SQL Server. Use `--help` to see the commands available at rubntime.
 
 Sub-command | Argument(s) | Description
 -|-|-
@@ -290,10 +299,10 @@ The [`Database`](./src/DbEx/DatabaseExtensions.cs) class provides a `SelectSchem
 
 To simplify the database management here are some further considerations that may make life easier over time; especially where you adopt the philosophy that the underlying busines logic (within the application APIs) is primarily responsible for the consistency of the data; and the data source (the database) is being largely used for storage and advanced query:
 
-- **Nullable everything** - all columns (except) the primary key should be defined as nullable. The business logic should validate the request to ensure data is provided where mandatory. Makes changes to the database schema easier over time without this constraint.
 - **Minimise constraints** - do not use database constraints unless absolutely necessary; only leverage where the database is the best and/or most efficient means to perform; i.e. uniqueness. The business logic should validate the request to ensure that any related data is provided, is valid and consistent. 
-- **No cross-schema referencing** - avoid referencing across `Schemas` where possible as this will impact the Migrations as part of this tooling; and we should not be using constraints as per prior point. Each schema is considered independent of others except in special cases, such as `dbo` or `sec` (security where used) for example.
+- **No cross-schema referencing** - avoid referencing across `Schemas` where possible as this may impact the Migrations as part of this tooling; and we should not be using constraints as per prior point. Each schema is considered independent of others (where using a schema per domain) except in special cases, such as `dbo` or `sec` (security where used) for example.
 - **JSON for schema-less** - where there is data that needs to be persisted, but rarely searched on, a schema-less approach should be considered such that a JSON object is persisted into a single column versus having to define additional tables and/or columns. This can further simplify the database requirements where the data is hierarchical in nature. To enable the [`ObjectToJsonConverter`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx/Mapping/Converters/ObjectToJsonConverter.cs) and [`AutoMapperObjectToJsonConverter`](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx.AutoMapper/Converters/AutoMapperObjectToJsonConverter.cs) can be used within the corresponding mapper to enable.
+- **Nullable everything** - all columns (except) the primary key should be defined as nullable. The business logic should validate the request to ensure data is provided where mandatory. Makes changes to the database schema easier over time without this constraint.
 
 <br/>
 
