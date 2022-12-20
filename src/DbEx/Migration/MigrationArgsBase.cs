@@ -16,6 +16,26 @@ namespace DbEx.Migration
     public abstract class MigrationArgsBase : OnRamp.CodeGeneratorDbArgsBase
     {
         /// <summary>
+        /// Gets the <see cref="DatabaseMigrationBase.DatabaseName"/> <see cref="Parameters"/> name.
+        /// </summary>
+        public const string DatabaseNameParamName = "DatabaseName";
+
+        /// <summary>
+        /// Gets the <see cref="DatabaseMigrationBase.Journal"/> <see cref="IDatabaseJournal.Schema"/> <see cref="Parameters"/> name.
+        /// </summary>
+        public const string JournalSchemaParamName = "JournalSchema";
+
+        /// <summary>
+        /// Gets the <see cref="DatabaseMigrationBase.Journal"/> <see cref="IDatabaseJournal.Table"/> <see cref="Parameters"/> name.
+        /// </summary>
+        public const string JournalTableParamName = "JournalTable";
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MigrationArgsBase"/>.
+        /// </summary>
+        public MigrationArgsBase() => DataParserArgs = new DataParserArgs(Parameters);
+
+        /// <summary>
         /// Gets or sets the <see cref="DbEx.MigrationCommand"/>.
         /// </summary>
         public MigrationCommand MigrationCommand { get; set; } = MigrationCommand.None;
@@ -24,6 +44,12 @@ namespace DbEx.Migration
         /// Gets the <see cref="Assembly"/> list to use to probe for assembly resource (in defined sequence); will check this assembly also (no need to explicitly specify).
         /// </summary>
         public List<Assembly> Assemblies { get; } = new List<Assembly> { typeof(MigrationArgs).Assembly };
+
+        /// <summary>
+        /// Gets the runtime parameters.
+        /// </summary>
+        /// <remarks>The following parameter names are reserved for a specific internal purpose: <see cref="DatabaseNameParamName"/>, <see cref="JournalSchemaParamName"/> and <see cref="JournalTableParamName"/>.</remarks>
+        public Dictionary<string, object?> Parameters { get; } = new Dictionary<string, object?>();
 
         /// <summary>
         /// Gets or sets the <see cref="ILogger"/> to optionally log the underlying database migration progress.
@@ -43,7 +69,7 @@ namespace DbEx.Migration
         /// <summary>
         /// Gets or sets the <see cref="Data.DataParserArgs"/>.
         /// </summary>
-        public DataParserArgs DataParserArgs { get; set; } = new DataParserArgs();
+        public DataParserArgs DataParserArgs { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="MigrationCommand.Script"/> name.
@@ -71,7 +97,6 @@ namespace DbEx.Migration
         /// </summary>
         /// <param name="assemblies">The assemblies to add.</param>
         /// <remarks>The order in which they are specified is the order in which they will be probed for embedded resources.</remarks>
-        /// <returns>The current <see cref="MigrationArgsBase"/> instance to support fluent-style method-chaining.</returns>
         public void AddAssembly(params Assembly[] assemblies)
         {
             foreach (var a in assemblies.Distinct().Reverse())
@@ -79,6 +104,19 @@ namespace DbEx.Migration
                 if (!Assemblies.Contains(a))
                     Assemblies.Insert(0, a);
             }
+        }
+
+        /// <summary>
+        /// Adds a parameter to the <see cref="MigrationArgsBase.Parameters"/> where it does not already exist; unless <paramref name="overrideExisting"/> is selected then it will add or override.
+        /// </summary>
+        /// <param name="key">The parameter key.</param>
+        /// <param name="value">The parameter value.</param>
+        /// <param name="overrideExisting">Indicates whether to override the existing value where it is pre-existing; otherwise, will not add/update.</param>
+        /// <returns>The current <see cref="MigrationArgs"/> instance to support fluent-style method-chaining.</returns>
+        public void Parameter(string key, object? value, bool overrideExisting = false)
+        {
+            if (!Parameters.TryAdd(key, value) && overrideExisting)
+                Parameters[key] = value;
         }
 
         /// <summary>
@@ -92,6 +130,8 @@ namespace DbEx.Migration
             MigrationCommand = args.MigrationCommand;
             Assemblies.Clear();
             Assemblies.AddRange(args.Assemblies);
+            Parameters.Clear();
+            args.Parameters.ForEach(x => Parameters.Add(x.Key, x.Value));
             Logger = args.Logger;
             OutputDirectory = args.OutputDirectory;
             SchemaOrder.Clear();

@@ -28,7 +28,7 @@ namespace DbEx.SqlServer.Migration
         private readonly string _databaseName;
         private readonly IDatabase _database;
         private readonly IDatabase _masterDatabase;
-        private List<string> _resetBypass = new List<string>();
+        private readonly List<string> _resetBypass = new();
 
         /// <summary>
         /// Initializes an instance of the <see cref="SqlServerMigration"/> class.
@@ -58,8 +58,10 @@ namespace DbEx.SqlServer.Migration
             if (!Args.SchemaOrder.Contains("dbo"))
                 Args.SchemaOrder.Insert(0, "dbo");
 
-            Journal.Schema = "dbo";
-            Journal.Table = "SchemaVersions";
+            // Add/set standard parameters.
+            Args.Parameter(MigrationArgsBase.DatabaseNameParamName, _databaseName, true);
+            Args.Parameter(MigrationArgsBase.JournalSchemaParamName, "dbo");
+            Args.Parameter(MigrationArgsBase.JournalTableParamName, "SchemaVersions");
         }
 
         /// <inheritdoc/>
@@ -109,7 +111,7 @@ namespace DbEx.SqlServer.Migration
 
             foreach (var sql in new SqlCommandSplitter().SplitScriptIntoCommands(sr.ReadToEnd()))
             {
-                await Database.SqlStatement(sql).NonQueryAsync(cancellationToken).ConfigureAwait(false);
+                await Database.SqlStatement(ReplaceSqlRuntimeParameters(sql)).NonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
     }

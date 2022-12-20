@@ -5,8 +5,8 @@
     <RootNamespace>DbEx</RootNamespace>
     <Product>DbEx</Product>
     <Title>DbEx Database Migration Tool.</Title>
-    <Description>DbEX Database Migration tool (including SQL Server support).</Description>
-    <PackageTags>dbex database dbup db-up sqlserver sql</PackageTags>
+    <Description>DbEX Database Migration tool base capabilities.</Description>
+    <PackageTags>dbex database dbup db-up data-migration</PackageTags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

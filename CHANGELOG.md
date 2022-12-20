@@ -2,6 +2,11 @@
 
 Represents the **NuGet** versions.
 
+## v2.2.0
+- *Enhancement:* Enable `Parameters` to be passed via the command line; either adding, or overridding any pre-configured values. Use `-p|--param Name=Value` syntax; e.g. `--param JournalSchema=dbo`.
+- *Enhancement:* Enable moustache syntax property placeholder replacements (e.g`{{ParameterName}}`), from the `Parameters`, within SQL scripts to allow changes during execution into the database at runtime.
+- *Enhancement:* Added command-line confirmation prompt for a `Drop` or `Reset` as these are considered highly destructive actions. Supports `--accept-prompts` option to bypass prompts within scripted scenarios.
+
 ## v2.1.1
 - *Fixed:* Multibyte support added to the `DataParser` insert and merge for SQL Server strings using the `N` prefix.
 

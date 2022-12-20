@@ -12,14 +12,14 @@ namespace DbEx.Migration
     public interface IDatabaseJournal
     {
         /// <summary>
-        /// Gets or sets the journal schema name.
+        /// Gets the journal schema name.
         /// </summary>
-        string? Schema { get; set; }
+        string? Schema { get; }
 
         /// <summary>
-        /// Gets or sets the journal table name.
+        /// Gets the journal table name.
         /// </summary>
-        string? Table { get; set; }
+        string? Table { get; }
 
         /// <summary>
         /// Ensures that the <see cref="IDatabaseJournal"/> exists within the database.

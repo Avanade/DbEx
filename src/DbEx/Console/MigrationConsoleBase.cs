@@ -27,7 +27,8 @@ namespace DbEx.Console
     /// <para>The underlying command line parsing is provided by <see href="https://natemcmaster.github.io/CommandLineUtils/"/>.</para></remarks>
     public abstract class MigrationConsoleBase
     {
-        private const string EntryAssemblyOnlyOptionName = "EO";
+        private const string EntryAssemblyOnlyOptionName = "entry-assembly-only";
+        private const string AcceptPromptsOptionName = "accept-prompts";
         private CommandArgument<MigrationCommand>? _commandArg;
         private CommandArgument? _additionalArgs;
         private CommandOption? _helpOption;
@@ -121,7 +122,9 @@ namespace DbEx.Console
             ConsoleOptions.Add(nameof(MigrationArgs.SchemaOrder), app.Option("-so|--schema-order", "Database schema name (multiple can be specified in priority order).", CommandOptionType.MultipleValue));
             ConsoleOptions.Add(nameof(MigrationArgs.OutputDirectory), app.Option("-o|--output", "Output directory path.", CommandOptionType.MultipleValue).Accepts(v => v.ExistingDirectory("Output directory path does not exist.")));
             ConsoleOptions.Add(nameof(MigrationArgs.Assemblies), app.Option("-a|--assembly", "Assembly containing embedded resources (multiple can be specified in probing order).", CommandOptionType.MultipleValue));
+            ConsoleOptions.Add(nameof(MigrationArgs.Parameters), app.Option("-p|--param", "Parameter expressed as a 'Name=Value' pair (multiple can be specified).", CommandOptionType.MultipleValue));
             ConsoleOptions.Add(EntryAssemblyOnlyOptionName, app.Option("-eo|--entry-assembly-only", "Use the entry assembly only (ignore all other assemblies).", CommandOptionType.NoValue));
+            ConsoleOptions.Add(AcceptPromptsOptionName, app.Option("--accept-prompts", "Accept prompts; command should _not_ stop and wait for user confirmation (DROP or RESET commands).", CommandOptionType.NoValue));
             _additionalArgs = app.Argument("args", "Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each a SQL statement to invoke).", multipleValues: true);
 
             OnBeforeExecute(app);
@@ -152,6 +155,10 @@ namespace DbEx.Console
                     Args.Assemblies.Clear();
                     Args.AddAssembly(Assembly.GetEntryAssembly()!);
                 });
+
+                vr = ValidateMultipleValue(nameof(MigrationArgs.Parameters), ctx, (ctx, co) => new ParametersValidator(Args).GetValidationResult(co, ctx));
+                if (vr != ValidationResult.Success)
+                    return vr;
 
                 if (_additionalArgs.Values.Count > 0 && !(Args.MigrationCommand.HasFlag(MigrationCommand.Script) || Args.MigrationCommand.HasFlag(MigrationCommand.Execute)))
                     return new ValidationResult($"Additional arguments can only be specified when the command is '{nameof(MigrationCommand.Script)}' or '{nameof(MigrationCommand.Execute)}'.", new string[] { "args" });
@@ -191,7 +198,25 @@ namespace DbEx.Console
                 Args.OverrideConnectionString(cs?.Value());
 
                 // Invoke any additional.
-                return OnValidation(ctx)!;
+                var res = OnValidation(ctx)!;
+
+                // Action any command input.
+                var nco = GetCommandOption(AcceptPromptsOptionName);
+                if (nco == null || !nco.HasValue())
+                {
+                    if (Args.MigrationCommand.HasFlag(MigrationCommand.Drop))
+                    {
+                        if (!Prompt.GetYesNo("DROP: Confirm that where the specified database already exists it should be dropped?", false, ConsoleColor.Yellow))
+                            return new ValidationResult("Database drop was not confirmed; no execution occurred.");
+                    }
+                    else if (Args.MigrationCommand.HasFlag(MigrationCommand.Reset))
+                    {
+                        if (!Prompt.GetYesNo("RESET: Confirm that the existing data within the database should be reset (deleted)?", false, ConsoleColor.Yellow))
+                            return new ValidationResult("Data reset was not confirmed; no execution occurred.");
+                    }
+                }
+
+                return res;
             });
 
             // Set up the code generation execution.
@@ -385,11 +410,16 @@ namespace DbEx.Console
 
             migrator.Args.Logger.LogInformation("{Content}", $"Command = {migrator.Args.MigrationCommand}");
             migrator.Args.Logger.LogInformation("{Content}", $"Provider = {migrator.Provider}");
-            migrator.Args.Logger.LogInformation("{Content}", $"Database = {migrator.DatabaseName}");
             migrator.Args.Logger.LogInformation("{Content}", $"SchemaOrder = {string.Join(", ", migrator.Args.SchemaOrder.ToArray())}");
             migrator.Args.Logger.LogInformation("{Content}", $"OutDir = {migrator.Args.OutputDirectory?.FullName}");
 
             additional?.Invoke(migrator.Args.Logger);
+
+            migrator.Args.Logger.LogInformation("{Content}", $"Parameters{(migrator.Args.Parameters.Count == 0 ? " = none" : ":")}");
+            foreach (var p in migrator.Args.Parameters.OrderBy(x => x.Key))
+            {
+                migrator.Args.Logger.LogInformation("{Content}", $"  {p.Key} = {p.Value}");
+            }
 
             migrator.Args.Logger.LogInformation("{Content}", $"Assemblies{(migrator.Args.Assemblies.Count == 0 ? " = none" : ":")}");
             foreach (var a in migrator.Args.Assemblies)

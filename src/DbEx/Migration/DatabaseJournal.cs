@@ -28,10 +28,10 @@ namespace DbEx.Migration
         public DatabaseJournal(DatabaseMigrationBase migrator) => Migrator = migrator ?? throw new ArgumentNullException(nameof(migrator));
 
         /// <inheritdoc/>
-        public string? Schema { get; set; }
+        public string? Schema => Migrator.Args.Parameters[MigrationArgsBase.JournalSchemaParamName]?.ToString();
 
         /// <inheritdoc/>
-        public string? Table { get; set; }
+        public string? Table => Migrator.Args.Parameters[MigrationArgsBase.JournalTableParamName]?.ToString();
 
         /// <summary>
         /// Gets the <see cref="DatabaseMigrationBase"/>.
