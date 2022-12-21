@@ -24,6 +24,7 @@ namespace DbEx.Migration
     public abstract class DatabaseMigrationBase
     {
         private const string NothingFoundText = "  ** Nothing found. **";
+        private const string OnDatabaseCreateName = "post.database.create";
         private HandlebarsCodeGenerator? _dataCodeGen;
         private bool _hasInitialized = false;
 
@@ -328,7 +329,7 @@ namespace DbEx.Migration
                 }
 
                 if (includeExecutionLogging)
-                    Logger.LogInformation("    {Content} {Tag}", script.Name, script.Tag ?? "");
+                    Logger.LogInformation("{Content}", $"    {script.Name}{(string.IsNullOrEmpty(script.Tag) ? "" : $" > {script.Tag}")}");
 
                 try
                 {
@@ -345,7 +346,7 @@ namespace DbEx.Migration
             }
 
             if (includeExecutionLogging && !somethingExecuted)
-                Logger.LogInformation("    {Content}", "No new scripts found to execute.");
+                Logger.LogInformation("{Content}", "    No new scripts found to execute.");
 
             return true;
         }
@@ -380,19 +381,19 @@ namespace DbEx.Migration
         /// <para>The <c>@DatabaseName</c> literal within the resulting (embedded resource) command is replaced by the <see cref="DatabaseName"/> using a <see cref="string.Replace(string, string)"/> (i.e. not database parameterized as not all databases support).</para></remarks>
         protected virtual async Task<bool> DatabaseDropAsync(CancellationToken cancellationToken = default)
         {
-            Logger.LogInformation("  Drop database...");
+            Logger.LogInformation("{Content}", "  Drop database...");
 
             var exists = await DatabaseExistsAsync(cancellationToken).ConfigureAwait(false);
             if (!exists)
             {
-                Logger.LogInformation("    {Content}", $"Database '{DatabaseName}' does not exist and therefore not dropped.");
+                Logger.LogInformation("{Content}", $"    Database '{DatabaseName}' does not exist and therefore not dropped.");
                 return true;
             }
 
             using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseDrop.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
             await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).NonQueryAsync(cancellationToken);
 
-            Logger.LogInformation("    {Content}", $"Database '{DatabaseName}' dropped.");
+            Logger.LogInformation("{Content}", $"    Database '{DatabaseName}' dropped.");
             return true;
         }
 
@@ -405,20 +406,39 @@ namespace DbEx.Migration
         /// <para>The <c>@DatabaseName</c> literal within the resulting (embedded resource) is replaced by the <see cref="DatabaseName"/> using a <see cref="string.Replace(string, string)"/> (i.e. not database parameterized as not all databases support).</para></remarks>
         protected virtual async Task<bool> DatabaseCreateAsync(CancellationToken cancellationToken = default)
         {
-            Logger.LogInformation("  Create database...");
+            Logger.LogInformation("{Content}", "  Create database...");
 
             var exists = await DatabaseExistsAsync(cancellationToken).ConfigureAwait(false);
             if (exists)
             {
-                Logger.LogInformation("    {Content}", $"Database '{DatabaseName}' already exists and therefore not created.");
+                Logger.LogInformation("{Content}", $"    Database '{DatabaseName}' already exists and therefore not created.");
                 return true;
             }
 
             using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseCreate.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
             await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).NonQueryAsync(cancellationToken);
 
-            Logger.LogInformation("    {Content}", $"Database '{DatabaseName}' did not exist and was created.");
-            return true;
+            Logger.LogInformation("{Content}", $"    Database '{DatabaseName}' did not exist and was created.");
+            Logger.LogInformation("{Content}", string.Empty);
+            Logger.LogInformation("{Content}", $"  Probing for '{OnDatabaseCreateName}' embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.sql"))}");
+
+            var scripts = new List<DatabaseMigrationScript>();
+            foreach (var ass in Args.Assemblies)
+            {
+                foreach (var name in ass.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture) && rn.EndsWith($".{OnDatabaseCreateName}.sql", StringComparison.InvariantCultureIgnoreCase))).OrderBy(x => x))
+                {
+                    scripts.Add(new DatabaseMigrationScript(ass, name) { RunAlways = true });
+                }
+            }
+
+            if (scripts.Count == 0)
+            {
+                Logger.LogInformation("{Content}", NothingFoundText);
+                return true;
+            }
+
+            Logger.LogInformation("{Content}", "  Execute the embedded resources...");
+            return await ExecuteScriptsAsync(scripts, true, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -433,11 +453,14 @@ namespace DbEx.Migration
             {
                 foreach (var name in ass.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture))).OrderBy(x => x))
                 {
+                    // Ignore any/all database create scripts.
+                    if (name.EndsWith($".{OnDatabaseCreateName}.sql", StringComparison.InvariantCultureIgnoreCase))
+                        continue;
+
                     // Determine run order and add script to list.
                     var order = name.EndsWith(".pre.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 1 :
                                 name.EndsWith(".post.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 3 : 2;
 
-                    using var sr = new StreamReader(ass.GetManifestResourceStream(name)!);
                     scripts.Add(new DatabaseMigrationScript(ass, name) { GroupOrder = order, RunAlways = order != 2 });
                 }
             }
@@ -448,7 +471,7 @@ namespace DbEx.Migration
                 return true;
             }
 
-            Logger.LogInformation("{Content}", "  Migrate the embedded resources...");
+            Logger.LogInformation("{Content}", "  Execute the embedded resources...");
             return await ExecuteScriptsAsync(scripts, true, cancellationToken).ConfigureAwait(false);
         }
 
@@ -512,7 +535,7 @@ namespace DbEx.Migration
             // Make sure there is work to be done.
             if (scripts.Count == 0)
             {
-                Logger.LogInformation(NothingFoundText);
+                Logger.LogInformation("{Content}", NothingFoundText);
                 return true;
             }
 
@@ -546,7 +569,8 @@ namespace DbEx.Migration
             // Drop all existing (in reverse order).
             int i = 0;
             var ss = new List<DatabaseMigrationScript>();
-            Logger.LogInformation("  Drop known schema objects...");
+            Logger.LogInformation("{Content}", string.Empty);
+            Logger.LogInformation("{Content}", "  Drop known schema objects...");
             foreach (var sor in list.OrderByDescending(x => x.SchemaOrder).ThenByDescending(x => x.TypeOrder).ThenByDescending(x => x.Schema).ThenByDescending(x => x.Name))
             {
                 ss.Add(new DatabaseMigrationScript(sor.SqlDropStatement, sor.SqlDropStatement) { GroupOrder = i++, RunAlways = true });
@@ -558,7 +582,8 @@ namespace DbEx.Migration
             // Execute each migration script proper (i.e. create 'em as scripted).
             i = 0;
             ss.Clear();
-            Logger.LogInformation("  Create known schema objects...");
+            Logger.LogInformation("{Content}", string.Empty);
+            Logger.LogInformation("{Content}", "  Create known schema objects...");
             foreach (var sor in list.OrderBy(x => x.SchemaOrder).ThenBy(x => x.TypeOrder).ThenBy(x => x.Schema).ThenBy(x => x.Name))
             {
                 var migrationScript = sor.MigrationScript;
@@ -612,18 +637,18 @@ namespace DbEx.Migration
         /// <remarks>This is invoked by using the <see cref="CommandExecuteAsync(string, Func{CancellationToken, Task{bool}}, Func{string}?, CancellationToken)"/>.</remarks>
         protected virtual async Task<bool> DatabaseResetAsync(CancellationToken cancellationToken = default)
         {
-            Logger.LogInformation("  Querying database to infer table(s) schema...");
+            Logger.LogInformation("{Content}", "  Querying database to infer table(s) schema...");
 
             var tables = await Database.SelectSchemaAsync(DatabaseSchemaConfig, Args.DataParserArgs, cancellationToken).ConfigureAwait(false);
             var query = tables.Where(DataResetFilterPredicate);
             if (Args.DataResetFilterPredicate != null)
                 query = query.Where(Args.DataResetFilterPredicate);
 
-            Logger.LogInformation("  Deleting data from all tables (except filtered)...");
+            Logger.LogInformation("{Content}", "  Deleting data from all tables (except filtered)...");
             var delete = query.Where(x => !x.IsAView).ToList();
             if (delete.Count == 0)
             {
-                Logger.LogInformation("    None.");
+                Logger.LogInformation("{Content}", "    None.");
                 return true;
             }
 
@@ -677,7 +702,7 @@ namespace DbEx.Migration
             }
 
             // Infer database schema.
-            Logger.LogInformation("  Querying database to infer table(s)/column(s) schema...");
+            Logger.LogInformation("{Content}", "  Querying database to infer table(s)/column(s) schema...");
             var dbTables = await Database.SelectSchemaAsync(DatabaseSchemaConfig, Args.DataParserArgs, cancellationToken).ConfigureAwait(false);
 
             // Iterate through each resource - parse the data, then insert/merge as requested.
@@ -739,7 +764,7 @@ namespace DbEx.Migration
 
             foreach (var table in dataTables)
             {
-                Logger.LogInformation("");
+                Logger.LogInformation("{Content}", string.Empty);
                 Logger.LogInformation("{Content}", $"---- Executing {table.Schema}{(table.Schema == string.Empty ? "" : ".")}{table.Name} SQL:");
 
                 var sql = _dataCodeGen.Generate(table);
@@ -864,7 +889,7 @@ namespace DbEx.Migration
         {
             if (statements == null || statements.Length == 0)
             {
-                Logger.LogInformation("  No statements to execute.");
+                Logger.LogInformation("{Content}", "  No statements to execute.");
                 return true;
             }
 
