@@ -94,7 +94,7 @@ A migration script can contain basic moustache value replacement syntax such as 
 
 It is recommended that each script be enclosed by a transaction that can be rolled back in the case of error; otherwise, a script could be partially applied and will then need manual intervention to resolve.
 
-_Note_: There are _special case_ scripts that will be executed pre- and post- migrations. In that any scripts ending with `.pre.deploy.sql` will always be executed before the migrations are attempted, and any scripts ending with `.post.deploy.sql` will always be executed after all the migrations have successfully executed.
+_Note_: There are _special case_ scripts that will be executed pre- and post- migration deployments. In that any scripts ending with `.pre.deploy.sql` will always be executed before the migrations are attempted, and any scripts ending with `.post.deploy.sql` will always be executed after all the migrations have successfully executed. Finally, any scripts ending with `.post.database.create.sql` will only be executed when (after) the database is created.
 
 <br/>
 

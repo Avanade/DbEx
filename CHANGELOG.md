@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v2.3.0
+- *Enhancement:* Support the execution of `*.post.database.create.sql` migration scripts that will _only_ get invoked after the creation of the database (i.e. a potential one-time only execution).
+
 ## v2.2.0
 - *Enhancement:* Enable `Parameters` to be passed via the command line; either adding, or overridding any pre-configured values. Use `-p|--param Name=Value` syntax; e.g. `--param JournalSchema=dbo`.
 - *Enhancement:* Enable moustache syntax property placeholder replacements (e.g`{{ParameterName}}`), from the `Parameters`, within SQL scripts to allow changes during execution into the database at runtime.
