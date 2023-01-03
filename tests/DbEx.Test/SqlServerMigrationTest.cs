@@ -23,7 +23,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("NoneDb");
             var l = UnitTest.GetLogger<SqlServerMigrationTest>();
             var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l };
-            var m = new SqlServerMigration(a);
+            using var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             Assert.IsTrue(r);
@@ -35,7 +35,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("EmptyDb");
             var l = UnitTest.GetLogger<SqlServerMigrationTest>();
             var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Empty.Test));
-            var m = new SqlServerMigration(a);
+            using var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             Assert.IsTrue(r);
@@ -47,7 +47,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ErrorDb");
             var l = UnitTest.GetLogger<SqlServerMigrationTest>();
             var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Error.TestError));
-            var m = new SqlServerMigration(a);
+            using var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             Assert.IsFalse(r);
@@ -63,7 +63,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ErrorDb");
             var l = UnitTest.GetLogger<SqlServerMigrationTest>();
             var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Error.TestError));
-            var m = new SqlServerMigration(a);
+            using var m = new SqlServerMigration(a);
             var r = await m.MigrateAndLogAsync().ConfigureAwait(false);
 
             Assert.IsFalse(r.Success);
@@ -166,7 +166,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigrationTest>();
             var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Console.Program));
-            var m = new SqlServerMigration(a);
+            using var m = new SqlServerMigration(a);
 
             m.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
             m.Args.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
@@ -185,7 +185,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("NoneDb");
             var l = UnitTest.GetLogger<SqlServerMigrationTest>();
             var a = new MigrationArgs(MigrationCommand.Reset, cs) { Logger = l };
-            var m = new SqlServerMigration(a);
+            using var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             Assert.IsTrue(r);
@@ -214,6 +214,8 @@ namespace DbEx.Test
             // Tables in dbo schema should not be touched.
             c = await db.SqlStatement("SELECT COUNT(*) FROM [dbo].[SchemaVersions]").ScalarAsync<int>().ConfigureAwait(false);
             Assert.That(c, Is.GreaterThanOrEqualTo(1));
+
+            m.Dispose();
         }
 
         [Test]
@@ -221,7 +223,7 @@ namespace DbEx.Test
         {
             var c = await CreateConsoleDb().ConfigureAwait(false);
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
-            var m = new SqlServerMigration(a);
+            using var m = new SqlServerMigration(a);
 
             var r = await m.ExecuteSqlStatementsAsync(new string[] { "SELECT * FROM Test.Contact" }).ConfigureAwait(false);
             Assert.IsTrue(r);
@@ -232,7 +234,7 @@ namespace DbEx.Test
         {
             var c = await CreateConsoleDb().ConfigureAwait(false);
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
-            var m = new SqlServerMigration(a);
+            using var m = new SqlServerMigration(a);
 
             var r = await m.ExecuteSqlStatementsAsync(new string[] { "SELECT * FROM Test.Contact", "SELECT BANANAS" }).ConfigureAwait(false);
             Assert.IsFalse(r);
@@ -243,7 +245,7 @@ namespace DbEx.Test
         {
             var c = await CreateConsoleDb().ConfigureAwait(false);
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
-            var m = new SqlServerMigration(a);
+            using var m = new SqlServerMigration(a);
 
             var r = await m.ExecuteSqlStatementsAsync(new string[] { @"SELECT * FROM Test.ContactBad; /* end */ GO; SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
             Assert.IsFalse(r);
@@ -254,7 +256,7 @@ namespace DbEx.Test
         {
             var c = await CreateConsoleDb().ConfigureAwait(false);
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
-            var m = new SqlServerMigration(a);
+            using var m = new SqlServerMigration(a);
 
             var r = await m.ExecuteSqlStatementsAsync(new string[] { @"SELECT * FROM Test.Contact;
 /* end */ 

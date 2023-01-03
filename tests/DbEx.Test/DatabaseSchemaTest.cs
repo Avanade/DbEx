@@ -24,7 +24,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<DatabaseSchemaTest>();
             var a = new MigrationArgs(MigrationCommand.Drop | MigrationCommand.Create | MigrationCommand.Migrate | MigrationCommand.Schema, cs) { Logger = l }.AddAssembly(typeof(Console.Program));
-            var m = new SqlServerMigration(a);
+            using var m = new SqlServerMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
             Assert.IsTrue(r);
 
@@ -328,7 +328,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("MySqlDb");
             var l = UnitTest.GetLogger<DatabaseSchemaTest>();
             var a = new MigrationArgs(MigrationCommand.Drop | MigrationCommand.Create | MigrationCommand.Migrate | MigrationCommand.Schema, cs) { Logger = l }.AddAssembly(typeof(MySqlStuff));
-            var m = new MySqlMigration(a);
+            using var m = new MySqlMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
             Assert.IsTrue(r);
 

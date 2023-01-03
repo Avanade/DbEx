@@ -23,7 +23,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerOutboxTest>();
             var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Console.Program), typeof(DbEx.Test.OutboxConsole.Program));
-            var m = new SqlServerMigration(a);
+            using var m = new SqlServerMigration(a);
             m.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
             m.Args.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => 1);
             await m.MigrateAsync().ConfigureAwait(false);

@@ -2,6 +2,11 @@
 
 Represents the **NuGet** versions.
 
+## v2.3.1
+- *Fixed:* Added `IDisposable` to `DatabaseMigrationBase` to ensure underlying database connections are correctly disposed (via `IDatabase.Dispose`).
+- *Fixed:* `DatabaseJournal` updated to use `DatabaseMigrationBase.ReplaceSqlRuntimeParameters` versus own limited implementation.
+- *Fixed:* Throw `InvalidOperationException` versus _errant_ `NullReferenceException` where required embedded resource is not found.
+
 ## v2.3.0
 - *Enhancement:* Support the execution of `*.post.database.create.sql` migration scripts that will _only_ get invoked after the creation of the database (i.e. a potential one-time only execution).
 

@@ -2,6 +2,7 @@
 
 using CoreEx.Database;
 using DbEx.DbSchema;
+using DbEx.Migration;
 using DbEx.Migration.Data;
 using OnRamp.Utility;
 using System;
@@ -83,7 +84,7 @@ namespace DbEx.SqlServer
         public override async Task LoadAdditionalInformationSchema(IDatabase database, List<DbTableSchema> tables, DataParserArgs? dataParserArgs, CancellationToken cancellationToken)
         {
             // Configure all the single column foreign keys.
-            using var sr3 = StreamLocator.GetResourcesStreamReader("SelectTableForeignKeys.sql", new Assembly[] { typeof(SqlServerSchemaConfig).Assembly }).StreamReader!;
+            using var sr3 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableForeignKeys.sql", new Assembly[] { typeof(SqlServerSchemaConfig).Assembly });
             var fks = await database.SqlStatement(await sr3.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("FK_CONSTRAINT_NAME"),
@@ -113,7 +114,7 @@ namespace DbEx.SqlServer
             }
 
             // Select the table identity columns.
-            using var sr4 = StreamLocator.GetResourcesStreamReader("SelectTableIdentityColumns.sql", new Assembly[] { typeof(SqlServerSchemaConfig).Assembly }).StreamReader!;
+            using var sr4 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableIdentityColumns.sql", new Assembly[] { typeof(SqlServerSchemaConfig).Assembly });
             await database.SqlStatement(await sr4.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr =>
             {
                 var t = tables.SingleOrDefault(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
@@ -128,7 +129,7 @@ namespace DbEx.SqlServer
             }, cancellationToken).ConfigureAwait(false);
 
             // Select the "always" generated columns.
-            using var sr5 = StreamLocator.GetResourcesStreamReader("SelectTableAlwaysGeneratedColumns.sql", new Assembly[] { typeof(SqlServerSchemaConfig).Assembly }).StreamReader!;
+            using var sr5 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableAlwaysGeneratedColumns.sql", new Assembly[] { typeof(SqlServerSchemaConfig).Assembly });
             await database.SqlStatement(await sr5.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr =>
             {
                 var t = tables.SingleOrDefault(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
@@ -141,7 +142,7 @@ namespace DbEx.SqlServer
             }, cancellationToken).ConfigureAwait(false);
 
             // Select the generated columns.
-            using var sr6 = StreamLocator.GetResourcesStreamReader("SelectTableGeneratedColumns.sql", new Assembly[] { typeof(SqlServerSchemaConfig).Assembly }).StreamReader!;
+            using var sr6 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableGeneratedColumns.sql", new Assembly[] { typeof(SqlServerSchemaConfig).Assembly });
             await database.SqlStatement(await sr6.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr =>
             {
                 var t = tables.SingleOrDefault(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));

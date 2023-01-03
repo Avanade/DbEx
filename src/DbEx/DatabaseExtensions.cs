@@ -2,8 +2,8 @@
 
 using CoreEx.Database;
 using DbEx.DbSchema;
+using DbEx.Migration;
 using DbEx.Migration.Data;
-using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,7 +37,7 @@ namespace DbEx
             var refDataPredicate = new Func<DbTableSchema, bool>(t => t.Columns.Any(c => c.Name == refDataCodeColumn && !c.IsPrimaryKey && c.DotNetType == "string") && t.Columns.Any(c => c.Name == refDataTextColumn && !c.IsPrimaryKey && c.DotNetType == "string"));
 
             // Get all the tables and their columns.
-            using var sr = StreamLocator.GetResourcesStreamReader("SelectTableAndColumns.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
+            using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableAndColumns.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly });
             await database.SqlStatement(await sr.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr =>
             {
                if (!databaseSchemaConfig.SupportsSchema && dr.GetValue<string>("TABLE_SCHEMA") != databaseSchemaConfig.DatabaseName)
@@ -70,7 +70,7 @@ namespace DbEx
             }
 
             // Configure all the single column primary and unique constraints.
-            using var sr2 = StreamLocator.GetResourcesStreamReader("SelectTablePrimaryKey.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly }).StreamReader!;
+            using var sr2 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTablePrimaryKey.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly });
             var pks = await database.SqlStatement(await sr2.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("CONSTRAINT_NAME"),

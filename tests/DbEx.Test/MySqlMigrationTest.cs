@@ -16,7 +16,7 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("MySqlDb");
             var l = UnitTest.GetLogger<MySqlMigrationTest>();
             var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly<MySqlStuff>();
-            var m = new MySqlMigration(a);
+            using var m = new MySqlMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
             Assert.IsTrue(r);
         }
@@ -29,14 +29,14 @@ namespace DbEx.Test
             var a = new MigrationArgs(MigrationCommand.ResetAndDatabase, cs) { Logger = l }.AddAssembly<MySqlStuff>();
             a.DataParserArgs.RefDataColumnDefaults.Add("sort_order", i => i);
 
-            var m = new MySqlMigration(a);
+            using var m = new MySqlMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
             Assert.IsTrue(r);
 
             a.MigrationCommand = MigrationCommand.ResetAndData;
-            m = new MySqlMigration(a);
+            using var m2 = new MySqlMigration(a);
 
-            r = await m.MigrateAsync().ConfigureAwait(false);
+            r = await m2.MigrateAsync().ConfigureAwait(false);
             Assert.IsTrue(r);
         }
     }

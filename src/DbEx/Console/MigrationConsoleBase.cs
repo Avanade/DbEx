@@ -312,7 +312,7 @@ namespace DbEx.Console
             try
             {
                 // Create the migrator.
-                var migrator = CreateMigrator();
+                using var migrator = CreateMigrator();
 
                 // Write header, etc.
                 if (!BypassOnWrites)
@@ -370,7 +370,7 @@ namespace DbEx.Console
         /// <summary>
         /// Creates the <see cref="DatabaseMigrationBase"/> that is used to perform the database migration orchestration.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The <see cref="DatabaseMigrationBase"/>.</returns>
         protected abstract DatabaseMigrationBase CreateMigrator();
 
         /// <summary>

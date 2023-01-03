@@ -87,7 +87,7 @@ namespace DbEx.SqlServer.Migration
         {
             // Filter out temporal tables.
             Logger.LogInformation("  Querying database to find and filter all temporal table(s)...");
-            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseTemporal.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
+            using var sr = GetRequiredResourcesStreamReader($"DatabaseTemporal.sql", ArtefactResourceAssemblies.ToArray());
             await Database.SqlStatement(sr.ReadToEnd()).SelectQueryAsync(dr =>
             {
                 _resetBypass.Add($"[{dr.GetValue<string>("schema")}].[{dr.GetValue<string>("table")}]");

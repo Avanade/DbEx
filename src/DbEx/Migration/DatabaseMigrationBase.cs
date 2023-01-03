@@ -21,12 +21,28 @@ namespace DbEx.Migration
     /// <summary>
     /// Represents the base capabilities for the database migration orchestrator leveraging <see href="https://dbup.readthedocs.io/en/latest/">DbUp</see> (where applicable).
     /// </summary>
-    public abstract class DatabaseMigrationBase
+    public abstract class DatabaseMigrationBase : IDisposable
     {
         private const string NothingFoundText = "  ** Nothing found. **";
         private const string OnDatabaseCreateName = "post.database.create";
         private HandlebarsCodeGenerator? _dataCodeGen;
         private bool _hasInitialized = false;
+
+        /// <summary>
+        /// Gets the <b>Resource</b> content from the file system and then <c>Resources</c> folder within the <paramref name="assemblies"/> until found.
+        /// </summary>
+        /// <param name="fileName">The file name.</param>
+        /// <param name="assemblies">Assemblies to use to probe for assembly resource (in defined sequence).</param>
+        /// <param name="extensions">The file extensions to also probe for.</param>
+        /// <returns>The resource <see cref="StreamReader"/> where found; otherwise, throws <see cref="ArgumentException"/>.</returns>
+        public static StreamReader GetRequiredResourcesStreamReader(string fileName, Assembly[]? assemblies = null, string[]? extensions = null)
+        {
+            var result = StreamLocator.GetResourcesStreamReader(fileName, assemblies, extensions);
+            if (result.StreamReader == null)
+                throw new InvalidOperationException($"Embedded resource '{fileName}' is required and was not found within the selected assemblies.");
+
+            return result.StreamReader;
+        }
 
         /// <summary>
         /// Initializes an instance of the <see cref="DatabaseMigrationBase"/> class.
@@ -367,7 +383,7 @@ namespace DbEx.Migration
         /// <remarks>The <c>@DatabaseName</c> literal within the resulting (embedded resource) command is replaced by the <see cref="DatabaseName"/> using a <see cref="string.Replace(string, string)"/> (i.e. not database parameterized as not all databases support).</remarks>
         protected virtual async Task<bool> DatabaseExistsAsync(CancellationToken cancellationToken = default)
         {
-            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseExists.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
+            using var sr = GetRequiredResourcesStreamReader($"DatabaseExists.sql", ArtefactResourceAssemblies.ToArray());
             var name = await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).ScalarAsync<string?>(cancellationToken);
             return name != null;
         }
@@ -390,7 +406,7 @@ namespace DbEx.Migration
                 return true;
             }
 
-            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseDrop.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
+            using var sr = GetRequiredResourcesStreamReader($"DatabaseDrop.sql", ArtefactResourceAssemblies.ToArray());
             await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).NonQueryAsync(cancellationToken);
 
             Logger.LogInformation("{Content}", $"    Database '{DatabaseName}' dropped.");
@@ -415,7 +431,7 @@ namespace DbEx.Migration
                 return true;
             }
 
-            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseCreate.sql", ArtefactResourceAssemblies.ToArray()).StreamReader!;
+            using var sr = GetRequiredResourcesStreamReader($"DatabaseCreate.sql", ArtefactResourceAssemblies.ToArray());
             await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).NonQueryAsync(cancellationToken);
 
             Logger.LogInformation("{Content}", $"    Database '{DatabaseName}' did not exist and was created.");
@@ -652,7 +668,7 @@ namespace DbEx.Migration
                 return true;
             }
 
-            using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseReset_sql", ArtefactResourceAssemblies.ToArray(), StreamLocator.HandlebarsExtensions).StreamReader!;
+            using var sr = GetRequiredResourcesStreamReader($"DatabaseReset_sql", ArtefactResourceAssemblies.ToArray(), StreamLocator.HandlebarsExtensions);
             var cg = new HandlebarsCodeGenerator(sr);
             var sql = cg.Generate(delete);
 
@@ -758,7 +774,7 @@ namespace DbEx.Migration
             // Cache the compiled code-gen template.
             if (_dataCodeGen == null)
             {
-                using var sr = StreamLocator.GetResourcesStreamReader($"DatabaseData_sql", ArtefactResourceAssemblies.ToArray(), StreamLocator.HandlebarsExtensions).StreamReader!;
+                using var sr = GetRequiredResourcesStreamReader($"DatabaseData_sql", ArtefactResourceAssemblies.ToArray(), StreamLocator.HandlebarsExtensions);
                 _dataCodeGen = new HandlebarsCodeGenerator(await sr.ReadToEndAsync().ConfigureAwait(false));
             }
 
@@ -915,8 +931,28 @@ namespace DbEx.Migration
         /// </summary>
         /// <param name="sql">The SQL command.</param>
         /// <returns>The resulting SQL command with runtime replacements make.</returns>
-        protected string ReplaceSqlRuntimeParameters(string sql) => Args.Parameters.Count == 0 
+        public string ReplaceSqlRuntimeParameters(string sql) => Args.Parameters.Count == 0 
             ? sql : Regex.Replace(sql, "(" + string.Join("|", Args.Parameters.Select(x => $"{{{{{x.Key}}}}}").ToArray()) + ")", m => Args.Parameters.TryGetValue(m.Value[2..^2], out var pv) 
                 ? pv?.ToString()  : throw new InvalidOperationException($"Runtime Parameter '{m.Value}' found within SQL command; a corresponding Parameter value has not been configured."));
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Dispose of the resources.
+        /// </summary>
+        /// <param name="disposing">Indicates whether to dispose.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposing)
+                return;
+
+            Database.Dispose();
+            MasterDatabase.Dispose();
+        }
     }
 }

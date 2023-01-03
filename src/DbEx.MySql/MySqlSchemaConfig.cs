@@ -3,7 +3,6 @@
 using CoreEx.Database;
 using DbEx.DbSchema;
 using DbEx.Migration.Data;
-using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +10,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using DbEx.Migration;
 
 namespace DbEx.MySql
 {
@@ -107,7 +107,7 @@ namespace DbEx.MySql
         public override async Task LoadAdditionalInformationSchema(IDatabase database, List<DbTableSchema> tables, DataParserArgs? dataParserArgs, CancellationToken cancellationToken)
         {
             // Configure all the single column foreign keys.
-            using var sr3 = StreamLocator.GetResourcesStreamReader("SelectTableForeignKeys.sql", new Assembly[] { typeof(MySqlSchemaConfig).Assembly }).StreamReader!;
+            using var sr3 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableForeignKeys.sql", new Assembly[] { typeof(MySqlSchemaConfig).Assembly });
             var fks = await database.SqlStatement(await sr3.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("fk_constraint_name"),
