@@ -3,7 +3,7 @@
 Represents the **NuGet** versions.
 
 ## v2.3.2
-- *Fixed:* The `DotNetType` and `SqlType` property value determination has been improved; removed explicit `Prepare` which could prove to be unreliable.
+- *Fixed:* The `DotNetType` and `SqlType` property value determination has been improved; removed explicit `Prepare` to simplify.
 - *Fixed:* Added `MigrationArgsBase.AcceptPrompts` to programmatically set the equivalent of the `--accept-prompts` command-line option. 
 
 ## v2.3.1
