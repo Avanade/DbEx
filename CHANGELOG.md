@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v2.3.2
+- *Fixed:* The `DotNetType` and `SqlType` property value determination has been improved; removed explicit `Prepare` to simplify.
+- *Fixed:* Added `MigrationArgsBase.AcceptPrompts` to programmatically set the equivalent of the `--accept-prompts` command-line option. 
+
 ## v2.3.1
 - *Fixed:* Added `IDisposable` to `DatabaseMigrationBase` to ensure underlying database connections are correctly disposed (via `IDatabase.Dispose`).
 - *Fixed:* `DatabaseJournal` updated to use `DatabaseMigrationBase.ReplaceSqlRuntimeParameters` versus own limited implementation.

@@ -206,12 +206,12 @@ namespace DbEx.Console
                 {
                     if (Args.MigrationCommand.HasFlag(MigrationCommand.Drop))
                     {
-                        if (!Prompt.GetYesNo("DROP: Confirm that where the specified database already exists it should be dropped?", false, ConsoleColor.Yellow))
+                        if (!Args.AcceptPrompts && !Prompt.GetYesNo("DROP: Confirm that where the specified database already exists it should be dropped?", false, ConsoleColor.Yellow))
                             return new ValidationResult("Database drop was not confirmed; no execution occurred.");
                     }
                     else if (Args.MigrationCommand.HasFlag(MigrationCommand.Reset))
                     {
-                        if (!Prompt.GetYesNo("RESET: Confirm that the existing data within the database should be reset (deleted)?", false, ConsoleColor.Yellow))
+                        if (!Args.AcceptPrompts && !Prompt.GetYesNo("RESET: Confirm that the existing data within the database should be reset (deleted)?", false, ConsoleColor.Yellow))
                             return new ValidationResult("Data reset was not confirmed; no execution occurred.");
                     }
                 }

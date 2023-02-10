@@ -130,12 +130,12 @@ namespace DbEx.DbSchema
         /// <summary>
         /// Gets the corresponding .NET <see cref="System.Type"/> name.
         /// </summary>
-        public string DotNetType => _dotNetType ?? throw new InvalidOperationException($"The {nameof(Prepare)} must be invoked before the {nameof(DotNetType)} property can be accessed.");
+        public string DotNetType => _dotNetType ?? DbTable?.Config.ToDotNetTypeName(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(DotNetType)} property can be accessed.");
 
         /// <summary>
         /// Gets the fully defined SQL type.
         /// </summary>
-        public string SqlType => _sqlType ?? throw new InvalidOperationException($"The {nameof(Prepare)} must be invoked before the {nameof(DotNetType)} property can be accessed.");
+        public string SqlType => _sqlType ?? DbTable?.Config.ToFormattedSqlType(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(SqlType)} property can be accessed.");
 
         /// <summary>
         /// Prepares the schema by updating the calcuated properties: <see cref="DotNetType"/> and <see cref="SqlType"/>.
@@ -179,7 +179,8 @@ namespace DbEx.DbSchema
             ForeignColumn = column.ForeignColumn;
             IsForeignRefData = column.IsForeignRefData;
             ForeignRefDataCodeColumn = column.ForeignRefDataCodeColumn;
-            Prepare();
+            _dotNetType = column._dotNetType;
+            _sqlType = column._sqlType;
         }
     }
 }

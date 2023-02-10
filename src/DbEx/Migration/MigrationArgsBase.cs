@@ -87,6 +87,11 @@ namespace DbEx.Migration
         public List<string>? ExecuteStatements { get; set; }
 
         /// <summary>
+        /// Indicates whether to automatically accept any confirmation prompts (command-line execution only).
+        /// </summary>
+        public bool AcceptPrompts { get; set; }
+
+        /// <summary>
         /// Gets or sets the <see cref="MigrationCommand.Reset"/> table filtering predicate.
         /// </summary>
         /// <remarks>This is additional to any pre-configured database provider specified <see cref="DatabaseMigrationBase.DataResetFilterPredicate"/>.</remarks>

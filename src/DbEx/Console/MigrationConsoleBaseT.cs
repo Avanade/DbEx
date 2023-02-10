@@ -116,5 +116,15 @@ namespace DbEx.Console
             SupportedCommands = supportedCommands;
             return (TSelf)this;
         }
+
+        /// <summary>
+        /// Indicates whether to automatically accept any confirmation prompts (command-line execution only).
+        /// </summary>
+        /// <returns>The current instance to supported fluent-style method-chaining.</returns>
+        public TSelf AcceptsPrompts()
+        {
+            Args.AcceptPrompts = true;
+            return (TSelf)this;
+        }
     }
 }
