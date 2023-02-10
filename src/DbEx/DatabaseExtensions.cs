@@ -52,7 +52,6 @@ namespace DbEx
                     tables.Add(table = dt);
 
                 var dc = databaseSchemaConfig.CreateColumnFromInformationSchema(table, dr);
-                dc.Prepare();
                 table.Columns.Add(dc);
                 return 0;
             }, cancellationToken).ConfigureAwait(false);
