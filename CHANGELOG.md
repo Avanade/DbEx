@@ -3,7 +3,7 @@
 Represents the **NuGet** versions.
 
 ## v2.3.3
-- *Fixed:* The unquoting of identifiers whilst parsing schema objects previously in an empty identifier where the quote was not specified; i.e. for SQL Server `[dbo].[name]` worked, whereas, `dbo.name` did not; this has been corrected.
+- *Fixed:* The unquoting of identifiers whilst parsing schema objects resulted in an empty identifier where the quote was not specified; i.e. for SQL Server `[dbo].[name]` worked, whereas, `dbo.name` did not; this has been corrected.
 
 ## v2.3.2
 - *Fixed:* The `DotNetType` and `SqlType` property value determination has been improved; removed explicit `Prepare` to simplify.
