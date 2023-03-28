@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 using DbEx.Migration;
-using DbUp.MySql;
 using DbUp.Support;
 using System;
 using System.Collections.Generic;
@@ -37,10 +36,7 @@ namespace DbEx.MySql.Migration
                 {
                     script.Type = tokens[i + 1];
                     script.FullyQualifiedName = tokens[i + 2];
-
-                    var parser = new MySqlObjectParser();
-                    script.Name = parser.UnquoteIdentifier(script.FullyQualifiedName);
-
+                    script.Name = script.FullyQualifiedName;
                     return script;
                 }
             }
@@ -53,7 +49,7 @@ namespace DbEx.MySql.Migration
         /// Initializes a new instance of the <see cref="MySqlSchemaScript"/> class.
         /// </summary>
         /// <param name="migrationScript">The parent <see cref="DatabaseMigrationScript"/>.</param>
-        private MySqlSchemaScript(DatabaseMigrationScript migrationScript) : base(migrationScript) { }
+        private MySqlSchemaScript(DatabaseMigrationScript migrationScript) : base(migrationScript, "`", "`") { }
 
         /// <inheritdoc/>
         public override string SqlDropStatement => $"DROP {Type.ToUpperInvariant()} IF EXISTS `{Name}`";
