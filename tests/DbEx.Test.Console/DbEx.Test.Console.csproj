@@ -12,11 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Data\Other.sql" />
-    <None Remove="Migrations\000.post.database.create.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\src\DbEx.SqlServer\DbEx.SqlServer.csproj" />
     <ProjectReference Include="..\..\src\DbEx\DbEx.csproj" />
     <ProjectReference Include="..\DbEx.Test.OutboxConsole\DbEx.Test.OutboxConsole.csproj" />

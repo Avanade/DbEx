@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 using DbEx.Migration;
-using DbUp.SqlServer;
 using DbUp.Support;
 using System;
 using System.Collections.Generic;
@@ -38,17 +37,16 @@ namespace DbEx.SqlServer.Migration
                     script.Type = tokens[i + 1];
                     script.FullyQualifiedName = tokens[i + 2];
 
-                    var parser = new SqlServerObjectParser();
                     var index = script.FullyQualifiedName.IndexOf('.');
                     if (index < 0)
                     {
                         script.Schema = "dbo";
-                        script.Name = parser.UnquoteIdentifier(script.FullyQualifiedName);
+                        script.Name = script.FullyQualifiedName;
                     }
                     else
                     {
-                        script.Schema = parser.UnquoteIdentifier(script.FullyQualifiedName[..index]);
-                        script.Name = parser.UnquoteIdentifier(script.FullyQualifiedName[(index + 1)..]);
+                        script.Schema = script.FullyQualifiedName[..index];
+                        script.Name = script.FullyQualifiedName[(index + 1)..];
                     }
 
                     return script;
@@ -63,7 +61,7 @@ namespace DbEx.SqlServer.Migration
         /// Initializes a new instance of the <see cref="SqlServerSchemaScript"/> class.
         /// </summary>
         /// <param name="migrationScript">The parent <see cref="DatabaseMigrationScript"/>.</param>
-        private SqlServerSchemaScript(DatabaseMigrationScript migrationScript) : base(migrationScript) { }
+        private SqlServerSchemaScript(DatabaseMigrationScript migrationScript) : base(migrationScript, "[", "]") { }
 
         /// <inheritdoc/>
         public override string SqlDropStatement => $"DROP {Type.ToUpperInvariant()} IF EXISTS [{Schema}].[{Name}]";
