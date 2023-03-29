@@ -13,10 +13,9 @@ namespace DbEx.Migration
     public abstract class MigrationArgsBase<TSelf> : MigrationArgsBase where TSelf : MigrationArgsBase<TSelf>
     {
         /// <summary>
-        /// Adds (inserts) one or more <paramref name="assemblies"/> to <see cref="MigrationArgsBase.Assemblies"/> (before any existing values; i.e. last in first out/probed).
+        /// Adds one or more <paramref name="assemblies"/> to the <see cref="MigrationArgsBase.Assemblies"/>.
         /// </summary>
         /// <param name="assemblies">The assemblies to add.</param>
-        /// <remarks>The order in which they are specified is the order in which they will be probed for embedded resources.</remarks>
         /// <returns>The current <see cref="MigrationArgsBase{TSelf}"/> instance to support fluent-style method-chaining.</returns>
         public new TSelf AddAssembly(params Assembly[] assemblies)
         {
@@ -25,7 +24,7 @@ namespace DbEx.Migration
         }
 
         /// <summary>
-        /// Adds (inserts) one or more <paramref name="types"/> (being the underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/> (before any existing values; i.e. last in first out/probed).
+        /// Adds one or more <paramref name="types"/> (being the underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/>.
         /// </summary>
         /// <param name="types">The types to add.</param>
         /// <remarks>The order in which they are specified is the order in which they will be probed for embedded resources.</remarks>
@@ -42,7 +41,7 @@ namespace DbEx.Migration
         }
 
         /// <summary>
-        /// Adds (inserts) the <typeparamref name="TAssembly"/> (being the underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/> (before any existing values; i.e. last in first out/probed).
+        /// Adds the <typeparamref name="TAssembly"/> (being the underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/>.
         /// </summary>
         public TSelf AddAssembly<TAssembly>() => AddAssembly(typeof(TAssembly));
 

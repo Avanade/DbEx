@@ -43,6 +43,9 @@ namespace DbEx.MySql.Migration
             csb.Database = null;
             _masterDatabase = new MySqlDatabase(() => new MySqlConnection(csb.ConnectionString));
 
+            // Add this assembly for probing.
+            Args.AddAssemblyAfter(typeof(DatabaseMigrationBase).Assembly, typeof(MySqlMigration).Assembly);
+
             // Defaults the schema object types unless already specified.
             if (SchemaObjectTypes.Length == 0)
                 SchemaObjectTypes = new string[] { "FUNCTION", "VIEW", "PROCEDURE" };
