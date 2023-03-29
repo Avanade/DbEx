@@ -41,9 +41,14 @@ namespace DbEx.Migration
         public MigrationCommand MigrationCommand { get; set; } = MigrationCommand.None;
 
         /// <summary>
-        /// Gets the <see cref="Assembly"/> list to use to probe for assembly resource (in defined sequence); will check this assembly also (no need to explicitly specify).
+        /// Gets the <see cref="Assembly"/> list to use to probe for assembly resource (in defined sequence); will automatically add this (DbEx) assembly also (therefore no need to explicitly specify).
         /// </summary>
         public List<Assembly> Assemblies { get; } = new List<Assembly> { typeof(MigrationArgs).Assembly };
+
+        /// <summary>
+        /// Gets the <see cref="Assemblies"/> reversed in order for probe-based sequencing.
+        /// </summary>
+        public IEnumerable<Assembly> ProbeAssemblies => Assemblies.Distinct().Reverse();
 
         /// <summary>
         /// Gets the runtime parameters.
@@ -98,17 +103,43 @@ namespace DbEx.Migration
         public Func<DbSchema.DbTableSchema, bool>? DataResetFilterPredicate { get; set; }
 
         /// <summary>
-        /// Adds (inserts) one or more <paramref name="assemblies"/> to <see cref="Assemblies"/> (before any existing values).
+        /// Adds one or more <paramref name="assemblies"/> to the <see cref="Assemblies"/>.
         /// </summary>
         /// <param name="assemblies">The assemblies to add.</param>
-        /// <remarks>The order in which they are specified is the order in which they will be probed for embedded resources.</remarks>
+        /// <remarks>Where a specified <see cref="Assembly"/> item already exists within the <see cref="Assemblies"/> it will not be added again.</remarks>
         public void AddAssembly(params Assembly[] assemblies)
         {
-            foreach (var a in assemblies.Distinct().Reverse())
+            foreach (var assembly in assemblies)
             {
-                if (!Assemblies.Contains(a))
-                    Assemblies.Insert(0, a);
+                if (!Assemblies.Contains(assembly))
+                    Assemblies.Add(assembly);
             }
+        }
+
+        /// <summary>
+        /// Adds one or more <paramref name="assemblies"/> to the <see cref="Assemblies"/> after the specified <paramref name="assemblyToFind"/>; where not found, will be added to the end.
+        /// </summary>
+        /// <param name="assemblyToFind">The <see cref="Assembly"/> to find within the existing <see cref="Assemblies"/>.</param>
+        /// <param name="assemblies">The assemblies to add</param>
+        /// <remarks>Where a specified <see cref="Assembly"/> item already exists within the <see cref="Assemblies"/> it will not be added again.</remarks>
+        public void AddAssemblyAfter(Assembly assemblyToFind, params Assembly[] assemblies)
+        {
+            var index = Assemblies.IndexOf(assemblyToFind ?? throw new ArgumentNullException(nameof(assemblyToFind)));
+            if (index < 0)
+            {
+                AddAssembly(assemblies);
+                return;
+            }
+
+            var newAssemblies = new List<Assembly>();
+            foreach (var assembly in assemblies)
+            {
+                if (!Assemblies.Contains(assembly))
+                    newAssemblies.Add(assembly);
+            }
+
+
+            Assemblies.InsertRange(index + 1, newAssemblies);
         }
 
         /// <summary>

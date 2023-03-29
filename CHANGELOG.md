@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v2.3.4
+- *Fixed:* `MigrationArgsBase.Assemblies` internal list management simplified; all order/sequencing managed within `DatabaseMigrationBase` implementation to limit issues. Added a new `AddAssemblyAfter` to support explicit positioning where needed.
+
 ## v2.3.3
 - *Fixed:* The unquoting of identifiers whilst parsing schema objects resulted in an empty identifier where the quote was not specified; i.e. for SQL Server `[dbo].[name]` worked, whereas, `dbo.name` did not; this has been corrected.
 

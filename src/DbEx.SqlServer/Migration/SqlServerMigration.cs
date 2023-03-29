@@ -7,7 +7,6 @@ using DbEx.Migration;
 using DbUp.Support;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
-using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,6 +44,9 @@ namespace DbEx.SqlServer.Migration
 
             csb.InitialCatalog = "master";
             _masterDatabase = new SqlServerDatabase(() => new SqlConnection(csb.ConnectionString));
+
+            // Add this assembly for probing.
+            Args.AddAssemblyAfter(typeof(DatabaseMigrationBase).Assembly, typeof(SqlServerMigration).Assembly);
 
             // Where no data reset predicate filter added then default to exclude 'dbo' and 'cdc'; where a dev needs to do all then they can override with following predicate: schema => true;
             if (Args.DataResetFilterPredicate == null)

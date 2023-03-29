@@ -105,7 +105,7 @@ namespace DbEx.Migration
         public ILogger Logger => Args.Logger!;
 
         /// <summary>
-        /// Gets the root namespaces for the <see cref="MigrationArgsBase.Assemblies"/>.
+        /// Gets the root namespaces for the <see cref="MigrationArgsBase.Assemblies"/> (ordered by <see cref="MigrationArgsBase.ProbeAssemblies"/>).
         /// </summary>
         protected IEnumerable<string> Namespaces { get; } = new List<string>();
 
@@ -235,7 +235,7 @@ namespace DbEx.Migration
             _hasInitialized = true;
 
             var list = (List<string>)Namespaces;
-            Args.Assemblies.ForEach(x => list.Add(x.GetName().Name));
+            Args.ProbeAssemblies.ForEach(x => list.Add(x.GetName().Name));
 
             // Walk the assembly hierarchy.
             var alist = new List<Assembly>();
@@ -439,7 +439,7 @@ namespace DbEx.Migration
             Logger.LogInformation("{Content}", $"  Probing for '{OnDatabaseCreateName}' embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.sql"))}");
 
             var scripts = new List<DatabaseMigrationScript>();
-            foreach (var ass in Args.Assemblies)
+            foreach (var ass in Args.ProbeAssemblies)
             {
                 foreach (var name in ass.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture) && rn.EndsWith($".{OnDatabaseCreateName}.sql", StringComparison.InvariantCultureIgnoreCase))).OrderBy(x => x))
                 {
@@ -465,7 +465,7 @@ namespace DbEx.Migration
             Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.sql"))}");
 
             var scripts = new List<DatabaseMigrationScript>();
-            foreach (var ass in Args.Assemblies)
+            foreach (var ass in Args.ProbeAssemblies)
             {
                 foreach (var name in ass.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture))).OrderBy(x => x))
                 {
@@ -532,7 +532,7 @@ namespace DbEx.Migration
 
             // Get all the resources from the assemblies.
             Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{SchemaNamespace}.*.sql"))}");
-            foreach (var ass in Args.Assemblies)
+            foreach (var ass in Args.ProbeAssemblies)
             {
                 foreach (var rn in ass.GetManifestResourceNames().OrderBy(x => x))
                 {
@@ -698,7 +698,7 @@ namespace DbEx.Migration
             Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*.[sql|yaml]", true))}");
 
             var list = new List<(Assembly Assembly, string ResourceName)>();
-            foreach (var ass in Args.Assemblies.Reverse<Assembly>()) // Reversed as assumed data builds on top of earlier.
+            foreach (var ass in Args.Assemblies.Distinct()) // Assumed data builds on top of earlier (do not use ProbeAssemblies as this is reversed).
             {
                 foreach (var rn in ass.GetManifestResourceNames().OrderBy(x => x))
                 {
