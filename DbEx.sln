@@ -39,9 +39,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BB01353C-4
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbEx.SqlServer", "src\DbEx.SqlServer\DbEx.SqlServer.csproj", "{74DF6A5E-4F95-467A-8F64-5A4DBC3AAFFC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbEx.MySql", "src\DbEx.MySql\DbEx.MySql.csproj", "{2B2BD40D-46FD-4582-994D-39D8056DE55E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbEx.MySql", "src\DbEx.MySql\DbEx.MySql.csproj", "{2B2BD40D-46FD-4582-994D-39D8056DE55E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbEx.Test.MySqlConsole", "tests\DbEx.Test.MySqlConsole\DbEx.Test.MySqlConsole.csproj", "{80EF0604-F641-4D01-9922-0162D0C69E02}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbEx.Test.MySqlConsole", "tests\DbEx.Test.MySqlConsole\DbEx.Test.MySqlConsole.csproj", "{80EF0604-F641-4D01-9922-0162D0C69E02}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Github Actions", "Github Actions", "{B208377A-6E7E-4E59-AD2F-34C9CB9A5E81}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\CI.yml = .github\workflows\CI.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
