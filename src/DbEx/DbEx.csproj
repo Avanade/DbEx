@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFrameworks>net6.0;net7.0;netstandard2.1</TargetFrameworks>
     <RootNamespace>DbEx</RootNamespace>
     <Product>DbEx</Product>
     <Title>DbEx Database Migration Tool.</Title>
@@ -21,9 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database" Version="2.5.0" />
-    <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
-    <PackageReference Include="OnRamp" Version="1.0.6" />
+    <PackageReference Include="CoreEx.Database" Version="3.0.0" />
+    <PackageReference Include="dbup-sqlserver" Version="5.0.8" />
+    <PackageReference Include="OnRamp" Version="1.0.7" />
   </ItemGroup>
 
   <Import Project="..\..\Common.targets" />

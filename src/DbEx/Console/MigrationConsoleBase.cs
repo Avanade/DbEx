@@ -252,7 +252,7 @@ namespace DbEx.Console
         /// </summary>
         /// <param name="option">The option name.</param>
         /// <param name="action">The action to perform where <paramref name="option"/> is provided.</param>
-        protected void UpdateStringOption(string option, Action<string?> action)
+        protected void UpdateStringOption(string option, Action<string> action)
         {
             var co = GetCommandOption(option);
             if (co != null && co.HasValue())
