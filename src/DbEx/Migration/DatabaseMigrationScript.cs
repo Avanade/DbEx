@@ -76,6 +76,6 @@ namespace DbEx.Migration
         /// </summary>
         public StreamReader GetStreamReader() => _assembly is not null 
             ? new StreamReader(_assembly!.GetManifestResourceStream(Name)!) 
-            : (_file is not null ? _file!.OpenText() : new StreamReader(new MemoryStream(Encoding.Default.GetBytes(_sql))));
+            : (_file is not null ? _file!.OpenText() : new StreamReader(new MemoryStream(Encoding.Default.GetBytes(_sql!))));
     }
 }

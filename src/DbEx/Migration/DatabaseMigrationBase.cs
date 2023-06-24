@@ -235,7 +235,7 @@ namespace DbEx.Migration
             _hasInitialized = true;
 
             var list = (List<string>)Namespaces;
-            Args.ProbeAssemblies.ForEach(x => list.Add(x.GetName().Name));
+            Args.ProbeAssemblies.ForEach(x => list.Add(x.GetName().Name!));
 
             // Walk the assembly hierarchy.
             var alist = new List<Assembly>();
@@ -246,7 +246,7 @@ namespace DbEx.Migration
                     alist.Add(type.Assembly);
 
                 type = type.BaseType;
-            } while (type != typeof(object));
+            } while (type != null && type != typeof(object));
 
             var list2 = (List<Assembly>)ArtefactResourceAssemblies;
             list2.AddRange(alist);
@@ -524,7 +524,7 @@ namespace DbEx.Migration
                 {
                     foreach (var fi in di.GetFiles("*.sql", SearchOption.AllDirectories))
                     {
-                        var rn = $"{fi.FullName[(Args.OutputDirectory.Parent.FullName.Length + 1)..]}".Replace(' ', '_').Replace('-', '_').Replace('\\', '.').Replace('/', '.');
+                        var rn = $"{fi.FullName[((Args.OutputDirectory?.Parent?.FullName.Length + 1) ?? 0)..]}".Replace(' ', '_').Replace('-', '_').Replace('\\', '.').Replace('/', '.');
                         scripts.Add(new DatabaseMigrationScript(fi, rn));
                     }
                 }
@@ -673,7 +673,7 @@ namespace DbEx.Migration
             var sql = cg.Generate(delete);
 
             using var sr2 = new StringReader(sql);
-            string line;
+            string? line;
             while ((line = sr2.ReadLine()) != null)
             {
                 Logger.LogInformation("{Content}", $"    {line}");
@@ -876,7 +876,7 @@ namespace DbEx.Migration
             var fi = new FileInfo(fn);
 
             // Generate the script content and write to file system.
-            if (!fi.Directory.Exists)
+            if (!fi.Directory!.Exists)
                 fi.Directory.Create();
 
             await File.WriteAllTextAsync(fi.FullName, new HandlebarsCodeGenerator(txt).Generate(data), cancellationToken).ConfigureAwait(false);
@@ -932,8 +932,8 @@ namespace DbEx.Migration
         /// <param name="sql">The SQL command.</param>
         /// <returns>The resulting SQL command with runtime replacements make.</returns>
         public string ReplaceSqlRuntimeParameters(string sql) => Args.Parameters.Count == 0 
-            ? sql : Regex.Replace(sql, "(" + string.Join("|", Args.Parameters.Select(x => $"{{{{{x.Key}}}}}").ToArray()) + ")", m => Args.Parameters.TryGetValue(m.Value[2..^2], out var pv) 
-                ? pv?.ToString()  : throw new InvalidOperationException($"Runtime Parameter '{m.Value}' found within SQL command; a corresponding Parameter value has not been configured."));
+            ? sql : Regex.Replace(sql, "(" + string.Join("|", Args.Parameters.Select(x => $"{{{{{x.Key}}}}}").ToArray()) + ")",
+                m => Args.Parameters.TryGetValue(m.Value[2..^2], out var pv) ? pv?.ToString()! : throw new InvalidOperationException($"Runtime Parameter '{m.Value}' found within SQL command; a corresponding Parameter value has not been configured."));
 
         /// <inheritdoc/>
         public void Dispose()

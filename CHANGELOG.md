@@ -2,6 +2,12 @@
 
 Represents the **NuGet** versions.
 
+## v2.3.5
+- *Enhancement:* Updated `CoreEx` to version `3.0.0`.
+- *Enhancement:* Updated all dependent packages to latest versions.
+- *Enhancement:* Added `net6.0` and `net7.0` support in addition to [.NET Standard](https://learn.microsoft.com/en-us/dotnet/standard/net-standard#when-to-target-net50-or-net60-vs-netstandard) to the `DbEx` packages. This will allow access to additional features per version where required, and overall performance improvements.
+- *Enhancement:* Included C# code-generation templates updated; target `net6.0`+ only.
+
 ## v2.3.4
 - *Fixed:* `MigrationArgsBase.Assemblies` internal list management simplified; all order/sequencing managed within `DatabaseMigrationBase` implementation to limit issues. Added a new `AddAssemblyAfter` to support explicit positioning where needed.
 

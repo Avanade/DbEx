@@ -4,7 +4,6 @@ using CoreEx.Database;
 using DbEx.DbSchema;
 using DbEx.Migration;
 using DbEx.Migration.Data;
-using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -219,7 +218,7 @@ namespace DbEx.SqlServer
             Guid => $"'{value}'",
             DateTime dt => $"'{dt.ToString(dataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
             DateTimeOffset dto => $"'{dto.ToString(dataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
-            _ => value.ToString()
+            _ => value.ToString()!
         };
 
         /// <inheritdoc/>

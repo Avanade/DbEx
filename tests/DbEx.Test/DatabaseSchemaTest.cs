@@ -333,7 +333,7 @@ namespace DbEx.Test
             Assert.IsTrue(r);
 
             using var db = new MySqlDatabase(() => new MySqlConnection(cs));
-            var tables = await db.SelectSchemaAsync(new MySqlSchemaConfig("dbex_test")).ConfigureAwait(false);
+            var tables = await db.SelectSchemaAsync(new MySqlSchemaConfig("DbEx_Test")).ConfigureAwait(false);
             Assert.IsNotNull(tables);
 
             // [Test].[ContactType]

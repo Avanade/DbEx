@@ -11,11 +11,15 @@ namespace DbEx.Migration
     /// </summary>
     internal class StringLogger : ILogger
     {
-        private readonly StringBuilder _stringBuilder = new StringBuilder();
+        private readonly StringBuilder _stringBuilder = new();
         private readonly IExternalScopeProvider _scopeProvider = new LoggerExternalScopeProvider();
 
         /// <inheritdoc/>
+#if NET7_0_OR_GREATER
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull => _scopeProvider.Push(state);
+#else
         public IDisposable BeginScope<TState>(TState state) => _scopeProvider.Push(state);
+#endif
 
         /// <inheritdoc/>
         public bool IsEnabled(LogLevel logLevel) => true;

@@ -41,8 +41,7 @@ namespace DbEx.Migration.Data
 
             SchemaTableName = $"'{(schema == string.Empty ? name : $"{schema}.{name}")}'";
 
-            DbTable = Parser.DbTables.Where(t => (!Parser.DatabaseSchemaConfig.SupportsSchema || t.Schema == schema) && t.Name == name).SingleOrDefault();
-            if (DbTable == null)
+            DbTable = Parser.DbTables.Where(t => (!Parser.DatabaseSchemaConfig.SupportsSchema || t.Schema == schema) && t.Name == name).SingleOrDefault() ??
                 throw new DataParserException($"Table {SchemaTableName} does not exist within the specified database.");
 
             // Check that an identifier generator can be used.

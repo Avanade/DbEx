@@ -199,7 +199,7 @@ namespace DbEx.MySql
             Guid => $"'{value}'",
             DateTime dt => $"'{dt.ToString(dataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
             DateTimeOffset dto => $"'{dto.ToString(dataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
-            _ => value.ToString()
+            _ => value.ToString()!
         };
 
         /// <inheritdoc/>
