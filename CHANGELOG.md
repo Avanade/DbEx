@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v2.3.6
+- *Enhancement:* Updated `CoreEx` to version `3.3.0`.
+
 ## v2.3.5
 - *Enhancement:* Updated `CoreEx` to version `3.0.0`.
 - *Enhancement:* Updated all dependent packages to latest versions.
