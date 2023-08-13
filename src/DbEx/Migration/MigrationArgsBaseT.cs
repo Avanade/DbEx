@@ -46,6 +46,16 @@ namespace DbEx.Migration
         public TSelf AddAssembly<TAssembly>() => AddAssembly(typeof(TAssembly));
 
         /// <summary>
+        /// Adds the <typeparamref name="TAssembly1"/> and <typeparamref name="TAssembly2"/> (being the underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/>.
+        /// </summary>
+        public TSelf AddAssembly<TAssembly1, TAssembly2>() => AddAssembly(typeof(TAssembly1), typeof(TAssembly2));
+
+        /// <summary>
+        /// Adds the <typeparamref name="TAssembly1"/>, <typeparamref name="TAssembly2"/> and <typeparamref name="TAssembly3"/> (being the underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/>.
+        /// </summary>
+        public TSelf AddAssembly<TAssembly1, TAssembly2, TAssembly3>() => AddAssembly(typeof(TAssembly1), typeof(TAssembly2), typeof(TAssembly3));
+
+        /// <summary>
         /// Adds a parameter to the <see cref="MigrationArgsBase.Parameters"/> where it does not already exist; unless <paramref name="overrideExisting"/> is selected then it will add or override.
         /// </summary>
         /// <param name="key">The parameter key.</param>
