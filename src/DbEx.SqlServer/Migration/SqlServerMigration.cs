@@ -48,10 +48,6 @@ namespace DbEx.SqlServer.Migration
             // Add this assembly for probing.
             Args.AddAssemblyAfter(typeof(DatabaseMigrationBase).Assembly, typeof(SqlServerMigration).Assembly);
 
-            // Where no data reset predicate filter added then default to exclude 'dbo' and 'cdc'; where a dev needs to do all then they can override with following predicate: schema => true;
-            if (Args.DataResetFilterPredicate == null)
-                Args.DataResetFilterPredicate = schema => schema.Schema != "dbo" || schema.Schema != "cdc";
-
             // Defaults the schema object types unless already specified.
             if (SchemaObjectTypes.Length == 0)
                 SchemaObjectTypes = new string[] { "TYPE", "FUNCTION", "VIEW", "PROCEDURE", "PROC" };
@@ -104,7 +100,8 @@ namespace DbEx.SqlServer.Migration
         }
 
         /// <inheritdoc/>
-        protected override Func<DbTableSchema, bool> DataResetFilterPredicate => schema => !_resetBypass.Contains(schema.QualifiedName!);
+        protected override Func<DbTableSchema, bool> DataResetFilterPredicate => 
+            schema => !_resetBypass.Contains(schema.QualifiedName!) && schema.Schema != "cdc" && !(schema.Schema == "dbo" && schema.Name.StartsWith("sys"));
 
         /// <inheritdoc/>
         protected override async Task ExecuteScriptAsync(DatabaseMigrationScript script, CancellationToken cancellationToken = default)
