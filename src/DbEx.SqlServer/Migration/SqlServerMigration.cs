@@ -101,7 +101,7 @@ namespace DbEx.SqlServer.Migration
 
         /// <inheritdoc/>
         protected override Func<DbTableSchema, bool> DataResetFilterPredicate => 
-            schema => !_resetBypass.Contains(schema.QualifiedName!) && schema.Schema != "cdc" && !(schema.Schema == "dbo" && schema.Name.StartsWith("sys"));
+            schema => !_resetBypass.Contains(schema.QualifiedName!) && schema.Schema != "sys" && schema.Schema != "cdc" && !(schema.Schema == "dbo" && schema.Name.StartsWith("sys"));
 
         /// <inheritdoc/>
         protected override async Task ExecuteScriptAsync(DatabaseMigrationScript script, CancellationToken cancellationToken = default)
