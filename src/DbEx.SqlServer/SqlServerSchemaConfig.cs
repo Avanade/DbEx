@@ -73,7 +73,7 @@ namespace DbEx.SqlServer
         public override DbColumnSchema CreateColumnFromInformationSchema(DbTableSchema table, DatabaseRecord dr) => new(table, dr.GetValue<string>("COLUMN_NAME"), dr.GetValue<string>("DATA_TYPE"))
         {
             IsNullable = dr.GetValue<string>("IS_NULLABLE").ToUpperInvariant() == "YES",
-            Length = (ulong?)dr.GetValue<int?>("CHARACTER_MAXIMUM_LENGTH"),
+            Length = (ulong?)(dr.GetValue<int?>("CHARACTER_MAXIMUM_LENGTH") <= 0 ? null : dr.GetValue<int?>("CHARACTER_MAXIMUM_LENGTH")),
             Precision = (ulong?)(dr.GetValue<byte?>("NUMERIC_PRECISION") ?? dr.GetValue<short?>("DATETIME_PRECISION")),
             Scale = (ulong?)dr.GetValue<int?>("NUMERIC_SCALE"),
             DefaultValue = dr.GetValue<string>("COLUMN_DEFAULT")
