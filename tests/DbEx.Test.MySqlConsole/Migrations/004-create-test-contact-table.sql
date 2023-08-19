@@ -5,5 +5,6 @@
       `date_of_birth` DATE NULL,
       `contact_type_id` INT NOT NULL DEFAULT 1,
       `gender_id` INT NULL,
+      `notes` TEXT NULL,
       CONSTRAINT `FK_Test_Contact_ContactType` FOREIGN KEY (`contact_type_id`) REFERENCES `contact_type` (`contact_type_id`)
     )

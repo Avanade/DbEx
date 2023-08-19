@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v2.3.8
+- *Fixed:* `SqlServerMigration` has been fixed to handle column size of `MAX` correctly.
+
 ## v2.3.7
 - *Fixed:* `SqlServerMigration` updated to correct the `DataResetFilterPredicate` to exclude all tables within schema `cdc`, and exclude all tables within the `dbo` schema where the table name starts with `sys`. This is to ensure that the internal Change Data tables are not reset, and that any SQL Server system tables are not inadvertently reset.
 

@@ -101,7 +101,7 @@ namespace DbEx.Test
             Assert.AreEqual("[Test].[Contact]", tab.QualifiedName);
             Assert.IsFalse(tab.IsAView);
             Assert.IsFalse(tab.IsRefData);
-            Assert.AreEqual(7, tab.Columns.Count);
+            Assert.AreEqual(8, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
 
             col = tab.Columns[0];
@@ -191,6 +191,24 @@ namespace DbEx.Test
 
             col = tab.Columns[6];
             Assert.AreEqual("TenantId", col.Name);
+
+            col = tab.Columns[7];
+            Assert.AreEqual("Notes", col.Name);
+            Assert.AreEqual("nvarchar", col.Type);
+            Assert.AreEqual("NVARCHAR(MAX) NULL", col.SqlType);
+            Assert.IsNull(col.Length);
+            Assert.IsNull(col.Scale);
+            Assert.IsNull(col.Precision);
+            Assert.AreEqual("string", col.DotNetType);
+            Assert.IsTrue(col.IsNullable);
+            Assert.IsFalse(col.IsPrimaryKey);
+            Assert.IsFalse(col.IsIdentity);
+            Assert.IsNull(col.IdentitySeed);
+            Assert.IsNull(col.IdentityIncrement);
+            Assert.IsFalse(col.IsUnique);
+            Assert.IsFalse(col.IsComputed);
+            Assert.IsFalse(col.IsForeignRefData);
+            Assert.IsNull(col.DefaultValue);
 
             // [Test].[MultiPk]
             tab = tables.Where(x => x.Name == "MultiPk").SingleOrDefault();
@@ -405,7 +423,7 @@ namespace DbEx.Test
             Assert.AreEqual("`contact`", tab.QualifiedName);
             Assert.IsFalse(tab.IsAView);
             Assert.IsFalse(tab.IsRefData);
-            Assert.AreEqual(6, tab.Columns.Count);
+            Assert.AreEqual(7, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
 
             col = tab.Columns[0];
@@ -491,6 +509,24 @@ namespace DbEx.Test
             Assert.AreEqual(string.Empty, col.ForeignSchema);
             Assert.AreEqual("gender", col.ForeignTable);
             Assert.AreEqual("gender_id", col.ForeignColumn);
+            Assert.IsNull(col.DefaultValue);
+
+            col = tab.Columns[6];
+            Assert.AreEqual("notes", col.Name);
+            Assert.AreEqual("text", col.Type);
+            Assert.AreEqual("TEXT NULL", col.SqlType);
+            Assert.AreEqual(65535, col.Length);
+            Assert.IsNull(col.Scale);
+            Assert.IsNull(col.Precision);
+            Assert.AreEqual("string", col.DotNetType);
+            Assert.IsTrue(col.IsNullable);
+            Assert.IsFalse(col.IsPrimaryKey);
+            Assert.IsFalse(col.IsIdentity);
+            Assert.IsNull(col.IdentitySeed);
+            Assert.IsNull(col.IdentityIncrement);
+            Assert.IsFalse(col.IsUnique);
+            Assert.IsFalse(col.IsComputed);
+            Assert.IsFalse(col.IsForeignRefData);
             Assert.IsNull(col.DefaultValue);
 
             // [Test].[MultiPk]
