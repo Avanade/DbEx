@@ -28,6 +28,21 @@ namespace DbEx.Migration.Data
         public List<DataColumn> Columns { get; } = new List<DataColumn>();
 
         /// <summary>
+        /// Gets the insert columns.
+        /// </summary>
+        public List<DataColumn> InsertColumns => Columns.Where(c => Table.InsertColumns.Any(x => x.Name == c.Name)).ToList();
+
+        /// <summary>
+        /// Gets the columns that are used for the merge insert.
+        /// </summary>
+        public List<DataColumn> MergeInsertColumns => Columns.Where(c => Table.MergeInsertColumns.Any(x => x.Name == c.Name)).ToList();
+
+        /// <summary>
+        /// Gets the columns that are used for the merge update.
+        /// </summary>
+        public List<DataColumn> MergeUpdateColumns => Columns.Where(c => Table.MergeUpdateColumns.Any(x => x.Name == c.Name)).ToList();
+
+        /// <summary>
         /// Adds a <see cref="DataColumn"/> to the row using the specified name and value.
         /// </summary>
         /// <param name="name">The column name.</param>

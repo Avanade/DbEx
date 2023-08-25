@@ -38,7 +38,11 @@ namespace DbEx
 
             // Get all the tables and their columns.
             using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableAndColumns.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly });
+#if NET7_0_OR_GREATER
+            await database.SqlStatement(await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr =>
+#else
             await database.SqlStatement(await sr.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr =>
+#endif
             {
                if (!databaseSchemaConfig.SupportsSchema && dr.GetValue<string>("TABLE_SCHEMA") != databaseSchemaConfig.DatabaseName)
                    return 0;
@@ -52,6 +56,9 @@ namespace DbEx
                     tables.Add(table = dt);
 
                 var dc = databaseSchemaConfig.CreateColumnFromInformationSchema(table, dr);
+                dc.IsCreatedAudit = dc.Name == (dataParserArgs?.CreatedByColumnName ?? databaseSchemaConfig.CreatedByColumnName) || dc.Name == (dataParserArgs?.CreatedDateColumnName ?? databaseSchemaConfig.CreatedDateColumnName);
+                dc.IsUpdatedAudit = dc.Name == (dataParserArgs?.UpdatedByColumnName ?? databaseSchemaConfig.UpdatedByColumnName) || dc.Name == (dataParserArgs?.UpdatedDateColumnName ?? databaseSchemaConfig.UpdatedDateColumnName);
+
                 table.Columns.Add(dc);
                 return 0;
             }, cancellationToken).ConfigureAwait(false);
@@ -70,7 +77,11 @@ namespace DbEx
 
             // Configure all the single column primary and unique constraints.
             using var sr2 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTablePrimaryKey.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly });
+#if NET7_0_OR_GREATER
+            var pks = await database.SqlStatement(await sr2.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr => new
+#else
             var pks = await database.SqlStatement(await sr2.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr => new
+#endif
             {
                 ConstraintName = dr.GetValue<string>("CONSTRAINT_NAME"),
                 TableSchema = dr.GetValue<string>("TABLE_SCHEMA"),

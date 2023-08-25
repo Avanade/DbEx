@@ -12,6 +12,7 @@ namespace DbEx.DbSchema
     public class DbColumnSchema
     {
         private string? _dotNetType;
+        private string? _dotNetName;
         private string? _sqlType;
 
         /// <summary>
@@ -128,21 +129,37 @@ namespace DbEx.DbSchema
         public string? ForeignRefDataCodeColumn { get; set; }
 
         /// <summary>
+        /// Indicates whether the column is a created audit column; i.e. name is <c>CreatedDate</c> or <c>CreatedBy</c>.
+        /// </summary>
+        public bool IsCreatedAudit { get; set; }
+
+        /// <summary>
+        /// Indicates whether the column is an updated audit column; i.e. name is <c>UpdatedDate</c> or <c>UpdatedBy</c>.
+        /// </summary>
+        public bool IsUpdatedAudit { get; set; }
+
+        /// <summary>
         /// Gets the corresponding .NET <see cref="System.Type"/> name.
         /// </summary>
-        public string DotNetType => _dotNetType ?? DbTable?.Config.ToDotNetTypeName(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(DotNetType)} property can be accessed.");
+        public string DotNetType => _dotNetType ??= DbTable?.Config.ToDotNetTypeName(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(DotNetType)} property can be accessed.");
+
+        /// <summary>
+        /// Gets the corresponding .NET name.
+        /// </summary>
+        public string DotNetName => _dotNetName ??= DbTableSchema.CreateDotNetName(Name);
 
         /// <summary>
         /// Gets the fully defined SQL type.
         /// </summary>
-        public string SqlType => _sqlType ?? DbTable?.Config.ToFormattedSqlType(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(SqlType)} property can be accessed.");
+        public string SqlType => _sqlType ??= DbTable?.Config.ToFormattedSqlType(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(SqlType)} property can be accessed.");
 
         /// <summary>
-        /// Prepares the schema by updating the calcuated properties: <see cref="DotNetType"/> and <see cref="SqlType"/>.
+        /// Prepares the schema by updating the calculated properties: <see cref="DotNetType"/>, <see cref="DotNetName"/> and <see cref="SqlType"/>.
         /// </summary>
         public void Prepare()
         {
             _dotNetType = DbTable.Config.ToDotNetTypeName(this);
+            _dotNetName = DbTableSchema.CreateDotNetName(Name);
             _sqlType = DbTable.Config.ToFormattedSqlType(this);
         }
 
@@ -179,7 +196,10 @@ namespace DbEx.DbSchema
             ForeignColumn = column.ForeignColumn;
             IsForeignRefData = column.IsForeignRefData;
             ForeignRefDataCodeColumn = column.ForeignRefDataCodeColumn;
+            IsCreatedAudit = column.IsCreatedAudit;
+            IsUpdatedAudit = column.IsUpdatedAudit;
             _dotNetType = column._dotNetType;
+            _dotNetName = column._dotNetName;
             _sqlType = column._sqlType;
         }
     }

@@ -110,16 +110,24 @@ namespace DbEx.Migration.Data
         public List<DbColumnSchema> Columns { get; } = new List<DbColumnSchema>();
 
         /// <summary>
+        /// Gets the insert columns.
+        /// </summary>
+        public List<DbColumnSchema> InsertColumns => Columns.Where(x => !x.IsUpdatedAudit).ToList();
+
+        /// <summary>
         /// Gets the merge match columns.
         /// </summary>
-        public List<DbColumnSchema> MergeMatchColumns => Columns.Where(x => 
-            !(x.Name == Args.CreatedDateColumnName || x.Name == Args.CreatedByColumnName || x.Name == Args.UpdatedDateColumnName || x.Name == Args.UpdatedDateColumnName)
-            && !(UseIdentifierGenerator && x.IsPrimaryKey)).ToList();
+        public List<DbColumnSchema> MergeMatchColumns => Columns.Where(x => !x.IsCreatedAudit && !x.IsUpdatedAudit && !(UseIdentifierGenerator && x.IsPrimaryKey)).ToList();
+
+        /// <summary>
+        /// Gets the merge insert columns.
+        /// </summary>
+        public List<DbColumnSchema> MergeInsertColumns => Columns.Where(x => !x.IsUpdatedAudit).ToList();
 
         /// <summary>
         /// Gets the merge update columns.
         /// </summary>
-        public List<DbColumnSchema> MergeUpdateColumns => Columns.Where(x => !(UseIdentifierGenerator && x.IsPrimaryKey)).ToList();
+        public List<DbColumnSchema> MergeUpdateColumns => Columns.Where(x => !x.IsCreatedAudit).ToList();
 
         /// <summary>
         /// Gets the primary key columns.

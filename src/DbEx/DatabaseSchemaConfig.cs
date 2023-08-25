@@ -106,7 +106,7 @@ namespace DbEx
         /// Opportunity to load additional `InformationSchema` related data that is specific to the database.
         /// </summary>
         /// <param name="database">The <see cref="IDatabase"/>.</param>
-        /// <param name="tables">The <see cref="DbTableSchema"/> list to load addtional data into.</param>
+        /// <param name="tables">The <see cref="DbTableSchema"/> list to load additional data into.</param>
         /// <param name="dataParserArgs">The <see cref="DataParserArgs"/>.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         public virtual Task LoadAdditionalInformationSchema(IDatabase database, List<DbTableSchema> tables, DataParserArgs? dataParserArgs, CancellationToken cancellationToken) => Task.CompletedTask;
@@ -143,21 +143,21 @@ namespace DbEx
         public abstract string ToFormattedSqlStatementValue(DataParserArgs dataParserArgs, object? value);
 
         /// <summary>
-        /// Inidicates whether the <paramref name="dbType"/> is considered an integer.
+        /// Indicates whether the <paramref name="dbType"/> is considered an integer.
         /// </summary>
         /// <param name="dbType">The database type.</param>
         /// <returns><c>true</c> indicates it is; otherwise, <c>false</c>.</returns>
         public abstract bool IsDbTypeInteger(string? dbType);
 
         /// <summary>
-        /// Inidicates whether the <paramref name="dbType"/> is considered a decimal.
+        /// Indicates whether the <paramref name="dbType"/> is considered a decimal.
         /// </summary>
         /// <param name="dbType">The database type.</param>
         /// <returns><c>true</c> indicates it is; otherwise, <c>false</c>.</returns>
         public abstract bool IsDbTypeDecimal(string? dbType);
 
         /// <summary>
-        /// Inidicates whether the <paramref name="dbType"/> is considered a string.
+        /// Indicates whether the <paramref name="dbType"/> is considered a string.
         /// </summary>
         /// <param name="dbType">The database type.</param>
         /// <returns><c>true</c> indicates it is; otherwise, <c>false</c>.</returns>
