@@ -67,6 +67,11 @@ namespace DbEx.SqlServer
                 dataParserArgs.RefDataColumnDefaults.TryAdd("IsActive", _ => true);
                 dataParserArgs.RefDataColumnDefaults.TryAdd("SortOrder", i => i);
             }
+
+            dataParserArgs.CreatedByColumnName ??= CreatedByColumnName;
+            dataParserArgs.CreatedDateColumnName ??= CreatedDateColumnName;
+            dataParserArgs.UpdatedByColumnName ??= UpdatedByColumnName;
+            dataParserArgs.UpdatedDateColumnName ??= UpdatedDateColumnName;
         }
 
         /// <inheritdoc/>

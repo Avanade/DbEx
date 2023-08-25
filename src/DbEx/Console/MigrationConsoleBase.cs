@@ -21,8 +21,8 @@ namespace DbEx.Console
     /// <summary>
     /// Base console that facilitates the <see cref="DatabaseMigrationBase"/> by managing the standard console command-line arguments/options.
     /// </summary>
-    /// <remarks>The standard console command-line arguments/options can be controlled via the constructor using the <see cref="SupportedOptions"/> flags. Additional capabilities can be added by inherting and overridding the
-    /// <see cref="OnBeforeExecute(CommandLineApplication)"/>, <see cref="OnValidation(ValidationContext)"/> and <see cref="OnMigrateAsync"/>. Changes to the console output can be achieved by overridding
+    /// <remarks>The standard console command-line arguments/options can be controlled via the constructor using the <see cref="SupportedOptions"/> flags. Additional capabilities can be added by inheriting and overriding the
+    /// <see cref="OnBeforeExecute(CommandLineApplication)"/>, <see cref="OnValidation(ValidationContext)"/> and <see cref="OnMigrateAsync"/>. Changes to the console output can be achieved by overriding
     /// <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(DatabaseMigrationBase)"/> and <see cref="OnWriteFooter(double)"/>.
     /// <para>The underlying command line parsing is provided by <see href="https://natemcmaster.github.io/CommandLineUtils/"/>.</para></remarks>
     public abstract class MigrationConsoleBase
@@ -160,20 +160,14 @@ namespace DbEx.Console
                 if (vr != ValidationResult.Success)
                     return vr;
 
-                if (_additionalArgs.Values.Count > 0 && !(Args.MigrationCommand.HasFlag(MigrationCommand.Script) || Args.MigrationCommand.HasFlag(MigrationCommand.Execute)))
-                    return new ValidationResult($"Additional arguments can only be specified when the command is '{nameof(MigrationCommand.Script)}' or '{nameof(MigrationCommand.Execute)}'.", new string[] { "args" });
+                if (_additionalArgs.Values.Count > 0 && !(Args.MigrationCommand.HasFlag(MigrationCommand.CodeGen) || Args.MigrationCommand.HasFlag(MigrationCommand.Script) || Args.MigrationCommand.HasFlag(MigrationCommand.Execute)))
+                    return new ValidationResult($"Additional arguments can only be specified when the command is '{nameof(MigrationCommand.CodeGen)}', '{nameof(MigrationCommand.Script)}' or '{nameof(MigrationCommand.Execute)}'.", new string[] { "args" });
 
-                if (Args.MigrationCommand.HasFlag(MigrationCommand.Script))
+                if (Args.MigrationCommand.HasFlag(MigrationCommand.CodeGen) || Args.MigrationCommand.HasFlag(MigrationCommand.Script))
                 {
                     for (int i = 0; i < _additionalArgs.Values.Count; i++)
                     {
-                        if (i == 0)
-                            Args.ScriptName = _additionalArgs.Values[i];
-                        else
-                        {
-                            Args.ScriptArguments ??= new Dictionary<string, string?>();
-                            Args.ScriptArguments.Add($"Param{i}", _additionalArgs.Values[i]);
-                        }
+                        Args.Parameters.Add($"Param{i}", _additionalArgs.Values[i]);
                     }
                 }
 

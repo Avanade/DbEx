@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace DbEx.DbSchema
@@ -17,6 +18,9 @@ namespace DbEx.DbSchema
     [DebuggerDisplay("{QualifiedName}")]
     public class DbTableSchema
     {
+        private string? _dotNetName;
+        private string? _pluralName;
+
         /// <summary>
         /// The <see cref="Regex"/> expression pattern for splitting strings into words.
         /// </summary>
@@ -35,6 +39,36 @@ namespace DbEx.DbSchema
 
             var s = StringConverter.ToSentenceCase(name)!;
             return new string(s.Replace(" ", " ").Replace("_", " ").Replace("-", " ").Split(' ').Where(x => !string.IsNullOrEmpty(x)).Select(x => x[..1].ToLower(System.Globalization.CultureInfo.InvariantCulture).ToCharArray()[0]).ToArray());
+        }
+
+        /// <summary>
+        /// Create a .NET friendly name.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>The .NET friendly name.</returns>
+        public static string CreateDotNetName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentNullException(nameof(name));
+
+            var sb = new StringBuilder();
+            name.Split(new char[] { '_', '-' }, StringSplitOptions.RemoveEmptyEntries).ForEach(part => sb.Append(StringConverter.ToPascalCase(part)));
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Create a plural from the name.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>The pluralized name.</returns>
+        public static string CreatePluralName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentNullException(nameof(name));
+
+            var words = Regex.Split(name, WordSplitPattern).Where(x => !string.IsNullOrEmpty(x)).ToList();
+            words[^1] = StringConverter.ToPlural(words[^1]);
+            return string.Join(string.Empty, words);
         }
 
         /// <summary>
@@ -61,6 +95,16 @@ namespace DbEx.DbSchema
         /// Gets the table name.
         /// </summary>
         public string Name { get; }
+
+        /// <summary>
+        /// Gets the table name in .NET friendly form.
+        /// </summary>
+        public string DotNetName => _dotNetName ??= CreateDotNetName(Name);
+
+        /// <summary>
+        /// Gets the <see cref="DotNetName"/> in plural form.
+        /// </summary>
+        public string PluralName => _pluralName ??= CreatePluralName(DotNetName);
 
         /// <summary>
         /// Gets the schema name.

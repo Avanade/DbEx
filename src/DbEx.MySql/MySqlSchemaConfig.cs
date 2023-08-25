@@ -67,6 +67,11 @@ namespace DbEx.MySql
                 dataParserArgs.RefDataColumnDefaults.TryAdd("is_active", _ => true);
                 dataParserArgs.RefDataColumnDefaults.TryAdd("sort_order", i => i);
             }
+
+            dataParserArgs.CreatedByColumnName ??= CreatedByColumnName;
+            dataParserArgs.CreatedDateColumnName ??= CreatedDateColumnName;
+            dataParserArgs.UpdatedByColumnName ??= UpdatedByColumnName;
+            dataParserArgs.UpdatedDateColumnName ??= UpdatedDateColumnName;
         }
 
         /// <inheritdoc/>

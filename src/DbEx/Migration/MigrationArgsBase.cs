@@ -53,7 +53,8 @@ namespace DbEx.Migration
         /// <summary>
         /// Gets the runtime parameters.
         /// </summary>
-        /// <remarks>The following parameter names are reserved for a specific internal purpose: <see cref="DatabaseNameParamName"/>, <see cref="JournalSchemaParamName"/> and <see cref="JournalTableParamName"/>.</remarks>
+        /// <remarks>The following parameter names are reserved for a specific internal purpose: <see cref="DatabaseNameParamName"/>, <see cref="JournalSchemaParamName"/> and <see cref="JournalTableParamName"/>.
+        /// <para><see cref="MigrationCommand.Script"/> and <see cref="MigrationCommand.CodeGen"/> can support additional command-line arguments; these are automatically added as '<c>ParamN</c>' where '<c>N</c>' is the zero-based index; e.g. '<c>Param0</c>'.</para></remarks>
         public Dictionary<string, object?> Parameters { get; } = new Dictionary<string, object?>();
 
         /// <summary>
@@ -75,16 +76,6 @@ namespace DbEx.Migration
         /// Gets or sets the <see cref="Data.DataParserArgs"/>.
         /// </summary>
         public DataParserArgs DataParserArgs { get; set; }
-
-        /// <summary>
-        /// Gets or sets the <see cref="MigrationCommand.Script"/> name.
-        /// </summary>
-        public string? ScriptName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the <see cref="MigrationCommand.Script"/> arguments.
-        /// </summary>
-        public IDictionary<string, string?>? ScriptArguments { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="MigrationCommand.Execute"/> statements.
@@ -173,16 +164,7 @@ namespace DbEx.Migration
             SchemaOrder.Clear();
             SchemaOrder.AddRange(args.SchemaOrder);
             DataParserArgs.CopyFrom(args.DataParserArgs);
-            ScriptName = args.ScriptName;
             DataResetFilterPredicate = args.DataResetFilterPredicate;
-
-            if (args.ScriptArguments == null)
-                ScriptArguments = null;
-            else
-            {
-                ScriptArguments = new Dictionary<string, string?>();
-                args.ScriptArguments.ForEach(x => ScriptArguments.Add(x.Key, x.Value));
-            }
 
             if (args.ExecuteStatements == null)
                 ExecuteStatements = null;
@@ -191,6 +173,23 @@ namespace DbEx.Migration
                 ExecuteStatements = new();
                 ExecuteStatements.AddRange(args.ExecuteStatements);
             }
+        }
+
+        /// <summary>
+        /// Creates a copy of the <see cref="Parameters"/> where all <see cref="KeyValuePair{TKey, TValue}.Value"/> are converted to a <see cref="string"/> or <c>null</c>.
+        /// </summary>
+        public IDictionary<string, string?> CreateStringParameters()
+        {
+            var dict = new Dictionary<string, string?>();
+            foreach (var item in Parameters)
+            {
+                if (item.Value == null)
+                    dict.Add(item.Key, null);
+                else
+                    dict.Add(item.Key, item.Value.ToString());
+            }
+
+            return dict;
         }
     }
 }

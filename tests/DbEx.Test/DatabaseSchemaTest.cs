@@ -43,6 +43,8 @@ namespace DbEx.Test
             Assert.IsTrue(tab.IsRefData);
             Assert.AreEqual(4, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
+            Assert.AreEqual("ContactType", tab.DotNetName);
+            Assert.AreEqual("ContactTypes", tab.PluralName);
 
             var col = tab.Columns[0];
             Assert.AreEqual("ContactTypeId", col.Name);
@@ -103,6 +105,8 @@ namespace DbEx.Test
             Assert.IsFalse(tab.IsRefData);
             Assert.AreEqual(8, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
+            Assert.AreEqual("Contact", tab.DotNetName);
+            Assert.AreEqual("Contacts", tab.PluralName);
 
             col = tab.Columns[0];
             Assert.AreEqual("ContactId", col.Name);
@@ -221,6 +225,8 @@ namespace DbEx.Test
             Assert.IsFalse(tab.IsRefData);
             Assert.AreEqual(4, tab.Columns.Count);
             Assert.AreEqual(2, tab.PrimaryKeyColumns.Count);
+            Assert.AreEqual("MultiPk", tab.DotNetName);
+            Assert.AreEqual("MultiPks", tab.PluralName);
 
             col = tab.Columns[0];
             Assert.AreEqual("Part1", col.Name);
@@ -315,8 +321,10 @@ namespace DbEx.Test
             Assert.AreEqual("[Test].[Person]", tab.QualifiedName);
             Assert.IsFalse(tab.IsAView);
             Assert.IsFalse(tab.IsRefData);
-            Assert.AreEqual(4, tab.Columns.Count);
+            Assert.AreEqual(6, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
+            Assert.AreEqual("Person", tab.DotNetName);
+            Assert.AreEqual("People", tab.PluralName);
 
             col = tab.Columns[0];
             Assert.AreEqual("PersonId", col.Name);
@@ -365,6 +373,8 @@ namespace DbEx.Test
             Assert.IsTrue(tab.IsRefData);
             Assert.AreEqual(4, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
+            Assert.AreEqual("ContactType", tab.DotNetName);
+            Assert.AreEqual("ContactTypes", tab.PluralName);
 
             var col = tab.Columns[0];
             Assert.AreEqual("contact_type_id", col.Name);
@@ -386,6 +396,7 @@ namespace DbEx.Test
             Assert.IsNull(col.ForeignTable);
             Assert.IsNull(col.ForeignColumn);
             Assert.IsNull(col.DefaultValue);
+            Assert.AreEqual("ContactTypeId", col.DotNetName);
 
             col = tab.Columns[1];
             Assert.AreEqual("code", col.Name);
@@ -407,6 +418,7 @@ namespace DbEx.Test
             Assert.IsNull(col.ForeignTable);
             Assert.IsNull(col.ForeignColumn);
             Assert.IsNull(col.DefaultValue);
+            Assert.AreEqual("Code", col.DotNetName);
 
             col = tab.Columns[2];
             Assert.AreEqual("text", col.Name);
@@ -423,8 +435,11 @@ namespace DbEx.Test
             Assert.AreEqual("`contact`", tab.QualifiedName);
             Assert.IsFalse(tab.IsAView);
             Assert.IsFalse(tab.IsRefData);
-            Assert.AreEqual(7, tab.Columns.Count);
+            Assert.AreEqual(11, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
+            Assert.AreEqual("Contact", tab.DotNetName);
+            Assert.AreEqual("Contacts", tab.PluralName);
+
 
             col = tab.Columns[0];
             Assert.AreEqual("contact_id", col.Name);
@@ -446,6 +461,7 @@ namespace DbEx.Test
             Assert.IsNull(col.ForeignTable);
             Assert.IsNull(col.ForeignColumn);
             Assert.IsNull(col.DefaultValue);
+            Assert.AreEqual("ContactId", col.DotNetName);
 
             col = tab.Columns[3];
             Assert.AreEqual("date_of_birth", col.Name);
@@ -467,6 +483,7 @@ namespace DbEx.Test
             Assert.IsNull(col.ForeignTable);
             Assert.IsNull(col.ForeignColumn);
             Assert.IsNull(col.DefaultValue);
+            Assert.AreEqual("DateOfBirth", col.DotNetName);
 
             col = tab.Columns[4];
             Assert.AreEqual("contact_type_id", col.Name);
@@ -489,6 +506,7 @@ namespace DbEx.Test
             Assert.AreEqual("contact_type_id", col.ForeignColumn);
             Assert.AreEqual("code", col.ForeignRefDataCodeColumn);
             Assert.AreEqual("1", col.DefaultValue);
+            Assert.AreEqual("ContactTypeId", col.DotNetName);
 
             col = tab.Columns[5];
             Assert.AreEqual("gender_id", col.Name);
@@ -540,6 +558,8 @@ namespace DbEx.Test
             Assert.IsFalse(tab.IsRefData);
             Assert.AreEqual(4, tab.Columns.Count);
             Assert.AreEqual(2, tab.PrimaryKeyColumns.Count);
+            Assert.AreEqual("MultiPk", tab.DotNetName);
+            Assert.AreEqual("MultiPks", tab.PluralName);
 
             col = tab.Columns[0];
             Assert.AreEqual("part1", col.Name);

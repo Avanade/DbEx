@@ -169,7 +169,7 @@ namespace DbEx.Migration
 
             // Where only creating a new script, then quickly do it and get out of here!
             if (Args.MigrationCommand.HasFlag(MigrationCommand.Script))
-                return await CreateScriptAsync(Args.ScriptName, Args.ScriptArguments, cancellationToken).ConfigureAwait(false);
+                return await CreateScriptAsync(Args.Parameters["Param0"]!.ToString(), Args.CreateStringParameters(), cancellationToken).ConfigureAwait(false);
 
             // Where only executing SQL statement, then execute and get out of here!
             if (Args.MigrationCommand.HasFlag(MigrationCommand.Execute))
@@ -353,7 +353,7 @@ namespace DbEx.Migration
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogCritical(ex, "An error occured executing the script: {Message}", ex.Message);
+                    Logger.LogCritical(ex, "An error occurred executing the script: {Message}", ex.Message);
                     return false;
                 }
 

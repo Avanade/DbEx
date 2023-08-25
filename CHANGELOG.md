@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v2.3.9
+- *Fixed:* The YAML-based `MigrationCommand.Data` logic previously set the `CreatedBy`, `CreatedDate`, `UpdatedBy` and `UpdatedDate` (or specified equivalent) regardless of whether the data was being inserted or merged (insert/update). This has been corrected such that the appropriate values are only set for the specific type of operation being performed; i.e. `Created*`-only or `Updated*`-only.
+- *Fixed:* Enabled additional command-line arguments to be passed for `MigrationCommand.CodeGen` to enable inherited usage flexibility. Removed `MigrationArgsBase.ScriptName` and `MigrationArgsBase.ScriptArguments` and included within existing `MigrationArgsBase.Parameters` as singular dictionary of key/value pairs (simplification).
+
 ## v2.3.8
 - *Fixed:* `SqlServerMigration` has been fixed to handle column size of `MAX` correctly.
 
