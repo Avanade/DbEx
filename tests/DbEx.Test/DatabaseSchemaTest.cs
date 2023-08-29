@@ -192,9 +192,11 @@ namespace DbEx.Test
             Assert.AreEqual("Gender", col.ForeignTable);
             Assert.AreEqual("GenderId", col.ForeignColumn);
             Assert.IsNull(col.DefaultValue);
+            Assert.IsFalse(col.IsTenantId);
 
             col = tab.Columns[6];
             Assert.AreEqual("TenantId", col.Name);
+            Assert.IsTrue(col.IsTenantId);
 
             col = tab.Columns[7];
             Assert.AreEqual("Notes", col.Name);

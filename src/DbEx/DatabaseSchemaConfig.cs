@@ -44,26 +44,32 @@ namespace DbEx
         /// <summary>
         /// Gets the name of the <see cref="IChangeLogAudit.CreatedDate"/> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to '<c>CreatedDate</c>'.</remarks>
         public abstract string CreatedDateColumnName { get; }
 
         /// <summary>
         /// Gets the name of the <see cref="IChangeLogAudit.CreatedBy"/> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to '<c>CreatedBy</c>'.</remarks>
         public abstract string CreatedByColumnName { get; }
 
         /// <summary>
         /// Gets the name of the <see cref="IChangeLogAudit.UpdatedDate"/> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to '<c>UpdatedDate</c>'.</remarks>
         public abstract string UpdatedDateColumnName { get; }
 
         /// <summary>
         /// Gets the name of the <see cref="IChangeLogAudit.UpdatedBy"/> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to '<c>UpdatedBy</c>'.</remarks>
         public abstract string UpdatedByColumnName { get; }
+
+        /// <summary>
+        /// Gets the name of the <see cref="ITenantId.TenantId"/> column (where it exists).
+        /// </summary>
+        public abstract string TenantIdColumnName { get; }
+
+        /// <summary>
+        /// Gets the name of the row-version (<see cref="IETag.ETag"/> equivalent) column (where it exists).
+        /// </summary>
+        public abstract string RowVersionColumnName { get; }
 
         /// <summary>
         /// Gets the default <see cref="IReferenceData.Code"/> column.
@@ -74,6 +80,11 @@ namespace DbEx
         /// Gets the default <see cref="IReferenceData.Text"/> column.
         /// </summary>
         public abstract string RefDataTextColumnName { get; }
+
+        /// <summary>
+        /// Gets the default <see cref="ILogicallyDeleted.IsDeleted"/> column.
+        /// </summary>
+        public abstract string IsDeletedColumnName { get; }
 
         /// <summary>
         /// Gets the default reference data predicate to determine <see cref="DbTableSchema.IsRefData"/>.

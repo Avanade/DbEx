@@ -8,8 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using OnRamp.Utility;
 
 namespace DbEx
 {
@@ -31,9 +34,11 @@ namespace DbEx
             var tables = new List<DbTableSchema>();
             DbTableSchema? table = null;
 
-            var idColumnNameSuffix = dataParserArgs?.IdColumnNameSuffix ?? databaseSchemaConfig.IdColumnNameSuffix;
-            var refDataCodeColumn = dataParserArgs?.RefDataCodeColumnName ?? databaseSchemaConfig.RefDataCodeColumnName;
-            var refDataTextColumn = dataParserArgs?.RefDataTextColumnName ?? databaseSchemaConfig.RefDataTextColumnName;
+            dataParserArgs ??= new DataParserArgs();
+            databaseSchemaConfig.PrepareDataParserArgs(dataParserArgs);
+            var idColumnNameSuffix = dataParserArgs?.IdColumnNameSuffix!;
+            var refDataCodeColumn = dataParserArgs?.RefDataCodeColumnName!;
+            var refDataTextColumn = dataParserArgs?.RefDataTextColumnName!;
             var refDataPredicate = new Func<DbTableSchema, bool>(t => t.Columns.Any(c => c.Name == refDataCodeColumn && !c.IsPrimaryKey && c.DotNetType == "string") && t.Columns.Any(c => c.Name == refDataTextColumn && !c.IsPrimaryKey && c.DotNetType == "string"));
 
             // Get all the tables and their columns.
@@ -56,8 +61,11 @@ namespace DbEx
                     tables.Add(table = dt);
 
                 var dc = databaseSchemaConfig.CreateColumnFromInformationSchema(table, dr);
-                dc.IsCreatedAudit = dc.Name == (dataParserArgs?.CreatedByColumnName ?? databaseSchemaConfig.CreatedByColumnName) || dc.Name == (dataParserArgs?.CreatedDateColumnName ?? databaseSchemaConfig.CreatedDateColumnName);
-                dc.IsUpdatedAudit = dc.Name == (dataParserArgs?.UpdatedByColumnName ?? databaseSchemaConfig.UpdatedByColumnName) || dc.Name == (dataParserArgs?.UpdatedDateColumnName ?? databaseSchemaConfig.UpdatedDateColumnName);
+                dc.IsCreatedAudit = dc.Name == dataParserArgs?.CreatedByColumnName || dc.Name == dataParserArgs?.CreatedDateColumnName;
+                dc.IsUpdatedAudit = dc.Name == dataParserArgs?.UpdatedByColumnName || dc.Name == dataParserArgs?.UpdatedDateColumnName;
+                dc.IsTenantId = dc.Name == dataParserArgs?.TenantIdColumnName;
+                dc.IsRowVersion = dc.Name == dataParserArgs?.RowVersionColumnName;
+                dc.IsIsDeleted = dc.Name == dataParserArgs?.IsDeletedColumnName;
 
                 table.Columns.Add(dc);
                 return 0;
@@ -150,6 +158,31 @@ namespace DbEx
                     c.ForeignColumn = fk.PrimaryKeyColumns[0].Name;
                     c.IsForeignRefData = true;
                     c.ForeignRefDataCodeColumn = refDataCodeColumn;
+                }
+            }
+
+            // Attempt to infer if a reference data column where not explicitly specified.
+            var sb = new StringBuilder();
+
+            foreach (var t in tables)
+            {
+                foreach (var c in t.Columns.Where(x => !x.IsPrimaryKey))
+                {
+                    if (c.IsForeignRefData)
+                    {
+                        c.IsRefData = true;
+                        continue;
+                    }
+
+                    sb.Clear();
+                    c.Name.Split(new char[] { '_', '-' }, StringSplitOptions.RemoveEmptyEntries).ForEach(part => sb.Append(StringConverter.ToPascalCase(part)));
+                    var words = Regex.Split(sb.ToString(), DbTableSchema.WordSplitPattern).Where(x => !string.IsNullOrEmpty(x));
+                    if (words.Count() > 1 && new string[] { "Id", "Code" }.Contains(words.Last(), StringComparer.InvariantCultureIgnoreCase))
+                    {
+                        var name = string.Join(string.Empty, words.Take(words.Count() - 1));
+                        if (tables.Any(x => x.Name == name && x.Schema == t.Schema && x.IsRefData))
+                            c.IsRefData = true;
+                    }
                 }
             }
 

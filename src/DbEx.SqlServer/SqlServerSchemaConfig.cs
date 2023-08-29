@@ -46,6 +46,18 @@ namespace DbEx.SqlServer
         public override string UpdatedByColumnName => "UpdatedBy";
 
         /// <inheritdoc/>
+        /// <remarks>Value is '<c>TenantId</c>'.</remarks>
+        public override string TenantIdColumnName => "TenantId";
+
+        /// <inheritdoc/>
+        /// <remarks>Value is '<c>RowVersion</c>'.</remarks>
+        public override string RowVersionColumnName => "RowVersion";
+
+        /// <inheritdoc/>
+        /// <remarks>Value is '<c>IsDeleted</c>'.</remarks>
+        public override string IsDeletedColumnName => "IsDeleted";
+
+        /// <inheritdoc/>
         /// <remarks>Value is '<c>Code</c>'.</remarks>
         public override string RefDataCodeColumnName => "Code";
 
@@ -68,10 +80,16 @@ namespace DbEx.SqlServer
                 dataParserArgs.RefDataColumnDefaults.TryAdd("SortOrder", i => i);
             }
 
+            dataParserArgs.IdColumnNameSuffix ??= IdColumnNameSuffix;
             dataParserArgs.CreatedByColumnName ??= CreatedByColumnName;
             dataParserArgs.CreatedDateColumnName ??= CreatedDateColumnName;
             dataParserArgs.UpdatedByColumnName ??= UpdatedByColumnName;
             dataParserArgs.UpdatedDateColumnName ??= UpdatedDateColumnName;
+            dataParserArgs.TenantIdColumnName ??= TenantIdColumnName;
+            dataParserArgs.RowVersionColumnName ??= RowVersionColumnName;
+            dataParserArgs.IsDeletedColumnName ??= IsDeletedColumnName;
+            dataParserArgs.RefDataCodeColumnName ??= RefDataCodeColumnName;
+            dataParserArgs.RefDataTextColumnName ??= RefDataTextColumnName;
         }
 
         /// <inheritdoc/>
