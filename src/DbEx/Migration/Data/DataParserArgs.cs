@@ -71,6 +71,24 @@ namespace DbEx.Migration.Data
         public string? UpdatedByColumnName { get; set; }
 
         /// <summary>
+        /// Gets or sets the name of the <see cref="ITenantId.TenantId"/> column (where it exists).
+        /// </summary>
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.TenantIdColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        public string? TenantIdColumnName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the row-version (<see cref="IETag.ETag"/> equivalent) column (where it exists).
+        /// </summary>
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.RowVersionColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        public string? RowVersionColumnName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the <see cref="ILogicallyDeleted.IsDeleted"/> column (where it exists).
+        /// </summary>
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.IsDeletedColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        public string? IsDeletedColumnName { get; set; }
+
+        /// <summary>
         /// Gets or sets the name of the <see cref="IReferenceData.Code"/> column.
         /// </summary>
         /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.RefDataCodeColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
@@ -169,10 +187,13 @@ namespace DbEx.Migration.Data
 
             UserName = args.UserName;
             DateTimeNow = args.DateTimeNow;
+            IdColumnNameSuffix = args.IdColumnNameSuffix;
             CreatedDateColumnName = args.CreatedDateColumnName;
             CreatedByColumnName = args.CreatedByColumnName;
             UpdatedDateColumnName = args.UpdatedDateColumnName;
             UpdatedByColumnName = args.UpdatedByColumnName;
+            RowVersionColumnName = args.RowVersionColumnName;
+            TenantIdColumnName = args.TenantIdColumnName;
             RefDataCodeColumnName = args.RefDataCodeColumnName;
             RefDataTextColumnName = args.RefDataTextColumnName;
             IdentifierGenerator = args.IdentifierGenerator;

@@ -45,15 +45,25 @@ namespace DbEx.DbSchema
         /// Create a .NET friendly name.
         /// </summary>
         /// <param name="name">The name.</param>
+        /// <param name="removeKnownSuffix">Indicates whether to remove the known suffix.</param>
         /// <returns>The .NET friendly name.</returns>
-        public static string CreateDotNetName(string name)
+        public static string CreateDotNetName(string name, bool removeKnownSuffix = false)
         {
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
 
             var sb = new StringBuilder();
             name.Split(new char[] { '_', '-' }, StringSplitOptions.RemoveEmptyEntries).ForEach(part => sb.Append(StringConverter.ToPascalCase(part)));
-            return sb.ToString();
+            var dotNet = sb.ToString();
+
+            if (removeKnownSuffix)
+            {
+                var words = Regex.Split(dotNet, WordSplitPattern).Where(x => !string.IsNullOrEmpty(x));
+                if (words.Count() > 1 && new string[] { "Id", "Code", "Json" }.Contains(words.Last(), StringComparer.InvariantCultureIgnoreCase))
+                    dotNet = string.Join(string.Empty, words.Take(words.Count() - 1));
+            }
+
+            return dotNet;
         }
 
         /// <summary>
@@ -84,6 +94,23 @@ namespace DbEx.DbSchema
             Name = name ?? throw new ArgumentNullException(nameof(name));
             QualifiedName = config.ToFullyQualifiedTableName(schema, name);
             Alias = CreateAlias(Name);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DbTableSchema"/> class referencing an existing instance.
+        /// </summary>
+        /// <param name="table">The existing <see cref="DbTableSchema"/>.</param>
+        public DbTableSchema(DbTableSchema table)
+        {
+            Config = table.Config;
+            Schema = table.Schema;
+            Name = table.Name;
+            QualifiedName = table.QualifiedName;
+            Alias = table.Alias;
+            IsAView = table.IsAView;
+            IsRefData = table.IsRefData;
+            Columns.AddRange(table.Columns);
+            RefDataCodeColumn = table.RefDataCodeColumn;
         }
 
         /// <summary>
@@ -140,6 +167,31 @@ namespace DbEx.DbSchema
         /// Gets the primary key <see cref="DbColumnSchema"/> list.
         /// </summary>
         public List<DbColumnSchema> PrimaryKeyColumns => Columns?.Where(x => x.IsPrimaryKey).ToList() ?? new List<DbColumnSchema>();
+
+        /// <summary>
+        /// Gets the standard <see cref="DbColumnSchema"/> list (i.e. not primary key, not created audit, not updated audit, not tenant-id, not row-version, not is-deleted).
+        /// </summary>
+        public List<DbColumnSchema> StandardColumns => Columns?.Where(x => !x.IsPrimaryKey && !x.IsCreatedAudit && !x.IsUpdatedAudit && !x.IsTenantId && !x.IsRowVersion && !x.IsIsDeleted).ToList() ?? new List<DbColumnSchema>();
+
+        /// <summary>
+        /// Gets the tenant idenfifier <see cref="DbColumnSchema"/> (if any).
+        /// </summary>
+        public DbColumnSchema? TenantIdColumn => Columns?.FirstOrDefault(x => x.IsTenantId);
+
+        /// <summary>
+        /// Gets the row version <see cref="DbColumnSchema"/> (if any).
+        /// </summary>
+        public DbColumnSchema? RowVersionColumn => Columns?.FirstOrDefault(x => x.IsRowVersion);
+
+        /// <summary>
+        /// Gets the is-deleted <see cref="DbColumnSchema"/> (if any).
+        /// </summary>
+        public DbColumnSchema? IsDeletedColumn => Columns?.FirstOrDefault(x => x.IsIsDeleted);
+
+        /// <summary>
+        /// Indicates whether the table has any audit columns.
+        /// </summary>
+        public bool HasAuditColumns => Columns?.Any(x => x.IsCreatedAudit || x.IsUpdatedAudit) ?? false;
 
         /// <summary>
         /// Gets or sets the <see cref="IReferenceData.Code"/> <see cref="DbColumnSchema"/>.

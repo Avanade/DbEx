@@ -13,6 +13,7 @@ namespace DbEx.DbSchema
     {
         private string? _dotNetType;
         private string? _dotNetName;
+        private string? _dotNetCleanedName;
         private string? _sqlType;
 
         /// <summary>
@@ -52,6 +53,11 @@ namespace DbEx.DbSchema
         /// Gets or sets the length.
         /// </summary>
         public ulong? Length { get; set; }
+
+        /// <summary>
+        /// Indicates whether the column has a length greater than zero.
+        /// </summary>
+        public bool HasLength => Length != null && Length > 0;
 
         /// <summary>
         /// Gets or sets the precision.
@@ -119,7 +125,12 @@ namespace DbEx.DbSchema
         public string? ForeignColumn { get; set; }
 
         /// <summary>
-        /// Indicates whether the foreign key is references a reference data table/entity.
+        /// Indicates whether the column <see cref="IsForeignRefData"/> or the name (after removing '<c>Id</c>' or '<c>Code</c>') matches a reference data table/entity in the same schema (where applicable).
+        /// </summary>
+        public bool IsRefData { get; set; }
+
+        /// <summary>
+        /// Indicates whether the foreign key is referencing a reference data table/entity.
         /// </summary>
         public bool IsForeignRefData { get; set; }
 
@@ -139,6 +150,26 @@ namespace DbEx.DbSchema
         public bool IsUpdatedAudit { get; set; }
 
         /// <summary>
+        /// Indicates whether the column is a row-version column; i.e. name is <c>RowVersion</c>.
+        /// </summary>
+        public bool IsRowVersion { get; set; }
+
+        /// <summary>
+        /// Indicates whether the column is a tenant identifier column; i.e. name is <c>TenantId</c>.
+        /// </summary>
+        public bool IsTenantId { get; set; }
+
+        /// <summary>
+        /// Indicates whether the column is an is-deleted column; i.e. name is <c>IsDeleted</c>.
+        /// </summary>
+        public bool IsIsDeleted { get; set; }
+
+        /// <summary>
+        /// Indicates whether the column <i>may</i> contain JSON content by convention (<see cref="DotNetType"/> is a `<c>string</c>` and the <see cref="Name"/> ends with `<c>Json</c>`) .
+        /// </summary>
+        public bool IsJsonContent => DotNetType == "string" && Name.EndsWith("Json", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
         /// Gets the corresponding .NET <see cref="System.Type"/> name.
         /// </summary>
         public string DotNetType => _dotNetType ??= DbTable?.Config.ToDotNetTypeName(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(DotNetType)} property can be accessed.");
@@ -149,19 +180,14 @@ namespace DbEx.DbSchema
         public string DotNetName => _dotNetName ??= DbTableSchema.CreateDotNetName(Name);
 
         /// <summary>
+        /// Gets the corresponding .NET name cleaned; by removing any known suffixes where <see cref="IsRefData"/> or <see cref="IsJsonContent"/> 
+        /// </summary>
+        public string DotNetCleanedName => _dotNetCleanedName ??= DbTableSchema.CreateDotNetName(Name, IsRefData || IsJsonContent);
+
+        /// <summary>
         /// Gets the fully defined SQL type.
         /// </summary>
         public string SqlType => _sqlType ??= DbTable?.Config.ToFormattedSqlType(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(SqlType)} property can be accessed.");
-
-        /// <summary>
-        /// Prepares the schema by updating the calculated properties: <see cref="DotNetType"/>, <see cref="DotNetName"/> and <see cref="SqlType"/>.
-        /// </summary>
-        public void Prepare()
-        {
-            _dotNetType = DbTable.Config.ToDotNetTypeName(this);
-            _dotNetName = DbTableSchema.CreateDotNetName(Name);
-            _sqlType = DbTable.Config.ToFormattedSqlType(this);
-        }
 
         /// <summary>
         /// Clones the <see cref="DbColumnSchema"/> creating a new instance.
@@ -195,11 +221,16 @@ namespace DbEx.DbSchema
             ForeignSchema = column.ForeignSchema;
             ForeignColumn = column.ForeignColumn;
             IsForeignRefData = column.IsForeignRefData;
+            IsRefData = column.IsRefData;
             ForeignRefDataCodeColumn = column.ForeignRefDataCodeColumn;
             IsCreatedAudit = column.IsCreatedAudit;
             IsUpdatedAudit = column.IsUpdatedAudit;
+            IsRowVersion = column.IsRowVersion;
+            IsTenantId = column.IsTenantId;
+            IsIsDeleted = column.IsIsDeleted;
             _dotNetType = column._dotNetType;
             _dotNetName = column._dotNetName;
+            _dotNetCleanedName = column._dotNetCleanedName;
             _sqlType = column._sqlType;
         }
     }
