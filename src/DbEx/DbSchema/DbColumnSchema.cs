@@ -13,6 +13,7 @@ namespace DbEx.DbSchema
     {
         private string? _dotNetType;
         private string? _dotNetName;
+        private string? _dotNetCleanedName;
         private string? _sqlType;
 
         /// <summary>
@@ -176,7 +177,12 @@ namespace DbEx.DbSchema
         /// <summary>
         /// Gets the corresponding .NET name.
         /// </summary>
-        public string DotNetName => _dotNetName ??= DbTableSchema.CreateDotNetName(Name, IsRefData || IsJsonContent);
+        public string DotNetName => _dotNetName ??= DbTableSchema.CreateDotNetName(Name);
+
+        /// <summary>
+        /// Gets the corresponding .NET name cleaned; by removing any known suffixes where <see cref="IsRefData"/> or <see cref="IsJsonContent"/> 
+        /// </summary>
+        public string DotNetCleanedName => _dotNetCleanedName ??= DbTableSchema.CreateDotNetName(Name, IsRefData || IsJsonContent);
 
         /// <summary>
         /// Gets the fully defined SQL type.
@@ -224,6 +230,7 @@ namespace DbEx.DbSchema
             IsIsDeleted = column.IsIsDeleted;
             _dotNetType = column._dotNetType;
             _dotNetName = column._dotNetName;
+            _dotNetCleanedName = column._dotNetCleanedName;
             _sqlType = column._sqlType;
         }
     }

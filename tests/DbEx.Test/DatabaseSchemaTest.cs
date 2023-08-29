@@ -171,6 +171,9 @@ namespace DbEx.Test
             Assert.AreEqual("ContactTypeId", col.ForeignColumn);
             Assert.AreEqual("Code", col.ForeignRefDataCodeColumn);
             Assert.AreEqual("((1))", col.DefaultValue);
+            Assert.AreEqual("ContactTypeId", col.DotNetName);
+            Assert.AreEqual("ContactType", col.DotNetCleanedName);
+            Assert.IsTrue(col.IsRefData);
 
             col = tab.Columns[5];
             Assert.AreEqual("GenderId", col.Name);
@@ -399,6 +402,7 @@ namespace DbEx.Test
             Assert.IsNull(col.ForeignColumn);
             Assert.IsNull(col.DefaultValue);
             Assert.AreEqual("ContactTypeId", col.DotNetName);
+            Assert.AreEqual("ContactTypeId", col.DotNetCleanedName);
 
             col = tab.Columns[1];
             Assert.AreEqual("code", col.Name);
