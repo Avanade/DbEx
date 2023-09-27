@@ -2,6 +2,13 @@
 
 Represents the **NuGet** versions.
 
+## v2.3.11
+- *Enhancement:* `DataParser.ParseJsonAsync` added to support JSON data file parsing in addition to the existing YAML. Files (embedded resources) can be mixed and matched as required.
+- *Enhancement:* `DataParser` supports specified schema of `*` to provide `DataConfig` that is applied to all tables in the YAML/JSON file.
+- *Enhancement:* `DataParser` supports hierarchical data (i.e parent/child) where the child row(s) are specified as a parent column value (must be an array). Will also attempt to update the child related column from the parent primary key where not specified to simplify specification.
+- *Fixed:* `DataParser` supports `bit` values of `0` and `1`, in addition to `false` and `true` respectively.
+- *Fixed:* `DataParser` constraint of table only being specified once in the YAML/JSON file has been removed; this is now supported. The underlying database insert or merge operations will be consolidated and executed in the sequence of initial specification.
+
 ## v2.3.10
 - *Fixed:* `DbTableSchema`, `DbColumnSchema` and `DataParserArgs` now correctly support the full range of by-convention properties (e.g. `RowVersion`, `TenantId` and `IsDeleted`). Both the `SqlServerSchemaConfig` and `MySqlSchemaConfig` updated to default names as appropriate. Additional properties added to `Db*Schema` to support additional code-generation scenarios, etc.
 

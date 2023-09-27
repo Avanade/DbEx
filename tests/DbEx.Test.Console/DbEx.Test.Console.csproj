@@ -12,6 +12,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Data\ContactType.json" />
+    <None Remove="Migrations\004a-create-test-contact-address-table.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\DbEx.SqlServer\DbEx.SqlServer.csproj" />
     <ProjectReference Include="..\..\src\DbEx\DbEx.csproj" />
     <ProjectReference Include="..\DbEx.Test.OutboxConsole\DbEx.Test.OutboxConsole.csproj" />

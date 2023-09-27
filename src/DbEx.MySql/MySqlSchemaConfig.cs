@@ -214,7 +214,7 @@ namespace DbEx.MySql
         }
 
         /// <inheritdoc/>
-        public override string ToFormattedSqlStatementValue(DataParserArgs dataParserArgs, object? value) => value switch
+        public override string ToFormattedSqlStatementValue(DbColumnSchema dbColumnSchema, DataParserArgs dataParserArgs, object? value) => value switch
         {
             null => "NULL",
             string str => $"'{str.Replace("'", "''", StringComparison.Ordinal)}'",

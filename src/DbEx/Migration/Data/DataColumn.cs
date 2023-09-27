@@ -19,6 +19,10 @@ namespace DbEx.Migration.Data
         {
             Table = table ?? throw new ArgumentNullException(nameof(table));
             Name = name ?? throw new ArgumentNullException(nameof(name));
+
+            // Map the column name where specified.
+            if (table.ColumnNameMappings is not null && table.ColumnNameMappings.TryGetValue(name, out var mappedName))
+                Name = mappedName;
         }
 
         /// <summary>
@@ -50,6 +54,6 @@ namespace DbEx.Migration.Data
         /// Gets the value formatted for use in a SQL statement.
         /// </summary>
         /// <returns>The value formatted for use in a SQL statement.</returns>
-        public string SqlValue => Table.DbTable.Config.ToFormattedSqlStatementValue(Table.Args, Value);
+        public string SqlValue => Table.DbTable.Config.ToFormattedSqlStatementValue(DbColumn ?? throw new InvalidOperationException("The DbColumn property must not be null."), Table.Args, Value);
     }
 }

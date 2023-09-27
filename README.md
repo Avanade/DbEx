@@ -118,14 +118,14 @@ The `Schema` folder is used to encourage the usage of database schemas. Therefor
 
 ### Data
 
-Data can be defined using [YAML](https://en.wikipedia.org/wiki/YAML) to enable simplified configuration that will be used to generate the required SQL statements to apply to the database.
+Data can be defined using [YAML](https://en.wikipedia.org/wiki/YAML) or JSON to enable simplified configuration that will be used to generate the required SQL statements to apply to the database.
 
 The data specified follows a basic indenting/levelling rule to enable:
 1. **Schema** - specifies Schema name.
 2. **Table** - specifies the Table name within the Schema; this will be validated to ensure it exists within the database as the underlying table schema (columns) will be inferred. The underyling rows will be [inserted](https://docs.microsoft.com/en-us/sql/t-sql/statements/insert-transact-sql) by default; or alternatively by prefixing with a `$` character a [merge](https://docs.microsoft.com/en-us/sql/t-sql/statements/merge-transact-sql) operation will be performed instead.
 3. **Rows** - each row specifies the column name and the corresponding values (except for reference data described below). The tooling will parse each column value according to the underying SQL type.
 
-Finally, SQL script files can also be provided in addition to YAML where explicit SQL is to be executed.
+Additionally, SQL script files can also be provided in addition to YAML and JSON where explicit SQL is to be executed.
 
 <br/>
 
@@ -139,7 +139,7 @@ Alternatively, a *Reference Data* reference could be the code itself, typically 
 
 <br/>
 
-#### YAML configuration
+#### YAML/JSON configuration
 
 Example YAML configuration for *merging* reference data is as follows.
 
@@ -175,7 +175,7 @@ Demo:
     - { FirstName: Wendy, LastName: Jones, Gender: F, Birthday: 1985-03-18 }
 ```
 
-Finally, runtime values can be used within the YAML using the value lookup notation; this notation is `^(Key)`. This will either reference the [`DataParserArgs`](./src/DbEx/Migration/Data/DataParserArgs.cs) `Parameters` property using the specified key. There are two special parameters, being `UserName` and `DateTimeNow`, that reference the same named `DataParserArgs` properties. Where not found the extended notation `^(Namespace.Type.Property.Method().etc, AssemblyName)` is used. Where the `AssemblyName` is not specified then the default `mscorlib` is assumed. The `System` root namespace is optional, i.e. it will be attempted by default. The initial property or method for a `Type` must be `static`, in that the `Type` will not be instantiated. Example as follows. These parameters (`Name=Value` pairs) can also be command-line specified.
+Runtime values can be used within the YAML using the value lookup notation; this notation is `^(Key)`. This will either reference the [`DataParserArgs`](./src/DbEx/Migration/Data/DataParserArgs.cs) `Parameters` property using the specified key. There are two special parameters, being `UserName` and `DateTimeNow`, that reference the same named `DataParserArgs` properties. Where not found the extended notation `^(Namespace.Type.Property.Method().etc, AssemblyName)` is used. Where the `AssemblyName` is not specified then the default `mscorlib` is assumed. The `System` root namespace is optional, i.e. it will be attempted by default. The initial property or method for a `Type` must be `static`, in that the `Type` will not be instantiated. Example as follows. These parameters (`Name=Value` pairs) can also be command-line specified.
 
 ``` yaml
 Demo:
@@ -183,6 +183,9 @@ Demo:
     - { FirstName: Wendy, Username: ^(System.Security.Principal.WindowsIdentity.GetCurrent().Name,System.Security.Principal.Windows), Birthday: ^(DateTimeNow) }
     - { FirstName: Wendy, Username: ^(Beef.ExecutionContext.EnvironmentUsername,Beef.Core), Birthday: ^(DateTime.UtcNow) }
 ```
+
+Advanced capabilities, such as nested YAML/JSON can be specified to represent hierarchical relationships (see `contact->addresses` within test [`data.yaml`](./tests/DbEx.Test.Console/Data/Data.yaml) and related [`TableNameMappings`](./tests/DbEx.Test.Console/Program.cs) to map to the correct underlying database table). [`DataConfig`](./src/Dbex/Migration/Data/DataConfig.cs) can also be specified using the `*` schema to control the behaviour within the context of a YAML/JSON file as demonstrated by the test [`ContactType.json`](./tests/DbEx.Test.Console/Data/ContactType.json).
+
 
 <br/>
 

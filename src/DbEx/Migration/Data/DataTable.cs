@@ -27,6 +27,7 @@ namespace DbEx.Migration.Data
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
 
+            // Determine features by notation/convention.
             if (name.StartsWith('$'))
             {
                 IsMerge = true;
@@ -39,8 +40,14 @@ namespace DbEx.Migration.Data
                 name = name[1..];
             }
 
-            SchemaTableName = $"'{(schema == string.Empty ? name : $"{schema}.{name}")}'";
+            // Determine the schema, table and column name mappings.
+            var mappings = parser.Args.TableNameMappings.Get(schema, name);
+            schema = mappings.Schema;
+            name = mappings.Table;
+            ColumnNameMappings = mappings.ColumnMappings ?? new Dictionary<string, string>();
 
+            // Get the database table.
+            SchemaTableName = $"'{(schema == string.Empty ? name : $"{schema}.{name}")}'";
             DbTable = Parser.DbTables.Where(t => (!Parser.DatabaseSchemaConfig.SupportsSchema || t.Schema == schema) && t.Name == name).SingleOrDefault() ??
                 throw new DataParserException($"Table {SchemaTableName} does not exist within the specified database.");
 
@@ -138,6 +145,26 @@ namespace DbEx.Migration.Data
         /// Gets the rows.
         /// </summary>
         public List<DataRow> Rows { get; } = new List<DataRow>();
+
+        /// <summary>
+        /// Gets the column name mappings (from the <see cref="DataParserArgs.TableNameMappings"/> where specified).
+        /// </summary>
+        public IDictionary<string, string>? ColumnNameMappings { get; }
+
+        /// <summary>
+        /// Gets the formatted pre-condition SQL.
+        /// </summary>
+        public string? PreConditionSql { get; private set; }
+
+        /// <summary>
+        /// Gets the formatted pre-SQL.
+        /// </summary>
+        public string? PreSql { get; private set; }
+
+        /// <summary>
+        /// Gets the formatted post-SQL.
+        /// </summary>
+        public string? PostSql { get; private set; }
 
         /// <summary>
         /// Adds a row (key value pairs of column name and corresponding value).
@@ -241,6 +268,17 @@ namespace DbEx.Migration.Data
                 AddColumn(name);
                 row.AddColumn(name, await value().ConfigureAwait(false));
             }
+        }
+
+        /// <summary>
+        /// Applys the <paramref name="config"/>.
+        /// </summary>
+        /// <param name="config">The <see cref="DataConfig"/>.</param>
+        internal void ApplyConfig(DataConfig? config)
+        {
+            PreConditionSql = config?.PreConditionSql?.Replace("{{schema}}", Schema, StringComparison.OrdinalIgnoreCase).Replace("{{table}}", Name, StringComparison.OrdinalIgnoreCase);
+            PreSql = config?.PreSql?.Replace("{{schema}}", Schema, StringComparison.OrdinalIgnoreCase).Replace("{{table}}", Name, StringComparison.OrdinalIgnoreCase);
+            PostSql = config?.PostSql?.Replace("{{schema}}", Schema, StringComparison.OrdinalIgnoreCase).Replace("{{table}}", Name, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

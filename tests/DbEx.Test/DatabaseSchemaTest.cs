@@ -41,7 +41,7 @@ namespace DbEx.Test
             Assert.AreEqual("[Test].[ContactType]", tab.QualifiedName);
             Assert.IsFalse(tab.IsAView);
             Assert.IsTrue(tab.IsRefData);
-            Assert.AreEqual(4, tab.Columns.Count);
+            Assert.AreEqual(6, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
             Assert.AreEqual("ContactType", tab.DotNetName);
             Assert.AreEqual("ContactTypes", tab.PluralName);

@@ -1,4 +1,8 @@
 ﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
+{{#if PreSql}}
+{{PreSql}}
+
+{{/if}}
 {{#if IsMerge}}
 CREATE TABLE #temp (
   {{#each Columns}}
@@ -28,4 +32,8 @@ DROP TABLE #temp
 INSERT INTO [{{Table.Schema}}].[{{Table.Name}}] ({{#each InsertColumns}}[{{Name}}]{{#unless @last}}, {{/unless}}{{/each}}) VALUES ({{#each InsertColumns}}{{#if UseForeignKeyQueryForId}}(SELECT TOP 1 [{{DbColumn.ForeignColumn}}] FROM [{{DbColumn.ForeignSchema}}].[{{DbColumn.ForeignTable}}] WHERE [{{DbColumn.ForeignRefDataCodeColumn}}] = {{{SqlValue}}}){{else}}{{{SqlValue}}}{{/if}}{{#unless @last}}, {{/unless}}{{/each}})
   {{/each}}
 SELECT {{Rows.Count}} -- Total rows inserted
+{{/if}}
+{{#if PostSql}}
+
+{{PostSql}}
 {{/if}}
