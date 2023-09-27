@@ -1,14 +1,13 @@
 ﻿Test:
-- $ContactType:
-  - E: External
-  - I: Internal
 - $Gender:
   - F: Female
   - M: Male
   - O: Other
 - Contact:
-  - { ContactId: 1, ContactType: E, Gender: M, Name: Bob, DateOfBirth: 2001-10-22 }
-  - { ContactId: 2, ContactType: I, Name: Jane, Phone: 1234 }
+  - { ContactId: 1, ContactType: E, Gender: M, Name: Bob, DateOfBirth: 2001-10-22, Addresses: [ { ContactAddressId: 10, Street: "1 Main Street" } ] }
+  - { ContactId: 2, ContactType: I, Name: Jane, Phone: 1234, Addresses: [ { ContactAddressId: 20, ContactId: 2, Street: "1 Main Street" } ] }
 - ^Person:
   - { PersonId: 88, Name: '^(DbEx.Test.Console.RuntimeValues.Name, DbEx.Test.Console)' }
   - { Name: '^(DefaultName)' }
+- $Gender:
+  - X: Not specified

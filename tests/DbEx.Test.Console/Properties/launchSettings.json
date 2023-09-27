@@ -2,7 +2,7 @@
   "profiles": {
     "DbEx.Test.Console": {
       "commandName": "Project",
-      "commandLineArgs": "dropandall -p DefaultName=Greg"
+      "commandLineArgs": "dropandall"
     }
   }
 }

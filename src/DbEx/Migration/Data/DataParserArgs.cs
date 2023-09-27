@@ -177,6 +177,11 @@ namespace DbEx.Migration.Data
         public Func<IEnumerable<DbTableSchema>, CancellationToken, Task<IEnumerable<DbTableSchema>>>? DbSchemaUpdaterAsync { get; set; }
 
         /// <summary>
+        /// Gets the <see cref="DataParserTableNameMappings"/>.
+        /// </summary>
+        public DataParserTableNameMappings TableNameMappings { get; } = new DataParserTableNameMappings();
+
+        /// <summary>
         /// Copy and replace from <paramref name="args"/>.
         /// </summary>
         /// <param name="args">The <see cref="DataParserArgs"/> to copy from.</param>
@@ -205,6 +210,8 @@ namespace DbEx.Migration.Data
             args.ColumnDefaults.ForEach(ColumnDefaults.Add);
             Parameters.Clear();
             args.Parameters.ForEach(x => Parameters.Add(x.Key, x.Value));
+            TableNameMappings.Clear();
+            args.TableNameMappings.ForEach(x => TableNameMappings.Add(x.Key.ParsedSchema, x.Key.ParsedTable, x.Value.Schema, x.Value.Table, x.Value.ColumnMappings));
         }
     }
 }

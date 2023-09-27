@@ -233,7 +233,7 @@ namespace DbEx.SqlServer
         }
 
         /// <inheritdoc/>
-        public override string ToFormattedSqlStatementValue(DataParserArgs dataParserArgs, object? value) => value switch
+        public override string ToFormattedSqlStatementValue(DbColumnSchema dbColumnSchema, DataParserArgs dataParserArgs, object? value) => value switch
         {
             null => "NULL",
             string str => $"N'{str.Replace("'", "''", StringComparison.Ordinal)}'",

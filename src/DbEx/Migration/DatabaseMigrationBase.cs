@@ -169,7 +169,7 @@ namespace DbEx.Migration
 
             // Where only creating a new script, then quickly do it and get out of here!
             if (Args.MigrationCommand.HasFlag(MigrationCommand.Script))
-                return await CreateScriptAsync(Args.Parameters["Param0"]!.ToString(), Args.CreateStringParameters(), cancellationToken).ConfigureAwait(false);
+                return await CreateScriptAsync(Args.Parameters.TryGetValue("Param0", out var p0) ? p0?.ToString() : null, Args.CreateStringParameters(), cancellationToken).ConfigureAwait(false);
 
             // Where only executing SQL statement, then execute and get out of here!
             if (Args.MigrationCommand.HasFlag(MigrationCommand.Execute))
@@ -218,7 +218,7 @@ namespace DbEx.Migration
                 return false;
 
             // Database data load.
-            if (!await CommandExecuteAsync(MigrationCommand.Data, "DATABASE DATA: Insert or merge the embedded YAML data...", DatabaseDataAsync, null, cancellationToken).ConfigureAwait(false))
+            if (!await CommandExecuteAsync(MigrationCommand.Data, "DATABASE DATA: Insert or merge the embedded data [yaml|json|sql]...", DatabaseDataAsync, null, cancellationToken).ConfigureAwait(false))
                 return false;
 
             return true;
@@ -695,15 +695,17 @@ namespace DbEx.Migration
         /// </summary>
         private async Task<bool> DatabaseDataAsync(CancellationToken cancellationToken)
         {
-            Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*.[sql|yaml]", true))}");
+            Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*", true))}");
 
             var list = new List<(Assembly Assembly, string ResourceName)>();
             foreach (var ass in Args.Assemblies.Distinct()) // Assumed data builds on top of earlier (do not use ProbeAssemblies as this is reversed).
             {
                 foreach (var rn in ass.GetManifestResourceNames().OrderBy(x => x))
                 {
-                    // Filter on schema namespace prefix and suffix of '.sql'.
-                    if (!Namespaces.Any(x => rn.StartsWith($"{x}.{DataNamespace}.", StringComparison.InvariantCulture) && (rn.EndsWith(".sql", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".yml", StringComparison.InvariantCultureIgnoreCase))))
+                    // Filter on schema namespace prefix and supported suffixes.
+                    if (!Namespaces.Any(x => rn.StartsWith($"{x}.{DataNamespace}.", StringComparison.InvariantCulture) && (rn.EndsWith(".sql", StringComparison.InvariantCultureIgnoreCase) 
+                        || rn.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".yml", StringComparison.InvariantCultureIgnoreCase)
+                        || rn.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".jsn", StringComparison.InvariantCultureIgnoreCase))))
                         continue;
 
                     list.Add((ass, rn));
@@ -739,13 +741,15 @@ namespace DbEx.Migration
                 }
                 else
                 {
-                    // Handle the YAML - parse and execute.
+                    // Handle the YAML/JSON - parse and execute.
                     try
                     {
                         Logger.LogInformation("{Content}", string.Empty);
                         Logger.LogInformation("{Content}", $"** Parsing and executing: {item.ResourceName}");
 
-                        var tables = await parser.ParseYamlAsync(sr, cancellationToken).ConfigureAwait(false);
+                        var tables = item.ResourceName.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase) || item.ResourceName.EndsWith(".jsn", StringComparison.InvariantCultureIgnoreCase)
+                            ? await parser.ParseJsonAsync(sr, cancellationToken).ConfigureAwait(false) 
+                            : await parser.ParseYamlAsync(sr, cancellationToken).ConfigureAwait(false);
 
                         if (!await DatabaseDataAsync(tables, cancellationToken).ConfigureAwait(false))
                             return false;
@@ -783,10 +787,28 @@ namespace DbEx.Migration
                 Logger.LogInformation("{Content}", string.Empty);
                 Logger.LogInformation("{Content}", $"---- Executing {table.Schema}{(table.Schema == string.Empty ? "" : ".")}{table.Name} SQL:");
 
-                var sql = _dataCodeGen.Generate(table);
+                if (table.PreConditionSql is not null)
+                {
+                    var csql = ReplaceSqlRuntimeParameters(table.PreConditionSql);
+                    Logger.LogInformation("{Content}", "Execute pre-condition SQL:");
+                    Logger.LogInformation("{Content}", csql);
+                    Logger.LogInformation("{Content}", string.Empty);
+
+                    var result = await Database.SqlStatement(ReplaceSqlRuntimeParameters(csql)).ScalarAsync<int>(cancellationToken).ConfigureAwait(false);
+                    if (result == 0)
+                    {
+                        Logger.LogInformation("{Content}", $"Result: Pre-condition was _not_ satisfied.");
+                        continue;
+                    }
+
+                    Logger.LogInformation("{Content}", $"Result: Pre-condition was satisfied.");
+                    Logger.LogInformation("{Content}", string.Empty);
+                }
+
+                var sql = ReplaceSqlRuntimeParameters(_dataCodeGen.Generate(table));
                 Logger.LogInformation("{Content}", sql);
 
-                var rows = await Database.SqlStatement(ReplaceSqlRuntimeParameters(sql)).ScalarAsync<object>(cancellationToken).ConfigureAwait(false);
+                var rows = await Database.SqlStatement(sql).ScalarAsync<object>(cancellationToken).ConfigureAwait(false);
                 Logger.LogInformation("{Content}", $"Result: {rows} rows affected.");
             }
 

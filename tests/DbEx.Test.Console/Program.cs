@@ -13,7 +13,9 @@ namespace DbEx.Test.Console
                 c.Args.AddSchemaOrder("Test", "Outbox");
                 c.Args.DataParserArgs.Parameter("DefaultName", "Bazza")
                                      .RefDataColumnDefault("SortOrder", i => i)
-                                     .ColumnDefault("*", "*", "TenantId", _ => "test-tenant");
+                                     .ColumnDefault("*", "*", "TenantId", _ => "test-tenant")
+                                     .TableNameMappings.Add("XTest", "XContactType", "Test", "ContactType", new() { { "XNumber", "Number" } })
+                                                       .Add("Test", "Addresses", "Test", "ContactAddress");
             })
             .RunAsync(args);
     }

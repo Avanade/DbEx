@@ -67,7 +67,7 @@ namespace DbEx.DbSchema
         }
 
         /// <summary>
-        /// Create a plural from the name.
+        /// Create a plural from the singular name.
         /// </summary>
         /// <param name="name">The name.</param>
         /// <returns>The pluralized name.</returns>
@@ -78,6 +78,21 @@ namespace DbEx.DbSchema
 
             var words = Regex.Split(name, WordSplitPattern).Where(x => !string.IsNullOrEmpty(x)).ToList();
             words[^1] = StringConverter.ToPlural(words[^1]);
+            return string.Join(string.Empty, words);
+        }
+
+        /// <summary>
+        /// Create a singular from the pluralized name.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>The singular name.</returns>
+        public static string CreateSingularName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentNullException(nameof(name));
+
+            var words = Regex.Split(name, WordSplitPattern).Where(x => !string.IsNullOrEmpty(x)).ToList();
+            words[^1] = StringConverter.ToSingle(words[^1]);
             return string.Join(string.Empty, words);
         }
 

@@ -1,0 +1,25 @@
+{
+  "*": {
+    "preConditionSql": "SELECT CASE WHEN EXISTS (SELECT * FROM [{{schema}}].[{{table}}]) THEN 0 ELSE 1 END;",
+    "preSql": "SET IDENTITY_INSERT [{{schema}}].[{{table}}] ON;",
+    "postSql": "SET IDENTITY_INSERT [{{schema}}].[{{table}}] OFF; DBCC CHECKIDENT ('{{schema}}.{{table}}', RESEED)"
+  },
+  "XTest": [
+    {
+      "XContactType": [
+        {
+          "ContactTypeId": 1,
+          "Code": "E",
+          "Text": "External",
+          "IsFlag": 1,
+          "XNumber": 4245422915
+        },
+        {
+          "ContactTypeId": 2,
+          "Code": "I",
+          "Text": "Internal"
+        }
+      ]
+    }
+  ]
+}

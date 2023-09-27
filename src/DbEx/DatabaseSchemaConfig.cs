@@ -148,10 +148,11 @@ namespace DbEx
         /// <summary>
         /// Gets the formatted SQL statement representation of the <paramref name="value"/>.
         /// </summary>
+        /// <param name="dbColumnSchema">The <see cref="DbColumnSchema"/>.</param>
         /// <param name="dataParserArgs">The <see cref="DataParserArgs"/>.</param>
         /// <param name="value">The value.</param>
         /// <returns>The formatted SQL statement representation.</returns>
-        public abstract string ToFormattedSqlStatementValue(DataParserArgs dataParserArgs, object? value);
+        public abstract string ToFormattedSqlStatementValue(DbColumnSchema dbColumnSchema, DataParserArgs dataParserArgs, object? value);
 
         /// <summary>
         /// Indicates whether the <paramref name="dbType"/> is considered an integer.

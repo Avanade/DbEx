@@ -89,19 +89,21 @@ namespace DbEx.Migration.Data
                 switch (col.DotNetType)
                 {
                     case "string": column.Value = str; break;
-                    case "decimal": column.Value = decimal.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
-                    case "DateTime": column.Value = DateTime.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
-                    case "bool": column.Value = bool.Parse(str); break;
-                    case "DateTimeOffset": column.Value = DateTimeOffset.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
-                    case "double": column.Value = double.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
-                    case "short": column.Value = short.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
-                    case "byte": column.Value = byte.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
-                    case "float": column.Value = float.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
-                    case "TimeSpan": column.Value = TimeSpan.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "decimal": column.Value = string.IsNullOrEmpty(str) ? 0m : decimal.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "DateTime": column.Value = string.IsNullOrEmpty(str) ? DateTime.MinValue : DateTime.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "bool": column.Value = str switch { "1" or "Y" => true, "0" or "N" or "" => false, _ => bool.Parse(str) }; break;
+                    case "DateTimeOffset": column.Value = string.IsNullOrEmpty(str) ? DateTimeOffset.MinValue : DateTimeOffset.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "double": column.Value = string.IsNullOrEmpty(str) ? 0d : double.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "short": column.Value = string.IsNullOrEmpty(str) ? (short)0 : short.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "byte": column.Value = string.IsNullOrEmpty(str) ? byte.MinValue : byte.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "float": column.Value = string.IsNullOrEmpty(str) ? 0f : float.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "TimeSpan": column.Value = string.IsNullOrEmpty(str) ? TimeSpan.Zero : TimeSpan.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
 
                     case "int":
                         if (int.TryParse(str, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int i))
                             column.Value = i;
+                        else if (string.IsNullOrEmpty(str))
+                            column.Value = 0;
                         else if (col.IsForeignRefData)
                         {
                             column.Value = str;
@@ -115,6 +117,8 @@ namespace DbEx.Migration.Data
                     case "long":
                         if (long.TryParse(str, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long l))
                             column.Value = l;
+                        else if (string.IsNullOrEmpty(str))
+                            column.Value = 0L;
                         else if (col.IsForeignRefData)
                         {
                             column.Value = str;
@@ -128,6 +132,8 @@ namespace DbEx.Migration.Data
                     case "Guid":
                         if (int.TryParse(str, out int a))
                             column.Value = DataValueConverter.IntToGuid(a);
+                        else if (string.IsNullOrEmpty(str))
+                            column.Value = Guid.Empty;
                         else
                         {
                             if (Guid.TryParse(str, out Guid g))
