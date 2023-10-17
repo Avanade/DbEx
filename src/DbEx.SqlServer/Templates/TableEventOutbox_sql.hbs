@@ -6,10 +6,10 @@ CREATE TABLE [{{OutboxSchema}}].[{{OutboxTable}}] (
    */
 
 {{/unless}}
-  [{{OutboxTable}}Id] BIGINT IDENTITY (1, 1) NOT NULL PRIMARY KEY NONCLUSTERED ([{{OutboxTable}}Id] ASC),
+  [{{OutboxTable}}Id] BIGINT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
   [PartitionKey] NVARCHAR(127) NULL,
   [Destination] NVARCHAR(127) NULL,
   [EnqueuedDate] DATETIME2 NOT NULL,
   [DequeuedDate] DATETIME2 NULL,
-  CONSTRAINT [IX_{{OutboxSchema}}_{{OutboxTable}}_DequeuedDate] UNIQUE CLUSTERED ([PartitionKey], [Destination], [DequeuedDate], [{{OutboxTable}}Id])
+  INDEX [IX_{{OutboxSchema}}_{{OutboxTable}}_DequeuedDate] ([DequeuedDate], [{{OutboxTable}}Id])
 );

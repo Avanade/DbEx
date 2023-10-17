@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v2.3.12
+- *Fixed:* The `OutBox.EventOutbox` table clustered/non-clustered indexes changed to simplify default implementation. Implementors of this capability should review the indexing, etc., based on usage to optimize. 
+	- _Note:_ it is also expected that the _Outbox_ tables are regularly purged, i.e. dequeued events should be removed. This is the responsibility of the implementor to perform as required.
+
 ## v2.3.11
 - *Enhancement:* `DataParser.ParseJsonAsync` added to support JSON data file parsing in addition to the existing YAML. Files (embedded resources) can be mixed and matched as required.
 - *Enhancement:* `DataParser` supports specified schema of `*` to provide `DataConfig` that is applied to all tables in the YAML/JSON file.
