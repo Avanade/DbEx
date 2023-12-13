@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v2.3.13
+- *Fixed:* Updated `CoreEx` to version `3.6.1`.
+- *Fixed:* Added `net8.0` support.
+
 ## v2.3.12
 - *Fixed:* The `OutBox.EventOutbox` table clustered/non-clustered indexes changed to simplify default implementation. Implementors of this capability should review the indexing, etc., based on usage to optimize. 
 	- _Note:_ it is also expected that the _Outbox_ tables are regularly purged, i.e. dequeued events should be removed. This is the responsibility of the implementor to perform as required.
