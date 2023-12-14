@@ -39,9 +39,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database.MySql" Version="3.6.1" />
+    <PackageReference Include="CoreEx.Database.MySql" Version="3.6.3" />
     <PackageReference Include="dbup-mysql" Version="5.0.37" />
-    <PackageReference Include="OnRamp" Version="1.0.8" />
   </ItemGroup>
 
   <ItemGroup>
