@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v2.3.14
+- *Fixed:* All related package dependencies updated to latest.
+
 ## v2.3.13
 - *Fixed:* Updated `CoreEx` to version `3.6.1`.
 - *Fixed:* Added `net8.0` support.
