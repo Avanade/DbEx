@@ -58,7 +58,7 @@ namespace DbEx.Migration
             Args.OutputDirectory ??= new DirectoryInfo(CodeGenConsole.GetBaseExeDirectory());
 
             Journal = new DatabaseJournal(this);
-            SchemaObjectTypes = Array.Empty<string>();
+            SchemaObjectTypes = [];
         }
 
         /// <summary>
@@ -173,7 +173,7 @@ namespace DbEx.Migration
 
             // Where only executing SQL statement, then execute and get out of here!
             if (Args.MigrationCommand.HasFlag(MigrationCommand.Execute))
-                return await ExecuteSqlStatementsAsync(Args.ExecuteStatements?.ToArray() ?? Array.Empty<string>(), cancellationToken).ConfigureAwait(false);
+                return await ExecuteSqlStatementsAsync(Args.ExecuteStatements?.ToArray() ?? [], cancellationToken).ConfigureAwait(false);
 
             /* The remaining commands are executed in sequence as defined (where selected) to enable multiple in the correct run order. */
 
@@ -829,7 +829,7 @@ namespace DbEx.Migration
                 list.Add($"{ns}.{suffix}");
             }
 
-            return list.Count == 0 ? new string[] { "(none)" } : list.ToArray();
+            return list.Count == 0 ? new string[] { "(none)" } : [.. list];
         }
 
         /// <summary>

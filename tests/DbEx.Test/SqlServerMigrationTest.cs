@@ -64,10 +64,10 @@ namespace DbEx.Test
             var l = UnitTest.GetLogger<SqlServerMigrationTest>();
             var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Error.TestError));
             using var m = new SqlServerMigration(a);
-            var r = await m.MigrateAndLogAsync().ConfigureAwait(false);
+            var (Success, Output) = await m.MigrateAndLogAsync().ConfigureAwait(false);
 
-            Assert.IsFalse(r.Success);
-            Assert.IsTrue(r.Output.Length > 0);
+            Assert.IsFalse(Success);
+            Assert.IsTrue(Output.Length > 0);
         }
 
         [Test]
@@ -254,7 +254,7 @@ namespace DbEx.Test
         }
 
         [Test]
-        public async Task B120_Execute_Console_Batch_Success()
+        public async Task B130_Execute_Console_Batch_Success()
         {
             var c = await CreateConsoleDb().ConfigureAwait(false);
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);

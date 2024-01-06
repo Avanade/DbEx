@@ -114,7 +114,7 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Gets the columns.
         /// </summary>
-        public List<DbColumnSchema> Columns { get; } = new List<DbColumnSchema>();
+        public List<DbColumnSchema> Columns { get; } = [];
 
         /// <summary>
         /// Gets the insert columns.
@@ -144,7 +144,7 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Gets the rows.
         /// </summary>
-        public List<DataRow> Rows { get; } = new List<DataRow>();
+        public List<DataRow> Rows { get; } = [];
 
         /// <summary>
         /// Gets the column name mappings (from the <see cref="DataParserArgs.TableNameMappings"/> where specified).

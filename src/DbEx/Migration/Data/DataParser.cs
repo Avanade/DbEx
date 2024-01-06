@@ -2,14 +2,15 @@
 
 using DbEx.DbSchema;
 using HandlebarsDotNet;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 
 namespace DbEx.Migration.Data
@@ -19,6 +20,36 @@ namespace DbEx.Migration.Data
     /// </summary>
     public class DataParser
     {
+        private class YamlNodeTypeResolver : INodeTypeResolver
+        {
+            private static readonly string[] boolValues = ["true", "false"];
+
+            /// <inheritdoc/>
+            bool INodeTypeResolver.Resolve(NodeEvent? nodeEvent, ref Type currentType)
+            {
+                if (nodeEvent is Scalar scalar && scalar.Style == YamlDotNet.Core.ScalarStyle.Plain)
+                {
+                    if (decimal.TryParse(scalar.Value, out _))
+                    {
+                        if (scalar.Value.Length > 1 && scalar.Value.StartsWith('0')) // Valid JSON does not support a number that starts with a zero.
+                            currentType = typeof(string);
+                        else
+                            currentType = typeof(decimal);
+
+                        return true;
+                    }
+
+                    if (boolValues.Contains(scalar.Value))
+                    {
+                        currentType = typeof(bool);
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DataParser"/> class.
         /// </summary>
@@ -79,9 +110,9 @@ namespace DbEx.Migration.Data
         /// <returns>The resulting <see cref="DataTable"/> list.</returns>
         public Task<List<DataTable>> ParseYamlAsync(TextReader tr, CancellationToken cancellationToken = default)
         {
-            var yaml = new DeserializerBuilder().Build().Deserialize(tr)!;
+            var yaml = new DeserializerBuilder().WithNodeTypeResolver(new YamlNodeTypeResolver()).Build().Deserialize(tr)!;
             var json = new SerializerBuilder().JsonCompatible().Build().Serialize(yaml);
-            return ParseJsonAsync(JObject.Parse(json), cancellationToken);
+            return ParseJsonAsync(json, cancellationToken);
         }
 
         /// <summary>
@@ -104,8 +135,8 @@ namespace DbEx.Migration.Data
         /// <returns>The resulting <see cref="DataTable"/> list.</returns>
         public Task<List<DataTable>> ParseJsonAsync(Stream s, CancellationToken cancellationToken = default)
         {
-            using var sr = new StreamReader(s);
-            return ParseJsonAsync(sr, cancellationToken);
+            using var jd = JsonDocument.Parse(s);
+            return ParseJsonAsync(jd, cancellationToken);
         }
 
         /// <summary>
@@ -116,14 +147,14 @@ namespace DbEx.Migration.Data
         /// <returns>The resulting <see cref="DataTable"/> list.</returns>
         public Task<List<DataTable>> ParseJsonAsync(TextReader tr, CancellationToken cancellationToken = default)
         {
-            using var jr = new JsonTextReader(tr);
-            return ParseJsonAsync(JObject.Load(jr), cancellationToken);
+            using var jd = JsonDocument.Parse(tr.ReadToEnd());
+            return ParseJsonAsync(jd, cancellationToken);
         }
 
         /// <summary>
-        /// Reads and parses the database using the specified <see cref="JObject"/>.
+        /// Reads and parses the database using the specified <see cref="JsonDocument"/>.
         /// </summary>
-        private async Task<List<DataTable>> ParseJsonAsync(JObject json, CancellationToken cancellationToken)
+        private async Task<List<DataTable>> ParseJsonAsync(JsonDocument json, CancellationToken cancellationToken)
         {
             // Further update/manipulate the schema.
             if (Args.DbSchemaUpdaterAsync != null)
@@ -134,19 +165,22 @@ namespace DbEx.Migration.Data
             DataConfig? dataConfig = null;
 
             // Loop through all the schemas.
-            foreach (var js in json.Children<JProperty>())
+            foreach (var js in json.RootElement.EnumerateObject())
             {
                 // Check for data configuration as identified by the * schema - which is a special key notation.
                 if (js.Name == "*")
                 {
-                    dataConfig = js.Children<JObject>().FirstOrDefault()?.ToObject<DataConfig?>();
+                    if (js.Value.ValueKind != JsonValueKind.Object)
+                        throw new DataParserException("Data configuration ('*' schema) is invalid; must be an object.");
+
+                    dataConfig = js.Value.Deserialize<DataConfig>();
                     continue;
                 }
 
                 // Loop through the collection of tables.
-                foreach (var jto in GetChildObjects(js))
+                foreach (var jto in js.Value.EnumerateArray())
                 {
-                    foreach (var jt in jto.Children<JProperty>())
+                    foreach (var jt in jto.EnumerateObject())
                     {
                         await ParseTableJsonAsync(tables, null, js.Name, jt, cancellationToken).ConfigureAwait(false);
                     }
@@ -168,10 +202,10 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Reads and parses the table data.
         /// </summary>
-        private async Task ParseTableJsonAsync(List<DataTable> tables, DataRow? parent, string schema, JProperty jt, CancellationToken cancellationToken)
+        private async Task ParseTableJsonAsync(List<DataTable> tables, DataRow? parent, string schema, JsonProperty jp, CancellationToken cancellationToken)
         {
             // Get existing or create new table.
-            var sdt = new DataTable(this, DatabaseSchemaConfig.SupportsSchema ? schema : string.Empty, jt.Name);
+            var sdt = new DataTable(this, DatabaseSchemaConfig.SupportsSchema ? schema : string.Empty, jp.Name);
             var prev = tables.SingleOrDefault(x => x.Schema == sdt.Schema && x.Name == sdt.Name);
             if (prev is null)
                 tables.Add(sdt);
@@ -179,30 +213,32 @@ namespace DbEx.Migration.Data
                 sdt = prev;
 
             // Loop through the collection of rows.
-            foreach (var jro in GetChildObjects(jt))
+            foreach (var jro in jp.Value.EnumerateArray())
             {
                 var row = new DataRow(sdt);
 
-                foreach (var jr in jro.Children<JProperty>())
+                foreach (var jr in jro.EnumerateObject())
                 {
-                    if (jr.Value.Type == JTokenType.Object)
+                    switch (jr.Value.ValueKind)
                     {
-                        throw new DataParserException($"Table '{sdt.Schema}.{sdt.Name}' has unsupported '{jr.Name}' column value; must not be an object: {jr.Value}.");
-                    }
-                    else if (jr.Value.Type == JTokenType.Array)
-                    {
-                        // Try parsing as a further described nested table configuration; i.e. representing a relationship.
-                        await ParseTableJsonAsync(tables, row, sdt.Schema, jr, cancellationToken).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        if (sdt.IsRefData && jro.Children().Count() == 1)
-                        {
-                            row.AddColumn(Args.RefDataCodeColumnName ?? DatabaseSchemaConfig.RefDataCodeColumnName, GetColumnValue(jr.Name));
-                            row.AddColumn(Args.RefDataTextColumnName ?? DatabaseSchemaConfig.RefDataTextColumnName, GetColumnValue(jr.Value));
-                        }
-                        else
-                            row.AddColumn(jr.Name, GetColumnValue(jr.Value));
+                        case JsonValueKind.Object:
+                            throw new DataParserException($"Table '{sdt.Schema}.{sdt.Name}' has unsupported '{jr.Name}' column value; must not be an object: {jr.Value}.");
+
+                        case JsonValueKind.Array:
+                            // Try parsing as a further described nested table configuration; i.e. representing a relationship.
+                            await ParseTableJsonAsync(tables, row, sdt.Schema, jr, cancellationToken).ConfigureAwait(false);
+                            break;
+
+                        default:
+                            if (sdt.IsRefData && jro.EnumerateObject().Count() == 1)
+                            {
+                                row.AddColumn(Args.RefDataCodeColumnName ?? DatabaseSchemaConfig.RefDataCodeColumnName, jr.Name);
+                                row.AddColumn(Args.RefDataTextColumnName ?? DatabaseSchemaConfig.RefDataTextColumnName, jr.Value.GetString());
+                            }
+                            else
+                                row.AddColumn(jr.Name, GetColumnValue(jr.Value));
+
+                            break;
                     }
                 }
 
@@ -220,38 +256,77 @@ namespace DbEx.Migration.Data
                 sdt.AddRow(row);
             }
 
+            //// Loop through the collection of rows.
+            //foreach (var jro in GetChildObjects(jp))
+            //{
+            //    var row = new DataRow(sdt);
+
+            //    foreach (var jr in jro.Children<JProperty>())
+            //    {
+            //        if (jr.Value.Type == JTokenType.Object)
+            //        {
+            //            throw new DataParserException($"Table '{sdt.Schema}.{sdt.Name}' has unsupported '{jr.Name}' column value; must not be an object: {jr.Value}.");
+            //        }
+            //        else if (jr.Value.Type == JTokenType.Array)
+            //        {
+            //            // Try parsing as a further described nested table configuration; i.e. representing a relationship.
+            //            await ParseTableJsonAsync(tables, row, sdt.Schema, jr, cancellationToken).ConfigureAwait(false);
+            //        }
+            //        else
+            //        {
+            //            if (sdt.IsRefData && jro.Children().Count() == 1)
+            //            {
+            //                row.AddColumn(Args.RefDataCodeColumnName ?? DatabaseSchemaConfig.RefDataCodeColumnName, GetColumnValue(jr.Name));
+            //                row.AddColumn(Args.RefDataTextColumnName ?? DatabaseSchemaConfig.RefDataTextColumnName, GetColumnValue(jr.Value));
+            //            }
+            //            else
+            //                row.AddColumn(jr.Name, GetColumnValue(jr.Value));
+            //        }
+            //    }
+
+            //    // Where specified within a hierarchy attempt to be fancy and auto-update from the parent's primary key where same name.
+            //    if (parent is not null)
+            //    {
+            //        foreach (var pktc in parent.Table.DbTable.PrimaryKeyColumns)
+            //        {
+            //            var pkc = parent.Columns.SingleOrDefault(x => x.Name == pktc.Name);
+            //            if (pkc is not null && row.Table.DbTable.Columns.Any(x => x.Name == pktc.Name) && row.Columns.SingleOrDefault(x => x.Name == pktc.Name) is null)
+            //                row.AddColumn(pkc.Name, pkc.Value);
+            //        }
+            //    }
+
+            //    sdt.AddRow(row);
+            //}
+
             if (sdt.Columns.Count > 0)
                 await sdt.PrepareAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// Gets the child objects.
-        /// </summary>
-        private static IEnumerable<JObject> GetChildObjects(JToken j)
-        {
-            foreach (var jc in j.Children<JArray>())
-            {
-                return jc.Children<JObject>();
-            }
+        ///// <summary>
+        ///// Gets the child objects.
+        ///// </summary>
+        //private static IEnumerable<JObject> GetChildObjects(JToken j)
+        //{
+        //    foreach (var jc in j.Children<JArray>())
+        //    {
+        //        return jc.Children<JObject>();
+        //    }
 
-            return Array.Empty<JObject>();
-        }
+        //    return Array.Empty<JObject>();
+        //}
 
         /// <summary>
         /// Gets the column value.
         /// </summary>
-        private object? GetColumnValue(JToken j)
+        private object? GetColumnValue(JsonElement j)
         {
-            return j.Type switch
+            return j.ValueKind switch
             {
-                JTokenType.Boolean => j.Value<bool>(),
-                JTokenType.Date => j.Value<DateTime>(),
-                JTokenType.Float => j.Value<float>(),
-                JTokenType.Guid => j.Value<Guid>(),
-                JTokenType.Integer => j.Value<long>(),
-                JTokenType.TimeSpan => j.Value<TimeSpan>(),
-                JTokenType.Uri => j.Value<string>(),
-                JTokenType.String => GetRuntimeParameterValue(j.Value<string>()),
+                JsonValueKind.Null => null,
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.Number => j.GetDecimal(),
+                JsonValueKind.String => j.TryGetDateTime(out var dt) ? dt : GetRuntimeParameterValue(j.GetString()),
                 _ => null
             };
         }
@@ -265,7 +340,7 @@ namespace DbEx.Migration.Data
                 return value;
 
             // Get runtime value when formatted like: ^(DateTime.UtcNow)
-            if (value.StartsWith("^(") && value.EndsWith(")"))
+            if (value.StartsWith("^(") && value.EndsWith(')'))
             {
                 var key = value[2..^1];
 
@@ -340,7 +415,7 @@ namespace DbEx.Migration.Data
             var part = parts[0];
             if (part.EndsWith("()"))
             {
-                var mi = type.GetMethod(part[0..^2], Array.Empty<Type>());
+                var mi = type.GetMethod(part[0..^2], []);
                 if (mi == null || mi.GetParameters().Length != 0)
                     return (null, $"Runtime value parameter '{param}' is invalid; specified method '{part}' is invalid.");
 

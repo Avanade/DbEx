@@ -176,17 +176,17 @@ namespace DbEx.DbSchema
         /// <summary>
         /// Gets or sets the <see cref="DbColumnSchema"/> list.
         /// </summary>
-        public List<DbColumnSchema> Columns { get; private set; } = new List<DbColumnSchema>();
+        public List<DbColumnSchema> Columns { get; private set; } = [];
 
         /// <summary>
         /// Gets the primary key <see cref="DbColumnSchema"/> list.
         /// </summary>
-        public List<DbColumnSchema> PrimaryKeyColumns => Columns?.Where(x => x.IsPrimaryKey).ToList() ?? new List<DbColumnSchema>();
+        public List<DbColumnSchema> PrimaryKeyColumns => Columns?.Where(x => x.IsPrimaryKey).ToList() ?? [];
 
         /// <summary>
         /// Gets the standard <see cref="DbColumnSchema"/> list (i.e. not primary key, not created audit, not updated audit, not tenant-id, not row-version, not is-deleted).
         /// </summary>
-        public List<DbColumnSchema> StandardColumns => Columns?.Where(x => !x.IsPrimaryKey && !x.IsCreatedAudit && !x.IsUpdatedAudit && !x.IsTenantId && !x.IsRowVersion && !x.IsIsDeleted).ToList() ?? new List<DbColumnSchema>();
+        public List<DbColumnSchema> StandardColumns => Columns?.Where(x => !x.IsPrimaryKey && !x.IsCreatedAudit && !x.IsUpdatedAudit && !x.IsTenantId && !x.IsRowVersion && !x.IsIsDeleted).ToList() ?? [];
 
         /// <summary>
         /// Gets the tenant idenfifier <see cref="DbColumnSchema"/> (if any).

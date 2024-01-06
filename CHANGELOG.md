@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v2.3.15
+- *Fixed:* Updated `CoreEx` to version `3.8.0`.
+- *Fixed:* Updated `OnRamp` to version `2.0.0` which necessitated internal change from `Newtonsoft.Json` (now deprecated) to `System.Text.Json`; additionally, the `DataParser` was refactored accordingly.
+
 ## v2.3.14
 - *Fixed:* All related package dependencies updated to latest.
 

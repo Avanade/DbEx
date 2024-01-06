@@ -55,7 +55,7 @@ namespace DbEx.Console
                 list.Add(t.Assembly);
             }
 
-            Args.AddAssembly(list.ToArray());
+            Args.AddAssembly([.. list]);
             return (TSelf)this;
         }
 
