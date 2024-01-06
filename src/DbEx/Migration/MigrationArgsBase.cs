@@ -43,7 +43,7 @@ namespace DbEx.Migration
         /// <summary>
         /// Gets the <see cref="Assembly"/> list to use to probe for assembly resource (in defined sequence); will automatically add this (DbEx) assembly also (therefore no need to explicitly specify).
         /// </summary>
-        public List<Assembly> Assemblies { get; } = new List<Assembly> { typeof(MigrationArgs).Assembly };
+        public List<Assembly> Assemblies { get; } = [typeof(MigrationArgs).Assembly];
 
         /// <summary>
         /// Gets the <see cref="Assemblies"/> reversed in order for probe-based sequencing.
@@ -55,7 +55,7 @@ namespace DbEx.Migration
         /// </summary>
         /// <remarks>The following parameter names are reserved for a specific internal purpose: <see cref="DatabaseNameParamName"/>, <see cref="JournalSchemaParamName"/> and <see cref="JournalTableParamName"/>.
         /// <para><see cref="MigrationCommand.Script"/> and <see cref="MigrationCommand.CodeGen"/> can support additional command-line arguments; these are automatically added as '<c>ParamN</c>' where '<c>N</c>' is the zero-based index; e.g. '<c>Param0</c>'.</para></remarks>
-        public Dictionary<string, object?> Parameters { get; } = new Dictionary<string, object?>();
+        public Dictionary<string, object?> Parameters { get; } = [];
 
         /// <summary>
         /// Gets or sets the <see cref="ILogger"/> to optionally log the underlying database migration progress.
@@ -70,7 +70,7 @@ namespace DbEx.Migration
         /// <summary>
         /// Gets the schema priority list (used to specify schema precedence; otherwise equal last).
         /// </summary>
-        public List<string> SchemaOrder { get; } = new List<string>();
+        public List<string> SchemaOrder { get; } = [];
 
         /// <summary>
         /// Gets or sets the <see cref="Data.DataParserArgs"/>.
@@ -170,7 +170,7 @@ namespace DbEx.Migration
                 ExecuteStatements = null;
             else
             {
-                ExecuteStatements = new();
+                ExecuteStatements = [];
                 ExecuteStatements.AddRange(args.ExecuteStatements);
             }
         }

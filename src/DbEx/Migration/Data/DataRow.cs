@@ -25,7 +25,7 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Gets the columns.
         /// </summary>
-        public List<DataColumn> Columns { get; } = new List<DataColumn>();
+        public List<DataColumn> Columns { get; } = [];
 
         /// <summary>
         /// Gets the insert columns.

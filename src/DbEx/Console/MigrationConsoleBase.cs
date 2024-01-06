@@ -27,6 +27,7 @@ namespace DbEx.Console
     /// <para>The underlying command line parsing is provided by <see href="https://natemcmaster.github.io/CommandLineUtils/"/>.</para></remarks>
     public abstract class MigrationConsoleBase
     {
+        private static readonly string[] memberNames = ["args"];
         private const string EntryAssemblyOnlyOptionName = "entry-assembly-only";
         private const string AcceptPromptsOptionName = "accept-prompts";
         private CommandArgument<MigrationCommand>? _commandArg;
@@ -62,7 +63,7 @@ namespace DbEx.Console
         /// <summary>
         /// Gets the console (command line) options.
         /// </summary>
-        protected Dictionary<string, CommandOption?> ConsoleOptions { get; } = new();
+        protected Dictionary<string, CommandOption?> ConsoleOptions { get; } = [];
 
         /// <summary>
         /// Indicates whether to bypass standard execution of <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(DatabaseMigrationBase)"/> and <see cref="OnWriteFooter(double)"/>.
@@ -161,7 +162,7 @@ namespace DbEx.Console
                     return vr;
 
                 if (_additionalArgs.Values.Count > 0 && !(Args.MigrationCommand.HasFlag(MigrationCommand.CodeGen) || Args.MigrationCommand.HasFlag(MigrationCommand.Script) || Args.MigrationCommand.HasFlag(MigrationCommand.Execute)))
-                    return new ValidationResult($"Additional arguments can only be specified when the command is '{nameof(MigrationCommand.CodeGen)}', '{nameof(MigrationCommand.Script)}' or '{nameof(MigrationCommand.Execute)}'.", new string[] { "args" });
+                    return new ValidationResult($"Additional arguments can only be specified when the command is '{nameof(MigrationCommand.CodeGen)}', '{nameof(MigrationCommand.Script)}' or '{nameof(MigrationCommand.Execute)}'.", memberNames);
 
                 if (Args.MigrationCommand.HasFlag(MigrationCommand.CodeGen) || Args.MigrationCommand.HasFlag(MigrationCommand.Script))
                 {
@@ -178,7 +179,7 @@ namespace DbEx.Console
                         if (string.IsNullOrEmpty(_additionalArgs.Values[i]))
                             continue;
 
-                        Args.ExecuteStatements ??= new List<string>();
+                        Args.ExecuteStatements ??= [];
                         Args.ExecuteStatements.Add(_additionalArgs.Values[i]!);
                     }
                 }
@@ -404,7 +405,7 @@ namespace DbEx.Console
 
             migrator.Args.Logger.LogInformation("{Content}", $"Command = {migrator.Args.MigrationCommand}");
             migrator.Args.Logger.LogInformation("{Content}", $"Provider = {migrator.Provider}");
-            migrator.Args.Logger.LogInformation("{Content}", $"SchemaOrder = {string.Join(", ", migrator.Args.SchemaOrder.ToArray())}");
+            migrator.Args.Logger.LogInformation("{Content}", $"SchemaOrder = {string.Join(", ", [.. migrator.Args.SchemaOrder])}");
             migrator.Args.Logger.LogInformation("{Content}", $"OutDir = {migrator.Args.OutputDirectory?.FullName}");
 
             additional?.Invoke(migrator.Args.Logger);

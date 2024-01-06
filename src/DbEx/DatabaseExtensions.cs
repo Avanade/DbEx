@@ -42,7 +42,7 @@ namespace DbEx
             var refDataPredicate = new Func<DbTableSchema, bool>(t => t.Columns.Any(c => c.Name == refDataCodeColumn && !c.IsPrimaryKey && c.DotNetType == "string") && t.Columns.Any(c => c.Name == refDataTextColumn && !c.IsPrimaryKey && c.DotNetType == "string"));
 
             // Get all the tables and their columns.
-            using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableAndColumns.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly });
+            using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableAndColumns.sql", [typeof(DatabaseExtensions).Assembly]);
 #if NET7_0_OR_GREATER
             await database.SqlStatement(await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr =>
 #else
@@ -84,7 +84,7 @@ namespace DbEx
             }
 
             // Configure all the single column primary and unique constraints.
-            using var sr2 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTablePrimaryKey.sql", new Assembly[] { typeof(DatabaseExtensions).Assembly });
+            using var sr2 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTablePrimaryKey.sql", [typeof(DatabaseExtensions).Assembly]);
 #if NET7_0_OR_GREATER
             var pks = await database.SqlStatement(await sr2.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr => new
 #else

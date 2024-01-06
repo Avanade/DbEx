@@ -116,7 +116,7 @@ namespace DbEx.Migration.Data
         /// Gets or sets the reference data column defaults dictionary.
         /// </summary>
         /// <remarks>The list should contain the column name and function that returns the default value (the input to the function is the corresponding row count as specified).</remarks>
-        public Dictionary<string, Func<int, object?>> RefDataColumnDefaults { get; } = new Dictionary<string, Func<int, object?>>();
+        public Dictionary<string, Func<int, object?>> RefDataColumnDefaults { get; } = [];
 
         /// <summary>
         /// Adds a reference data column default to the <see cref="RefDataColumnDefaults"/>.
@@ -134,7 +134,7 @@ namespace DbEx.Migration.Data
         /// Gets or sets the column defaults collection.
         /// </summary>
         /// <remarks>The list should contain the column name and function that returns the default value (the input to the function is the corresponding row count as specified).</remarks>
-        public DataParserColumnDefaultCollection ColumnDefaults { get; } = new DataParserColumnDefaultCollection();
+        public DataParserColumnDefaultCollection ColumnDefaults { get; } = [];
 
         /// <summary>
         /// Adds a <see cref="DataParserColumnDefault"/> to the <see cref="ColumnDefaults"/>.
@@ -153,7 +153,7 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Gets the runtime parameters.
         /// </summary>
-        public Dictionary<string, object?> Parameters { get; } = new Dictionary<string, object?>();
+        public Dictionary<string, object?> Parameters { get; } = [];
 
         /// <summary>
         /// Adds a parameter to the <see cref="MigrationArgsBase.Parameters"/> where it does not already exist; unless <paramref name="overrideExisting"/> is selected then it will add or override.
@@ -179,7 +179,7 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Gets the <see cref="DataParserTableNameMappings"/>.
         /// </summary>
-        public DataParserTableNameMappings TableNameMappings { get; } = new DataParserTableNameMappings();
+        public DataParserTableNameMappings TableNameMappings { get; } = [];
 
         /// <summary>
         /// Copy and replace from <paramref name="args"/>.

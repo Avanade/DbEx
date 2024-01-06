@@ -11,7 +11,7 @@ namespace DbEx.Migration.Data
     /// </summary>
     public class DataParserTableNameMappings : IEnumerable<KeyValuePair<(string ParsedSchema, string ParsedTable), (string Schema, string Table, Dictionary<string, string>? ColumnMappings)>>
     {
-        private readonly Dictionary<(string, string), (string, string, Dictionary<string, string>?)> _dict = new();
+        private readonly Dictionary<(string, string), (string, string, Dictionary<string, string>?)> _dict = [];
 
         /// <summary>
         /// Adds a schema, table and column(s) mapping.
