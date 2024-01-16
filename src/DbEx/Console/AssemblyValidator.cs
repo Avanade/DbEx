@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using DbEx.Migration;
 using McMaster.Extensions.CommandLineUtils;
 using McMaster.Extensions.CommandLineUtils.Validation;
@@ -15,15 +16,10 @@ namespace DbEx.Console
     /// <summary>
     /// Validates the assembly name(s).
     /// </summary>
-    public class AssemblyValidator : IOptionValidator
+    /// <param name="args">The <see cref="MigrationArgs"/> to update.</param>
+    public class AssemblyValidator(MigrationArgsBase args) : IOptionValidator
     {
-        private readonly MigrationArgsBase _args;
-
-        /// <summary>
-        /// Initilizes a new instance of the <see cref="AssemblyValidator"/> class.
-        /// </summary>
-        /// <param name="args">The <see cref="MigrationArgs"/> to update.</param>
-        public AssemblyValidator(MigrationArgsBase args) => _args = args ?? throw new ArgumentNullException(nameof(args));
+        private readonly MigrationArgsBase _args = args.ThrowIfNull(nameof(args));
 
         /// <summary>
         /// Performs the validation.
@@ -45,7 +41,7 @@ namespace DbEx.Console
                 try
                 {
                     // Load from the specified file on the file system or by using its long form name. 
-                    list.Add(File.Exists(name) ? Assembly.LoadFrom(name!) : Assembly.Load(name!));
+                    _args.AddAssembly(File.Exists(name) ? Assembly.LoadFrom(name!) : Assembly.Load(name!));
                 }
                 catch (Exception ex)
                 {
@@ -53,7 +49,6 @@ namespace DbEx.Console
                 }
             }
 
-            _args.Assemblies.InsertRange(0, list.ToArray());
             return ValidationResult.Success!;
         }
     }

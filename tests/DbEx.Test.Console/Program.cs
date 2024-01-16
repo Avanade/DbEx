@@ -9,7 +9,7 @@ namespace DbEx.Test.Console
             .Create<Program>("Data Source=.;Initial Catalog=DbEx.Console;Integrated Security=True;TrustServerCertificate=true")
             .Configure(c =>
             {
-                c.Args.AddAssembly(typeof(DbEx.Test.OutboxConsole.Program).Assembly);
+                c.Args.AddAssembly<DbEx.Test.OutboxConsole.Program>("Data", "Data2");
                 c.Args.AddSchemaOrder("Test", "Outbox");
                 c.Args.DataParserArgs.Parameter("DefaultName", "Bazza")
                                      .RefDataColumnDefault("SortOrder", i => i)

@@ -27,7 +27,7 @@ namespace DbEx.SqlServer.Migration
         private readonly string _databaseName;
         private readonly IDatabase _database;
         private readonly IDatabase _masterDatabase;
-        private readonly List<string> _resetBypass = new();
+        private readonly List<string> _resetBypass = [];
 
         /// <summary>
         /// Initializes an instance of the <see cref="SqlServerMigration"/> class.
@@ -50,7 +50,7 @@ namespace DbEx.SqlServer.Migration
 
             // Defaults the schema object types unless already specified.
             if (SchemaObjectTypes.Length == 0)
-                SchemaObjectTypes = new string[] { "TYPE", "FUNCTION", "VIEW", "PROCEDURE", "PROC" };
+                SchemaObjectTypes = ["TYPE", "FUNCTION", "VIEW", "PROCEDURE", "PROC"];
 
             // Always add the dbo schema _first_ unless already specified.
             if (!Args.SchemaOrder.Contains("dbo"))

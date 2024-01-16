@@ -15,6 +15,8 @@ namespace DbEx.Migration
     /// </summary>
     public abstract class MigrationArgsBase : OnRamp.CodeGeneratorDbArgsBase
     {
+        private readonly List<MigrationAssemblyArgs> _assemblies = [new MigrationAssemblyArgs(typeof(MigrationArgs).Assembly)];
+
         /// <summary>
         /// Gets the <see cref="DatabaseMigrationBase.DatabaseName"/> <see cref="Parameters"/> name.
         /// </summary>
@@ -43,12 +45,12 @@ namespace DbEx.Migration
         /// <summary>
         /// Gets the <see cref="Assembly"/> list to use to probe for assembly resource (in defined sequence); will automatically add this (DbEx) assembly also (therefore no need to explicitly specify).
         /// </summary>
-        public List<Assembly> Assemblies { get; } = [typeof(MigrationArgs).Assembly];
+        public IEnumerable<MigrationAssemblyArgs> Assemblies => _assemblies;
 
         /// <summary>
         /// Gets the <see cref="Assemblies"/> reversed in order for probe-based sequencing.
         /// </summary>
-        public IEnumerable<Assembly> ProbeAssemblies => Assemblies.Distinct().Reverse();
+        public IEnumerable<MigrationAssemblyArgs> ProbeAssemblies => Assemblies.Reverse();
 
         /// <summary>
         /// Gets the runtime parameters.
@@ -94,16 +96,28 @@ namespace DbEx.Migration
         public Func<DbSchema.DbTableSchema, bool>? DataResetFilterPredicate { get; set; }
 
         /// <summary>
+        /// Clears the <see cref="Assemblies"/> by removing all existing items.
+        /// </summary>
+        public void ClearAssemblies() => _assemblies.Clear();
+
+        /// <summary>
         /// Adds one or more <paramref name="assemblies"/> to the <see cref="Assemblies"/>.
         /// </summary>
         /// <param name="assemblies">The assemblies to add.</param>
         /// <remarks>Where a specified <see cref="Assembly"/> item already exists within the <see cref="Assemblies"/> it will not be added again.</remarks>
-        public void AddAssembly(params Assembly[] assemblies)
+        public void AddAssembly(params Assembly[] assemblies) => AddAssembly(assemblies.Select(x => new MigrationAssemblyArgs(x)).ToArray());
+
+        /// <summary>
+        /// Adds one or more <paramref name="assemblies"/> to the <see cref="Assemblies"/>.
+        /// </summary>
+        /// <param name="assemblies">The assemblies to add.</param>
+        /// <remarks>Where a specified <see cref="Assembly"/> item already exists within the <see cref="Assemblies"/> it will not be added again.</remarks>
+        public void AddAssembly(params MigrationAssemblyArgs[] assemblies)
         {
             foreach (var assembly in assemblies)
             {
-                if (!Assemblies.Contains(assembly))
-                    Assemblies.Add(assembly);
+                if (!_assemblies.Any(x => x.Assembly == assembly.Assembly))
+                    _assemblies.Add(assembly);
             }
         }
 
@@ -113,28 +127,36 @@ namespace DbEx.Migration
         /// <param name="assemblyToFind">The <see cref="Assembly"/> to find within the existing <see cref="Assemblies"/>.</param>
         /// <param name="assemblies">The assemblies to add</param>
         /// <remarks>Where a specified <see cref="Assembly"/> item already exists within the <see cref="Assemblies"/> it will not be added again.</remarks>
-        public void AddAssemblyAfter(Assembly assemblyToFind, params Assembly[] assemblies)
+        public void AddAssemblyAfter(Assembly assemblyToFind, params Assembly[] assemblies) => AddAssemblyAfter(assemblyToFind, assemblies.Select(x => new MigrationAssemblyArgs(x)).ToArray());
+
+        /// <summary>
+        /// Adds one or more <paramref name="assemblies"/> to the <see cref="Assemblies"/> after the specified <paramref name="assemblyToFind"/>; where not found, will be added to the end.
+        /// </summary>
+        /// <param name="assemblyToFind">The <see cref="Assembly"/> to find within the existing <see cref="Assemblies"/>.</param>
+        /// <param name="assemblies">The assemblies to add</param>
+        /// <remarks>Where a specified <see cref="Assembly"/> item already exists within the <see cref="Assemblies"/> it will not be added again.</remarks>
+        public void AddAssemblyAfter(Assembly assemblyToFind, params MigrationAssemblyArgs[] assemblies)
         {
-            var index = Assemblies.IndexOf(assemblyToFind ?? throw new ArgumentNullException(nameof(assemblyToFind)));
+            var index = _assemblies.FindIndex(x => x.Assembly == (assemblyToFind ?? throw new ArgumentNullException(nameof(assemblyToFind))));
             if (index < 0)
             {
                 AddAssembly(assemblies);
                 return;
             }
 
-            var newAssemblies = new List<Assembly>();
+            var newAssemblies = new List<MigrationAssemblyArgs>();
             foreach (var assembly in assemblies)
             {
-                if (!Assemblies.Contains(assembly))
+                if (!_assemblies.Any(x => x.Assembly == assembly.Assembly) && !newAssemblies.Any(x => x.Assembly == assembly.Assembly))
                     newAssemblies.Add(assembly);
             }
 
 
-            Assemblies.InsertRange(index + 1, newAssemblies);
+            _assemblies.InsertRange(index + 1, newAssemblies);
         }
 
         /// <summary>
-        /// Adds a parameter to the <see cref="MigrationArgsBase.Parameters"/> where it does not already exist; unless <paramref name="overrideExisting"/> is selected then it will add or override.
+        /// Adds a parameter to the <see cref="Parameters"/> where it does not already exist; unless <paramref name="overrideExisting"/> is selected then it will add or override.
         /// </summary>
         /// <param name="key">The parameter key.</param>
         /// <param name="value">The parameter value.</param>
@@ -155,8 +177,8 @@ namespace DbEx.Migration
             base.CopyFrom(args ?? throw new ArgumentNullException(nameof(args)));
 
             MigrationCommand = args.MigrationCommand;
-            Assemblies.Clear();
-            Assemblies.AddRange(args.Assemblies);
+            _assemblies.Clear();
+            _assemblies.AddRange(args.Assemblies);
             Parameters.Clear();
             args.Parameters.ForEach(x => Parameters.Add(x.Key, x.Value));
             Logger = args.Logger;

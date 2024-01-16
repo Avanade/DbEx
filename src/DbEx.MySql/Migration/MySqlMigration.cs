@@ -25,7 +25,7 @@ namespace DbEx.MySql.Migration
         private readonly string _databaseName;
         private readonly IDatabase _database;
         private readonly IDatabase _masterDatabase;
-        private readonly List<string> _resetBypass = new();
+        private readonly List<string> _resetBypass = [];
 
         /// <summary>
         /// Initializes an instance of the <see cref="MySqlMigration"/> class.
@@ -48,7 +48,7 @@ namespace DbEx.MySql.Migration
 
             // Defaults the schema object types unless already specified.
             if (SchemaObjectTypes.Length == 0)
-                SchemaObjectTypes = new string[] { "FUNCTION", "VIEW", "PROCEDURE" };
+                SchemaObjectTypes = ["FUNCTION", "VIEW", "PROCEDURE"];
 
             // Add/set standard parameters.
             Args.Parameter(MigrationArgsBase.DatabaseNameParamName, _databaseName, true);
