@@ -153,7 +153,7 @@ namespace DbEx.Console
 
                 UpdateBooleanOption(EntryAssemblyOnlyOptionName, () =>
                 {
-                    Args.Assemblies.Clear();
+                    Args.ClearAssemblies();
                     Args.AddAssembly(Assembly.GetEntryAssembly()!);
                 });
 
@@ -416,10 +416,10 @@ namespace DbEx.Console
                 migrator.Args.Logger.LogInformation("{Content}", $"  {p.Key} = {p.Value}");
             }
 
-            migrator.Args.Logger.LogInformation("{Content}", $"Assemblies{(migrator.Args.Assemblies.Count == 0 ? " = none" : ":")}");
+            migrator.Args.Logger.LogInformation("{Content}", $"Assemblies{(!migrator.Args.Assemblies.Any() ? " = none" : ":")}");
             foreach (var a in migrator.Args.Assemblies)
             {
-                migrator.Args.Logger.LogInformation("{Content}", $"  {a.FullName}");
+                migrator.Args.Logger.LogInformation("{Content}", $"  {a.Assembly.FullName}");
             }
         }
 

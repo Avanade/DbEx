@@ -25,6 +25,7 @@ namespace DbEx.Migration
     {
         private const string NothingFoundText = "  ** Nothing found. **";
         private const string OnDatabaseCreateName = "post.database.create";
+        private static readonly string[] _splitters = ["\r\n", "\r", "\n"];
         private HandlebarsCodeGenerator? _dataCodeGen;
         private bool _hasInitialized = false;
 
@@ -118,11 +119,6 @@ namespace DbEx.Migration
         /// Gets or sets the <b>Migrations</b> scripts namespace part name.
         /// </summary>
         public string SchemaNamespace { get; set; } = "Schema";
-
-        /// <summary>
-        /// Gets or sets the <b>Migrations</b> scripts namespace part name.
-        /// </summary>
-        public string DataNamespace { get; set; } = "Data";
 
         /// <summary>
         /// Gets or sets the list of supported schema object types in the order of precedence.
@@ -235,7 +231,7 @@ namespace DbEx.Migration
             _hasInitialized = true;
 
             var list = (List<string>)Namespaces;
-            Args.ProbeAssemblies.ForEach(x => list.Add(x.GetName().Name!));
+            Args.ProbeAssemblies.ForEach(x => list.Add(x.Assembly.GetName().Name!));
 
             // Walk the assembly hierarchy.
             var alist = new List<Assembly>();
@@ -441,9 +437,9 @@ namespace DbEx.Migration
             var scripts = new List<DatabaseMigrationScript>();
             foreach (var ass in Args.ProbeAssemblies)
             {
-                foreach (var name in ass.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture) && rn.EndsWith($".{OnDatabaseCreateName}.sql", StringComparison.InvariantCultureIgnoreCase))).OrderBy(x => x))
+                foreach (var name in ass.Assembly.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture) && rn.EndsWith($".{OnDatabaseCreateName}.sql", StringComparison.InvariantCultureIgnoreCase))).OrderBy(x => x))
                 {
-                    scripts.Add(new DatabaseMigrationScript(ass, name) { RunAlways = true });
+                    scripts.Add(new DatabaseMigrationScript(ass.Assembly, name) { RunAlways = true });
                 }
             }
 
@@ -467,7 +463,7 @@ namespace DbEx.Migration
             var scripts = new List<DatabaseMigrationScript>();
             foreach (var ass in Args.ProbeAssemblies)
             {
-                foreach (var name in ass.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture))).OrderBy(x => x))
+                foreach (var name in ass.Assembly.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture))).OrderBy(x => x))
                 {
                     // Ignore any/all database create scripts.
                     if (name.EndsWith($".{OnDatabaseCreateName}.sql", StringComparison.InvariantCultureIgnoreCase))
@@ -477,7 +473,7 @@ namespace DbEx.Migration
                     var order = name.EndsWith(".pre.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 1 :
                                 name.EndsWith(".post.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 3 : 2;
 
-                    scripts.Add(new DatabaseMigrationScript(ass, name) { GroupOrder = order, RunAlways = order != 2 });
+                    scripts.Add(new DatabaseMigrationScript(ass.Assembly, name) { GroupOrder = order, RunAlways = order != 2 });
                 }
             }
 
@@ -534,7 +530,7 @@ namespace DbEx.Migration
             Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{SchemaNamespace}.*.sql"))}");
             foreach (var ass in Args.ProbeAssemblies)
             {
-                foreach (var rn in ass.GetManifestResourceNames().OrderBy(x => x))
+                foreach (var rn in ass.Assembly.GetManifestResourceNames().OrderBy(x => x))
                 {
                     // Filter on schema namespace prefix and suffix of '.sql'.
                     if (!(Namespaces.Any(x => rn.StartsWith($"{x}.{SchemaNamespace}.", StringComparison.InvariantCulture) && rn.EndsWith(".sql", StringComparison.InvariantCultureIgnoreCase))))
@@ -544,7 +540,7 @@ namespace DbEx.Migration
                     if (scripts.Any(x => x.Name == rn))
                         continue;
 
-                    scripts.Add(new DatabaseMigrationScript(ass, rn));
+                    scripts.Add(new DatabaseMigrationScript(ass.Assembly, rn));
                 }
             }
 
@@ -695,20 +691,32 @@ namespace DbEx.Migration
         /// </summary>
         private async Task<bool> DatabaseDataAsync(CancellationToken cancellationToken)
         {
-            Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{DataNamespace}.*", true))}");
+            var names = new List<string>();
+            foreach (var ass in Args.Assemblies)
+            {
+                foreach (var dns in ass.DataNamespaces)
+                {
+                    names.Add($"{ass.Assembly.GetName().Name}.{dns}.*");
+                }
+            }
+
+            Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", names)}");
 
             var list = new List<(Assembly Assembly, string ResourceName)>();
-            foreach (var ass in Args.Assemblies.Distinct()) // Assumed data builds on top of earlier (do not use ProbeAssemblies as this is reversed).
+            foreach (var ass in Args.Assemblies)
             {
-                foreach (var rn in ass.GetManifestResourceNames().OrderBy(x => x))
+                foreach (var rn in ass.Assembly.GetManifestResourceNames().OrderBy(x => x))
                 {
-                    // Filter on schema namespace prefix and supported suffixes.
-                    if (!Namespaces.Any(x => rn.StartsWith($"{x}.{DataNamespace}.", StringComparison.InvariantCulture) && (rn.EndsWith(".sql", StringComparison.InvariantCultureIgnoreCase) 
-                        || rn.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".yml", StringComparison.InvariantCultureIgnoreCase)
-                        || rn.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".jsn", StringComparison.InvariantCultureIgnoreCase))))
-                        continue;
+                    foreach (var dns in ass.DataNamespaces)
+                    {
+                        // Filter on schema namespace prefix and supported suffixes.
+                        if (!Namespaces.Any(x => rn.StartsWith($"{x}.{dns}.", StringComparison.InvariantCulture) && (rn.EndsWith(".sql", StringComparison.InvariantCultureIgnoreCase)
+                            || rn.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".yml", StringComparison.InvariantCultureIgnoreCase)
+                            || rn.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".jsn", StringComparison.InvariantCultureIgnoreCase))))
+                            continue;
 
-                    list.Add((ass, rn));
+                        list.Add((ass.Assembly, rn));
+                    }
                 }
             }
 
@@ -818,7 +826,7 @@ namespace DbEx.Migration
         /// <summary>
         /// Gets the <see cref="Namespaces"/> with the specified namespace suffix applied.
         /// </summary>
-        private IEnumerable<string> GetNamespacesWithSuffix(string suffix, bool reverse = false)
+        private string[] GetNamespacesWithSuffix(string suffix, bool reverse = false)
         {
             if (suffix == null)
                 throw new ArgumentNullException(nameof(suffix));
@@ -829,7 +837,7 @@ namespace DbEx.Migration
                 list.Add($"{ns}.{suffix}");
             }
 
-            return list.Count == 0 ? new string[] { "(none)" } : [.. list];
+            return list.Count == 0 ? ["(none)"] : [.. list];
         }
 
         /// <summary>
@@ -850,6 +858,7 @@ namespace DbEx.Migration
         /// </summary>
         private async Task<bool> CreateScriptInternalAsync(string? name, IDictionary<string, string?>? parameters, CancellationToken cancellationToken)
         {
+
             name ??= "Default";
             var rn = $"Script{name}_sql";
 
@@ -867,7 +876,7 @@ namespace DbEx.Migration
 
             // Extract the filename from content if specified.
             var data = new { Parameters = parameters ?? new Dictionary<string, string?>() };
-            var lines = txt.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+            var lines = txt.Split(_splitters, StringSplitOptions.None);
             string fn = "new-script";
             foreach (var line in lines)
             {

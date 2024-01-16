@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v2.4.0
+- *Enhancement:* Added `MigrationAssemblyArgs` to allow for the specification of zero or more `Data` folder names.
+
 ## v2.3.15
 - *Fixed:* Updated `CoreEx` to version `3.8.0`.
 - *Fixed:* Updated `OnRamp` to version `2.0.0` which necessitated internal change from `Newtonsoft.Json` (now deprecated) to `System.Text.Json`; additionally, the `DataParser` was refactored accordingly.

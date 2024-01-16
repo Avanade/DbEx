@@ -24,6 +24,17 @@ namespace DbEx.Migration
         }
 
         /// <summary>
+        /// Adds one or more <paramref name="assemblies"/> to the <see cref="MigrationArgsBase.Assemblies"/>.
+        /// </summary>
+        /// <param name="assemblies">The assemblies to add.</param>
+        /// <returns>The current <see cref="MigrationArgsBase{TSelf}"/> instance to support fluent-style method-chaining.</returns>
+        public new TSelf AddAssembly(params MigrationAssemblyArgs[] assemblies)
+        {
+            base.AddAssembly(assemblies);
+            return (TSelf)this;
+        }
+
+        /// <summary>
         /// Adds one or more <paramref name="types"/> (being the underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/>.
         /// </summary>
         /// <param name="types">The types to add.</param>
@@ -43,17 +54,8 @@ namespace DbEx.Migration
         /// <summary>
         /// Adds the <typeparamref name="TAssembly"/> (being the underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/>.
         /// </summary>
-        public TSelf AddAssembly<TAssembly>() => AddAssembly(typeof(TAssembly));
-
-        /// <summary>
-        /// Adds the <typeparamref name="TAssembly1"/> and <typeparamref name="TAssembly2"/> (being the underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/>.
-        /// </summary>
-        public TSelf AddAssembly<TAssembly1, TAssembly2>() => AddAssembly(typeof(TAssembly1), typeof(TAssembly2));
-
-        /// <summary>
-        /// Adds the <typeparamref name="TAssembly1"/>, <typeparamref name="TAssembly2"/> and <typeparamref name="TAssembly3"/> (being the underlying <see cref="Type.Assembly"/>) to <see cref="MigrationArgsBase.Assemblies"/>.
-        /// </summary>
-        public TSelf AddAssembly<TAssembly1, TAssembly2, TAssembly3>() => AddAssembly(typeof(TAssembly1), typeof(TAssembly2), typeof(TAssembly3));
+        /// <param name="dataNamespaces">The <see cref="MigrationAssemblyArgs.DataNamespaces"/>; defaults to <see cref="MigrationAssemblyArgs.DefaultDataNamespace"/>.</param>
+        public TSelf AddAssembly<TAssembly>(params string[] dataNamespaces) => AddAssembly(new MigrationAssemblyArgs(typeof(TAssembly).Assembly, dataNamespaces));
 
         /// <summary>
         /// Adds a parameter to the <see cref="MigrationArgsBase.Parameters"/> where it does not already exist; unless <paramref name="overrideExisting"/> is selected then it will add or override.
