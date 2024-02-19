@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using DbEx.DbSchema;
 using HandlebarsDotNet;
 using System;
@@ -58,8 +59,8 @@ namespace DbEx.Migration.Data
         /// <param name="args">The optional <see cref="DataParserArgs"/> (will use defaults where not specified).</param>
         public DataParser(DatabaseSchemaConfig databaseSchemaConfig, List<DbTableSchema> dbTables, DataParserArgs? args = null)
         {
-            DatabaseSchemaConfig = databaseSchemaConfig ?? throw new ArgumentNullException(nameof(databaseSchemaConfig));
-            DbTables = dbTables ?? throw new ArgumentNullException(nameof(dbTables));
+            DatabaseSchemaConfig = databaseSchemaConfig.ThrowIfNull(nameof(databaseSchemaConfig));
+            DbTables = dbTables.ThrowIfNull(nameof(dbTables));
             databaseSchemaConfig.PrepareDataParserArgs(Args = args ?? new DataParserArgs());
         }
 

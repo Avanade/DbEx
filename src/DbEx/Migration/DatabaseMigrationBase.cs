@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using CoreEx.Database;
 using DbEx.Migration.Data;
 using Microsoft.Extensions.Logging;
@@ -51,7 +52,7 @@ namespace DbEx.Migration
         /// <param name="args">The <see cref="MigrationArgsBase"/>.</param>
         protected DatabaseMigrationBase(MigrationArgsBase args)
         {
-            Args = args ?? throw new ArgumentNullException(nameof(args));
+            Args = args.ThrowIfNull(nameof(args));
             if (string.IsNullOrEmpty(Args.ConnectionString))
                 throw new ArgumentException($"{nameof(MigrationArgs.ConnectionString)} property must have a value.", nameof(args));
 
@@ -298,12 +299,12 @@ namespace DbEx.Migration
             Logger.LogInformation("{Content}", string.Empty);
             Logger.LogInformation("{Content}", new string('-', 80));
             Logger.LogInformation("{Content}", string.Empty);
-            Logger.LogInformation("{Content}", title ?? throw new ArgumentNullException(nameof(title)));
+            Logger.LogInformation("{Content}", title.ThrowIfNull(nameof(title)));
 
             try
             {
                 var sw = Stopwatch.StartNew();
-                if (!await (action ?? throw new ArgumentNullException(nameof(action))).Invoke(cancellationToken).ConfigureAwait(false))
+                if (!await action.ThrowIfNull(nameof(action)).Invoke(cancellationToken).ConfigureAwait(false))
                     return false;
 
                 sw.Stop();
@@ -439,7 +440,7 @@ namespace DbEx.Migration
             {
                 foreach (var name in ass.Assembly.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture) && rn.EndsWith($".{OnDatabaseCreateName}.sql", StringComparison.InvariantCultureIgnoreCase))).OrderBy(x => x))
                 {
-                    scripts.Add(new DatabaseMigrationScript(ass.Assembly, name) { RunAlways = true });
+                    scripts.Add(new DatabaseMigrationScript(this, ass.Assembly, name) { RunAlways = true });
                 }
             }
 
@@ -473,7 +474,7 @@ namespace DbEx.Migration
                     var order = name.EndsWith(".pre.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 1 :
                                 name.EndsWith(".post.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 3 : 2;
 
-                    scripts.Add(new DatabaseMigrationScript(ass.Assembly, name) { GroupOrder = order, RunAlways = order != 2 });
+                    scripts.Add(new DatabaseMigrationScript(this, ass.Assembly, name) { GroupOrder = order, RunAlways = order != 2 });
                 }
             }
 
@@ -521,7 +522,7 @@ namespace DbEx.Migration
                     foreach (var fi in di.GetFiles("*.sql", SearchOption.AllDirectories))
                     {
                         var rn = $"{fi.FullName[((Args.OutputDirectory?.Parent?.FullName.Length + 1) ?? 0)..]}".Replace(' ', '_').Replace('-', '_').Replace('\\', '.').Replace('/', '.');
-                        scripts.Add(new DatabaseMigrationScript(fi, rn));
+                        scripts.Add(new DatabaseMigrationScript(this, fi, rn));
                     }
                 }
             }
@@ -540,7 +541,7 @@ namespace DbEx.Migration
                     if (scripts.Any(x => x.Name == rn))
                         continue;
 
-                    scripts.Add(new DatabaseMigrationScript(ass.Assembly, rn));
+                    scripts.Add(new DatabaseMigrationScript(this, ass.Assembly, rn));
                 }
             }
 
@@ -583,12 +584,14 @@ namespace DbEx.Migration
             var ss = new List<DatabaseMigrationScript>();
             Logger.LogInformation("{Content}", string.Empty);
             Logger.LogInformation("{Content}", "  Drop known schema objects...");
-            foreach (var sor in list.OrderByDescending(x => x.SchemaOrder).ThenByDescending(x => x.TypeOrder).ThenByDescending(x => x.Schema).ThenByDescending(x => x.Name))
+            foreach (var sor in list.Where(x => !x.SupportsReplace).OrderByDescending(x => x.SchemaOrder).ThenByDescending(x => x.TypeOrder).ThenByDescending(x => x.Schema).ThenByDescending(x => x.Name))
             {
-                ss.Add(new DatabaseMigrationScript(sor.SqlDropStatement, sor.SqlDropStatement) { GroupOrder = i++, RunAlways = true });
+                ss.Add(new DatabaseMigrationScript(this, sor.SqlDropStatement, sor.SqlDropStatement) { GroupOrder = i++, RunAlways = true });
             }
 
-            if (!await ExecuteScriptsAsync(ss, true, cancellationToken).ConfigureAwait(false))
+            if (i == 0)
+                Logger.LogInformation("{Content}", "    None.");
+            else if (!await ExecuteScriptsAsync(ss, true, cancellationToken).ConfigureAwait(false))
                 return false;
 
             // Execute each migration script proper (i.e. create 'em as scripted).
@@ -743,7 +746,7 @@ namespace DbEx.Migration
                     Logger.LogInformation("{Content}", string.Empty);
                     Logger.LogInformation("{Content}", $"** Executing: {item.ResourceName}");
 
-                    var ss = new DatabaseMigrationScript(item.Assembly, item.ResourceName) { RunAlways = true };
+                    var ss = new DatabaseMigrationScript(this, item.Assembly, item.ResourceName) { RunAlways = true };
                     if (!await ExecuteScriptsAsync(new DatabaseMigrationScript[] { ss }, false, cancellationToken).ConfigureAwait(false))
                         return false;
                 }
@@ -828,8 +831,7 @@ namespace DbEx.Migration
         /// </summary>
         private string[] GetNamespacesWithSuffix(string suffix, bool reverse = false)
         {
-            if (suffix == null)
-                throw new ArgumentNullException(nameof(suffix));
+            suffix.ThrowIfNull(nameof(suffix));
 
             var list = new List<string>();
             foreach (var ns in reverse ? Namespaces.Reverse() : Namespaces)
@@ -949,9 +951,9 @@ namespace DbEx.Migration
             for (int i = 0; i < statements.Length; i++)
             {
                 if (File.Exists(statements[i]))
-                    scripts.Add(new DatabaseMigrationScript(new FileInfo(statements[i]), statements[i]));
+                    scripts.Add(new DatabaseMigrationScript(this, new FileInfo(statements[i]), statements[i]));
                 else
-                    scripts.Add(new DatabaseMigrationScript(statements[i], $"{sn}{i + 1:000}.sql"));
+                    scripts.Add(new DatabaseMigrationScript(this, statements[i], $"{sn}{i + 1:000}.sql"));
             }
 
             return await ExecuteScriptsAsync(scripts, false, cancellationToken).ConfigureAwait(false);

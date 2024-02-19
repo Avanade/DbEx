@@ -1,0 +1,11 @@
+﻿public:
+- $contact_type:
+  - E: External
+  - I: Internal
+- $gender:
+  - F: Female
+  - M: Male
+  - O: Other
+- contact:
+  - { contact_id: 1, contact_type: E, gender: M, name: Bob, date_of_birth: 2001-10-22 }
+  - { contact_id: 2, contact_type: I, name: Jane, phone: 1234 }

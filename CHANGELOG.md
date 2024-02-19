@@ -2,10 +2,12 @@
 
 Represents the **NuGet** versions.
 
+## v2.5.0
+- *Enhancement:* Added PostgreSQL database migrations support.
+
 ## v2.4.0
 - *Enhancement:* Added `MigrationAssemblyArgs` to allow for the specification of zero or more `Data` folder names.
 - *Fixed:* Updated `CoreEx` to version `3.9.0`.
-
 
 ## v2.3.15
 - *Fixed:* Updated `CoreEx` to version `3.8.0`.

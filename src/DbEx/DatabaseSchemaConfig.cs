@@ -18,15 +18,19 @@ namespace DbEx
     /// </summary>
     public abstract class DatabaseSchemaConfig
     {
+        private readonly string? _defaultSchema;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DatabaseSchemaConfig"/> class.
         /// </summary>
         /// <param name="databaseName">The database name.</param>
         /// <param name="supportsSchema">Indicates whether the database supports per-database schema-based separation.</param>
-        protected DatabaseSchemaConfig(string databaseName, bool supportsSchema = true)
+        /// <param name="defaultSchema">The default schema name used where not explicitly specified.</param>
+        public DatabaseSchemaConfig(string databaseName, bool supportsSchema = false, string? defaultSchema = null)
         {
             DatabaseName = databaseName;
             SupportsSchema = supportsSchema;
+            _defaultSchema = defaultSchema;
             RefDataPredicate = new Func<DbTableSchema, bool>(t => t.Columns.Any(c => c.Name == RefDataCodeColumnName && !c.IsPrimaryKey && c.DotNetType == "string") && t.Columns.Any(c => c.Name == RefDataTextColumnName && !c.IsPrimaryKey && c.DotNetType == "string"));
         }
 
@@ -40,6 +44,14 @@ namespace DbEx
         /// Indicates whether the database supports per-database schema-based separation.
         /// </summary>
         public bool SupportsSchema { get; }
+
+        /// <summary>
+        /// Gets the default schema name used where not explicitly specified.
+        /// </summary>
+        /// <remarks>Will throw an appropriate exception where accessed incorrectly.</remarks>
+        public string DefaultSchema => SupportsSchema
+            ? (_defaultSchema ?? throw new InvalidOperationException("The database supports per-database schema-based separation and a default is required."))
+            : throw new NotSupportedException("The database does not support per-database schema-based separation.");
 
         /// <summary>
         /// Gets the name of the <see cref="IChangeLogAudit.CreatedDate"/> column (where it exists).
@@ -128,7 +140,7 @@ namespace DbEx
         /// <param name="schema">The schema name.</param>
         /// <param name="table">The table name.</param>
         /// <returns>The fully qualified name.</returns>
-        public abstract string ToFullyQualifiedTableName(string schema, string table);
+        public abstract string ToFullyQualifiedTableName(string? schema, string table);
 
         /// <summary>
         /// Gets the corresponding .NET <see cref="Type"/> name for the specified <see cref="DbColumnSchema"/>.

@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using DbEx.DbSchema;
 using System;
 using System.Collections.ObjectModel;
@@ -33,14 +34,9 @@ namespace DbEx.Migration.Data
         /// </remarks>
         public bool TryGetValue(string schema, string table, string column, [NotNullWhen(true)] out DataParserColumnDefault? item)
         {
-            if (schema == null)
-                throw new ArgumentNullException(nameof(schema));
-
-            if (table == null)
-                throw new ArgumentNullException(nameof(table));
-
-            if (column == null)
-                throw new ArgumentNullException(nameof(column));
+            schema.ThrowIfNull(nameof(schema));
+            table.ThrowIfNull(nameof(table));
+            column.ThrowIfNull(nameof(column));
 
             if (TryGetValue((schema, table, column), out item))
                 return true;
@@ -63,7 +59,7 @@ namespace DbEx.Migration.Data
         public DataParserColumnDefaultCollection GetDefaultsForTable(DbTableSchema table)
         {
             var dc = new DataParserColumnDefaultCollection();
-            foreach (var c in (table ?? throw new ArgumentNullException(nameof(table))).Columns)
+            foreach (var c in table.ThrowIfNull(nameof(table)).Columns)
             {
                 if (TryGetValue(table.Schema, table.Name, c.Name, out var item))
                     dc.Add(item);

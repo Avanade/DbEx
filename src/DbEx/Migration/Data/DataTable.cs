@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using DbEx.DbSchema;
 using System;
 using System.Collections.Generic;
@@ -22,10 +23,8 @@ namespace DbEx.Migration.Data
         /// <param name="name">The table name.</param>
         internal DataTable(DataParser parser, string schema, string name)
         {
-            Parser = parser ?? throw new ArgumentNullException(nameof(parser));
-
-            if (name == null)
-                throw new ArgumentNullException(nameof(name));
+            Parser = parser.ThrowIfNull(nameof(parser));
+            name.ThrowIfNull(nameof(name));
 
             // Determine features by notation/convention.
             if (name.StartsWith('$'))
@@ -172,8 +171,7 @@ namespace DbEx.Migration.Data
         /// <param name="row">The row.</param>
         public void AddRow(DataRow row)
         {
-            if (row == null)
-                throw new ArgumentNullException(nameof(row));
+            row.ThrowIfNull(nameof(row));
 
             foreach (var c in row.Columns)
             {

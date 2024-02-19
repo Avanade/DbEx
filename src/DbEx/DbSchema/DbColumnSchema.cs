@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using System;
 using System.Diagnostics;
 
@@ -8,41 +9,32 @@ namespace DbEx.DbSchema
     /// <summary>
     /// Represents the Database <b>Column</b> schema definition.
     /// </summary>
+    /// <param name="dbTable">The owning (parent) <see cref="DbTableSchema"/>.</param>
+    /// <param name="name">The column name.</param>
+    /// <param name="type">The column type.</param>
+    /// <param name="dotNetNameOverride">The .NET name override (optional).</param>
     [DebuggerDisplay("{Name} {SqlType} ({DotNetType})")]
-    public class DbColumnSchema
+    public class DbColumnSchema(DbTableSchema dbTable, string name, string type, string? dotNetNameOverride = null)
     {
         private string? _dotNetType;
-        private string? _dotNetName;
-        private string? _dotNetCleanedName;
+        private string? _dotNetName = dotNetNameOverride;
+        private string? _dotNetCleanedName = dotNetNameOverride;
         private string? _sqlType;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DbColumnSchema"/> class.
-        /// </summary>
-        /// <param name="dbTable">The owning (parent) <see cref="DbTableSchema"/>.</param>
-        /// <param name="name">The column name.</param>
-        /// <param name="type">The column type.</param>
-        public DbColumnSchema(DbTableSchema dbTable, string name, string type)
-        {
-            DbTable = dbTable ?? throw new ArgumentNullException(nameof(dbTable));
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            Type = type ?? throw new ArgumentNullException(nameof(type));
-        }
 
         /// <summary>
         /// Gets the owning (parent) <see cref="DbTable"/>.
         /// </summary>
-        public DbTableSchema DbTable { get; }
+        public DbTableSchema DbTable { get; } = dbTable.ThrowIfNull(nameof(dbTable));
 
         /// <summary>
         /// Gets the column name.
         /// </summary>
-        public string Name { get; }
+        public string Name { get; } = name.ThrowIfNull(nameof(name));
 
         /// <summary>
         /// Gets the SQL Server data type.
         /// </summary>
-        public string Type { get; }
+        public string Type { get; } = type.ThrowIfNull(nameof(type));
 
         /// <summary>
         /// Indicates whether the column is nullable.
@@ -206,7 +198,7 @@ namespace DbEx.DbSchema
         /// <param name="column">The <see cref="DbColumnSchema"/> to copy from.</param>
         public void CopyFrom(DbColumnSchema column)
         {
-            IsNullable = (column ?? throw new ArgumentNullException(nameof(column))).IsNullable;
+            IsNullable = column.ThrowIfNull(nameof(column)).IsNullable;
             Length = column.Length;
             Precision = column.Precision;
             Scale = column.Scale;

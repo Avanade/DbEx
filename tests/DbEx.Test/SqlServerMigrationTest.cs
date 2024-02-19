@@ -268,36 +268,52 @@ SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
         }
 
         [Test]
-        public void SqlServerSchemaScript_SchemaAndObject()
+        public async Task SqlServerSchemaScript_SchemaAndObject()
         {
-            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript("CREATE PROC [Ref].[USStates]", "blah"));
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            using var m = new SqlServerMigration(a);
+
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript(m, "CREATE PROC [Ref].[USStates]", "blah"));
             Assert.That(ss.HasError, Is.False);
             Assert.That(ss.Schema, Is.EqualTo("Ref"));
             Assert.That(ss.Name, Is.EqualTo("USStates"));
         }
 
         [Test]
-        public void SqlServerSchemaScript_NoSchemaAndObject()
+        public async Task SqlServerSchemaScript_NoSchemaAndObject()
         {
-            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript("CREATE PROC [USStates]", "blah"));
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            using var m = new SqlServerMigration(a);
+
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript(m, "CREATE PROC [USStates]", "blah"));
             Assert.That(ss.HasError, Is.False);
             Assert.That(ss.Schema, Is.EqualTo("dbo"));
             Assert.That(ss.Name, Is.EqualTo("USStates"));
         }
 
         [Test]
-        public void SqlServerSchemaScript_FunctionWithBrackets()
+        public async Task SqlServerSchemaScript_FunctionWithBrackets()
         {
-            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript("CREATE FUNCTION [Sec].[fnGetUserHasPermission]( some, other='stuf', num = 1.3 );", "blah"));
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            using var m = new SqlServerMigration(a);
+
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript(m, "CREATE FUNCTION [Sec].[fnGetUserHasPermission]( some, other='stuf', num = 1.3 );", "blah"));
             Assert.That(ss.HasError, Is.False);
             Assert.That(ss.Schema, Is.EqualTo("Sec"));
             Assert.That(ss.Name, Is.EqualTo("fnGetUserHasPermission"));
         }
 
         [Test]
-        public void SqlServerSchemaScript_FunctionWithBrackets2()
+        public async Task SqlServerSchemaScript_FunctionWithBrackets2()
         {
-            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript(@"CREATE FUNCTION [Sec].[fnGetUserHasPermission]()
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            using var m = new SqlServerMigration(a);
+
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript(m, @"CREATE FUNCTION [Sec].[fnGetUserHasPermission]()
 some other stuf", "blah"));
 
             Assert.That(ss.HasError, Is.False);

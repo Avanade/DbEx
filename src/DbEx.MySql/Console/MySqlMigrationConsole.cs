@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using DbEx.Console;
 using DbEx.Migration;
 using DbEx.MySql.Migration;
@@ -32,7 +33,7 @@ namespace DbEx.MySql.Console
         /// Initializes a new instance of the <see cref="MySqlMigrationConsole"/> class that provides a default for the <paramref name="connectionString"/>.
         /// </summary>
         /// <param name="connectionString">The database connection string.</param>
-        public MySqlMigrationConsole(string connectionString) : base(new MigrationArgs { ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString)) }) { }
+        public MySqlMigrationConsole(string connectionString) : base(new MigrationArgs { ConnectionString = connectionString.ThrowIfNull(nameof(connectionString)) }) { }
 
         /// <summary>
         /// Gets the <see cref="MigrationArgs"/>.

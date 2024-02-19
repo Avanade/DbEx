@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using CoreEx.Entities;
 using CoreEx.RefData;
 using DbEx.DbSchema;
@@ -187,8 +188,7 @@ namespace DbEx.Migration.Data
         /// <param name="args">The <see cref="DataParserArgs"/> to copy from.</param>
         public void CopyFrom(DataParserArgs args)
         {
-            if (args == null)
-                throw new ArgumentNullException(nameof(args));
+            args.ThrowIfNull(nameof(args));
 
             UserName = args.UserName;
             DateTimeNow = args.DateTimeNow;

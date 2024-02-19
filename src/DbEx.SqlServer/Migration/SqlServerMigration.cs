@@ -21,7 +21,7 @@ namespace DbEx.SqlServer.Migration
     /// <remarks>The following <see cref="DatabaseMigrationBase.SchemaObjectTypes"/> are supported by default: '<c>TYPE</c>', '<c>FUNCTION</c>', '<c>VIEW</c>', '<c>PROCEDURE</c>' and '<c>PROC</c>'.
     /// <para>Where the <see cref="DatabaseMigrationBase.Args"/> <see cref="MigrationArgsBase.DataResetFilterPredicate"/> is not specified it will default to '<c>schema => schema.Schema != "dbo" || schema.Schema != "cdc"</c>' which will 
     /// filter out a data reset where a table is in the '<c>dbo</c>' and '<c>cdc</c>' schemas.</para>
-    /// <para>The base <see cref="DatabaseMigrationBase.Journal"/> instance is updated; the <see cref="IDatabaseJournal.Schema"/> and <see cref="IDatabaseJournal.Table"/> properties are set to `<c>dbo</c>` and `<c>SchemaVersions</c>` respectively.</para></remarks>
+    /// <para>The base <see cref="DatabaseMigrationBase.Journal"/> instance is updated; the <see cref="IDatabaseJournal.Schema"/> and <see cref="IDatabaseJournal.Table"/> properties are set to `<see cref="DatabaseSchemaConfig.DefaultSchema"/>` and `<c>SchemaVersions</c>` respectively.</para></remarks>
     public class SqlServerMigration : DatabaseMigrationBase
     {
         private readonly string _databaseName;
@@ -53,12 +53,12 @@ namespace DbEx.SqlServer.Migration
                 SchemaObjectTypes = ["TYPE", "FUNCTION", "VIEW", "PROCEDURE", "PROC"];
 
             // Always add the dbo schema _first_ unless already specified.
-            if (!Args.SchemaOrder.Contains("dbo"))
-                Args.SchemaOrder.Insert(0, "dbo");
+            if (!Args.SchemaOrder.Contains(DatabaseSchemaConfig.DefaultSchema))
+                Args.SchemaOrder.Insert(0, DatabaseSchemaConfig.DefaultSchema);
 
             // Add/set standard parameters.
             Args.Parameter(MigrationArgsBase.DatabaseNameParamName, _databaseName, true);
-            Args.Parameter(MigrationArgsBase.JournalSchemaParamName, "dbo");
+            Args.Parameter(MigrationArgsBase.JournalSchemaParamName, DatabaseSchemaConfig.DefaultSchema);
             Args.Parameter(MigrationArgsBase.JournalTableParamName, "SchemaVersions");
         }
 

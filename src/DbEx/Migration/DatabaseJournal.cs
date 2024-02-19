@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using CoreEx;
 
 namespace DbEx.Migration
 {
@@ -16,15 +17,10 @@ namespace DbEx.Migration
     /// <remarks>Journaling is the recording/auditing of migration scripts executed against the database to ensure they are executed only once. This is implemented in a manner compatible, same-as, 
     /// <see href="https://github.com/DbUp/DbUp/blob/master/src/dbup-core/Support/TableJournal.cs">DbUp</see> to ensure consistency.
     /// <para>The <see cref="Schema"/> and <see cref="Table"/> values are used to replace the '<c>{{JournalSchema}}</c>' and '<c>{{JournalTable}}</c>' placeholders respectively.</para></remarks>
-    public class DatabaseJournal : IDatabaseJournal
+    /// <param name="migrator">The <see cref="DatabaseMigrationBase"/>.</param>
+    public class DatabaseJournal(DatabaseMigrationBase migrator) : IDatabaseJournal
     {
         private bool _journalExists;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DatabaseJournal"/> class.
-        /// </summary>
-        /// <param name="migrator">The <see cref="DatabaseMigrationBase"/>.</param>
-        public DatabaseJournal(DatabaseMigrationBase migrator) => Migrator = migrator ?? throw new ArgumentNullException(nameof(migrator));
 
         /// <inheritdoc/>
         public string? Schema => Migrator.Args.Parameters[MigrationArgsBase.JournalSchemaParamName]?.ToString();
@@ -35,7 +31,7 @@ namespace DbEx.Migration
         /// <summary>
         /// Gets the <see cref="DatabaseMigrationBase"/>.
         /// </summary>
-        public DatabaseMigrationBase Migrator { get; }
+        public DatabaseMigrationBase Migrator { get; } = migrator.ThrowIfNull(nameof(migrator));
 
         /// <inheritdoc/>
         public async Task EnsureExistsAsync(CancellationToken cancellationToken = default)

@@ -1,0 +1,2 @@
+﻿-- Inspired by https://github.com/DbUp/dbup-postgresql/blob/main/src/dbup-postgresql/PostgresqlTableJournal.cs for consistency.
+SELECT 1 FROM information_schema.tables WHERE table_name = '{{JournalTable}}' AND table_schema = '{{JournalSchema}}'

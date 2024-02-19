@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using CoreEx.Database;
 using DbEx.DbSchema;
 using DbEx.Migration;
@@ -7,12 +8,12 @@ using DbEx.Migration.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using OnRamp.Utility;
+using System.IO;
 
 namespace DbEx
 {
@@ -21,6 +22,9 @@ namespace DbEx
     /// </summary>
     public static class DatabaseExtensions
     {
+        private static readonly string[] _sourceArray = ["Id", "Code"];
+        private static readonly char[] _separatorChars = ['_', '-'];
+
         /// <summary>
         /// Selects all the table and column schema details from the database.
         /// </summary>
@@ -42,12 +46,9 @@ namespace DbEx
             var refDataPredicate = new Func<DbTableSchema, bool>(t => t.Columns.Any(c => c.Name == refDataCodeColumn && !c.IsPrimaryKey && c.DotNetType == "string") && t.Columns.Any(c => c.Name == refDataTextColumn && !c.IsPrimaryKey && c.DotNetType == "string"));
 
             // Get all the tables and their columns.
-            using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableAndColumns.sql", [typeof(DatabaseExtensions).Assembly]);
-#if NET7_0_OR_GREATER
-            await database.SqlStatement(await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr =>
-#else
-            await database.SqlStatement(await sr.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr =>
-#endif
+            var probeAssemblies = new[] { databaseSchemaConfig.GetType().Assembly, typeof(DatabaseExtensions).Assembly };
+            using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableAndColumns.sql", probeAssemblies);
+            await database.SqlStatement(await databaseSchemaConfig.ReadSqlAsync(sr, cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr =>
             {
                if (!databaseSchemaConfig.SupportsSchema && dr.GetValue<string>("TABLE_SCHEMA") != databaseSchemaConfig.DatabaseName)
                    return 0;
@@ -84,12 +85,8 @@ namespace DbEx
             }
 
             // Configure all the single column primary and unique constraints.
-            using var sr2 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTablePrimaryKey.sql", [typeof(DatabaseExtensions).Assembly]);
-#if NET7_0_OR_GREATER
-            var pks = await database.SqlStatement(await sr2.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr => new
-#else
-            var pks = await database.SqlStatement(await sr2.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr => new
-#endif
+            using var sr2 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTablePrimaryKey.sql", probeAssemblies);
+            var pks = await database.SqlStatement(await databaseSchemaConfig.ReadSqlAsync(sr2, cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("CONSTRAINT_NAME"),
                 TableSchema = dr.GetValue<string>("TABLE_SCHEMA"),
@@ -175,9 +172,9 @@ namespace DbEx
                     }
 
                     sb.Clear();
-                    c.Name.Split(new char[] { '_', '-' }, StringSplitOptions.RemoveEmptyEntries).ForEach(part => sb.Append(StringConverter.ToPascalCase(part)));
+                    c.Name.Split(_separatorChars, StringSplitOptions.RemoveEmptyEntries).ForEach(part => sb.Append(StringConverter.ToPascalCase(part)));
                     var words = Regex.Split(sb.ToString(), DbTableSchema.WordSplitPattern).Where(x => !string.IsNullOrEmpty(x));
-                    if (words.Count() > 1 && new string[] { "Id", "Code" }.Contains(words.Last(), StringComparer.InvariantCultureIgnoreCase))
+                    if (words.Count() > 1 && _sourceArray.Contains(words.Last(), StringComparer.InvariantCultureIgnoreCase))
                     {
                         var name = string.Join(string.Empty, words.Take(words.Count() - 1));
                         if (tables.Any(x => x.Name == name && x.Schema == t.Schema && x.IsRefData))
@@ -187,6 +184,19 @@ namespace DbEx
             }
 
             return tables;
+        }
+
+        /// <summary>
+        /// Gets the SQL statement from the embedded resource stream
+        /// </summary>
+        private async static Task<string> ReadSqlAsync(this DatabaseSchemaConfig databaseSchemaConfig, StreamReader sr, CancellationToken cancellationToken)
+        {
+#if NET7_0_OR_GREATER
+            var sql = await sr.ThrowIfNull(nameof(sr)).ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+#else
+            var sql = await sr.ThrowIfNull(nameof(sr)).ReadToEndAsync().ConfigureAwait(false);
+#endif
+            return sql.Replace("{{DatabaseName}}", databaseSchemaConfig.DatabaseName);
         }
     }
 }

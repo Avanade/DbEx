@@ -1,2 +1,2 @@
 ﻿-- Inspired by https://github.com/DbUp/DbUp/blob/master/src/dbup-sqlserver/SqlTableJournal.cs for consistency.
-INSERT INTO [{{JournalSchema}}].[{{JournalTable}}] (ScriptName, Applied) values (@scriptname, @applied)
+INSERT INTO [{{JournalSchema}}].[{{JournalTable}}] (ScriptName, Applied) VALUES (@scriptname, @applied)

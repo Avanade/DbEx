@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using DbEx.Migration;
 using System;
 using System.Collections.Generic;
@@ -102,7 +103,7 @@ namespace DbEx.Console
         /// <returns>The current instance to supported fluent-style method-chaining.</returns>
         public TSelf OutputDirectory(string path)
         {
-            Args.OutputDirectory = new DirectoryInfo(path ?? throw new ArgumentNullException(nameof(path)));
+            Args.OutputDirectory = new DirectoryInfo(path.ThrowIfNull(nameof(path)));
             return (TSelf)this;
         }
 

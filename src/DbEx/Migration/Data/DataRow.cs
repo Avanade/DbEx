@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +16,7 @@ namespace DbEx.Migration.Data
         /// Initializes a new instance of the <see cref="DataRow"/> class.
         /// </summary>
         /// <param name="table">The parent <see cref="DataTable"/>.</param>
-        internal DataRow(DataTable table) => Table = table ?? throw new ArgumentNullException(nameof(table));
+        internal DataRow(DataTable table) => Table = table.ThrowIfNull(nameof(table));
 
         /// <summary>
         /// Gets the <see cref="DataTable"/>.
@@ -55,9 +56,7 @@ namespace DbEx.Migration.Data
         /// <param name="column">The <see cref="DataColumn"/>.</param>
         public void AddColumn(DataColumn column)
         {
-            if (column == null)
-                throw new ArgumentNullException(nameof(column));
-
+            column.ThrowIfNull(nameof(column));
             if (string.IsNullOrEmpty(column.Name))
                 throw new ArgumentException("Column.Name must have a value.", nameof(column));
 

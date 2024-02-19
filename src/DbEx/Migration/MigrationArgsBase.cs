@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using DbEx.Migration.Data;
 using Microsoft.Extensions.Logging;
 using System;
@@ -137,7 +138,7 @@ namespace DbEx.Migration
         /// <remarks>Where a specified <see cref="Assembly"/> item already exists within the <see cref="Assemblies"/> it will not be added again.</remarks>
         public void AddAssemblyAfter(Assembly assemblyToFind, params MigrationAssemblyArgs[] assemblies)
         {
-            var index = _assemblies.FindIndex(x => x.Assembly == (assemblyToFind ?? throw new ArgumentNullException(nameof(assemblyToFind))));
+            var index = _assemblies.FindIndex(x => x.Assembly == assemblyToFind.ThrowIfNull(nameof(assemblyToFind)));
             if (index < 0)
             {
                 AddAssembly(assemblies);
@@ -174,7 +175,7 @@ namespace DbEx.Migration
         /// <param name="args">The <see cref="MigrationArgsBase{TSelf}"/> to copy from.</param>
         protected void CopyFrom(MigrationArgsBase args)
         {
-            base.CopyFrom(args ?? throw new ArgumentNullException(nameof(args)));
+            base.CopyFrom(args.ThrowIfNull(nameof(args)));
 
             MigrationCommand = args.MigrationCommand;
             _assemblies.Clear();

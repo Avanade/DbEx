@@ -11,20 +11,16 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using DbEx.Migration;
+using CoreEx;
 
 namespace DbEx.MySql
 {
     /// <summary>
     /// Provides MySQL specific configuration and capabilities.
     /// </summary>
-    public class MySqlSchemaConfig : DatabaseSchemaConfig
+    /// <param name="databaseName">The database name.</param>
+    public class MySqlSchemaConfig(string databaseName) : DatabaseSchemaConfig(databaseName)
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MySqlSchemaConfig"/> class.
-        /// </summary>
-        /// <param name="databaseName">The database name.</param>
-        public MySqlSchemaConfig(string databaseName) : base(databaseName, false) { }
-
         /// <inheritdoc/>
         /// <remarks>Value is '<c>_id</c>'.</remarks>
         public override string IdColumnNameSuffix => "_id";
@@ -66,7 +62,7 @@ namespace DbEx.MySql
         public override string RefDataTextColumnName => "text";
 
         /// <inheritdoc/>
-        public override string ToFullyQualifiedTableName(string schema, string table) => $"`{table}`";
+        public override string ToFullyQualifiedTableName(string? schema, string table) => $"`{table}`";
 
         /// <inheritdoc/>
         public override void PrepareDataParserArgs(DataParserArgs dataParserArgs)
@@ -130,7 +126,7 @@ namespace DbEx.MySql
         public override async Task LoadAdditionalInformationSchema(IDatabase database, List<DbTableSchema> tables, DataParserArgs? dataParserArgs, CancellationToken cancellationToken)
         {
             // Configure all the single column foreign keys.
-            using var sr3 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableForeignKeys.sql", new Assembly[] { typeof(MySqlSchemaConfig).Assembly });
+            using var sr3 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableForeignKeys.sql", [typeof(MySqlSchemaConfig).Assembly]);
             var fks = await database.SqlStatement(await sr3.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("fk_constraint_name"),
@@ -162,7 +158,7 @@ namespace DbEx.MySql
         /// <inheritdoc/>
         public override string ToDotNetTypeName(DbColumnSchema schema)
         {
-            var dbType = (schema ?? throw new ArgumentNullException(nameof(schema))).Type;
+            var dbType = schema.ThrowIfNull(nameof(schema)).Type;
             if (string.IsNullOrEmpty(dbType))
                 return "string";
 

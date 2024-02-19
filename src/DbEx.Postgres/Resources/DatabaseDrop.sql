@@ -1,0 +1,1 @@
+﻿DROP DATABASE "{{DatabaseName}}" WITH (FORCE)

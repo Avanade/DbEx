@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using DbEx.Migration;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
@@ -38,7 +39,7 @@ namespace DbEx.Console
         /// Initializes a new instance of the <see cref="MigrationConsoleBase"/> class.
         /// </summary>
         /// <param name="args">The default <see cref="MigrationArgs"/> that will be overridden/updated by the command-line argument values.</param>
-        protected MigrationConsoleBase(MigrationArgsBase args) => Args = args ?? throw new ArgumentNullException(nameof(args));
+        protected MigrationConsoleBase(MigrationArgsBase args) => Args = args.ThrowIfNull(nameof(args));
 
         /// <summary>
         /// Gets the <see cref="MigrationArgsBase"/>.

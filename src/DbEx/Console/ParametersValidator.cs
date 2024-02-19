@@ -1,27 +1,22 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using DbEx.Migration;
 using McMaster.Extensions.CommandLineUtils;
 using McMaster.Extensions.CommandLineUtils.Validation;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using YamlDotNet.Core.Tokens;
 
 namespace DbEx.Console
 {
     /// <summary>
     /// Validate the Params to ensure format is correct and values are not duplicated.
     /// </summary>
-    public class ParametersValidator : IOptionValidator
+    /// <param name="args">The <see cref="MigrationArgsBase"/> to update.</param>
+    public class ParametersValidator(MigrationArgsBase args) : IOptionValidator
     {
-        private readonly MigrationArgsBase _args;
-
-        /// <summary>
-        /// Initilizes a new instance of the <see cref="ParametersValidator"/> class.
-        /// </summary>
-        /// <param name="args">The <see cref="MigrationArgsBase"/> to update.</param>
-        public ParametersValidator(MigrationArgsBase args) => _args = args ?? throw new ArgumentNullException(nameof(args));
+        private readonly MigrationArgsBase _args = args.ThrowIfNull(nameof(args));
 
         /// <summary>
         /// Performs the validation.
@@ -31,11 +26,8 @@ namespace DbEx.Console
         /// <returns>The <see cref="ValidationResult"/>.</returns>
         public ValidationResult GetValidationResult(CommandOption option, ValidationContext context)
         {
-            if (option == null)
-                throw new ArgumentNullException(nameof(option));
-
-            if (context == null)
-                throw new ArgumentNullException(nameof(context));
+            option.ThrowIfNull(nameof(option));
+            context.ThrowIfNull(nameof(context));
 
             foreach (var p in option.Values.Where(x => !string.IsNullOrEmpty(x)))
             {

@@ -11,7 +11,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageReference Include="coverlet.collector" Version="6.0.0">
@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\DbEx.MySql\DbEx.MySql.csproj" />
+    <ProjectReference Include="..\..\src\DbEx.Postgres\DbEx.Postgres.csproj" />
     <ProjectReference Include="..\..\src\DbEx.SqlServer\DbEx.SqlServer.csproj" />
     <ProjectReference Include="..\..\src\DbEx\DbEx.csproj" />
     <ProjectReference Include="..\DbEx.Test.Console\DbEx.Test.Console.csproj" />
@@ -29,6 +30,7 @@
     <ProjectReference Include="..\DbEx.Test.Error\DbEx.Test.Error.csproj" />
     <ProjectReference Include="..\DbEx.Test.MySqlConsole\DbEx.Test.MySqlConsole.csproj" />
     <ProjectReference Include="..\DbEx.Test.OutboxConsole\DbEx.Test.OutboxConsole.csproj" />
+    <ProjectReference Include="..\DbEx.Test.PostgresConsole\DbEx.Test.PostgresConsole.csproj" />
   </ItemGroup>
 
   <ItemGroup>

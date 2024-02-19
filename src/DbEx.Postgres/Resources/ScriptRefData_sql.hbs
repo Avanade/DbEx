@@ -1,0 +1,17 @@
+﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
+{{! FILENAME:create-[lookup Parameters 'Param1']-[lookup Parameters 'Param2']-refdata-table }}
+{{! PARAM:Param1=Schema }}
+{{! PARAM:Param2=Name }}
+-- Create Reference Data table: "{{lookup Parameters 'Param1'}}"."{{lookup Parameters 'Param2'}}"
+
+CREATE TABLE "{{lookup Parameters 'Param1'}}"."{{lookup Parameters 'Param2'}}" (
+  "{{lookup Parameters 'Param1'}}_id" SERIAL PRIMARY KEY,
+  "code" VARCHAR(50) NOT NULL UNIQUE,
+  "text" VARCHAR(250) NULL,
+  "is_active" BOOLEAN NULL,
+  "sort_order" INT NULL,
+  "created_by" VARCHAR(250) NULL,
+  "created_date" TIMESTAMPTZ NULL,
+  "updated_by" VARCHAR(250) NULL,
+  "updated_date" TIMESTAMPTZ NULL
+);

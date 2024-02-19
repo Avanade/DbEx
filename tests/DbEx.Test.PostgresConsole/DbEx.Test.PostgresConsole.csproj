@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Data\Data.yaml" />
+    <None Remove="Migrations\002-create-test-contact-type-table.sql" />
+    <None Remove="Migrations\003-create-test-gender-table.sql" />
+    <None Remove="Migrations\004-create-test-contact-table.sql" />
+    <None Remove="Migrations\005-create-test-multipk-table.sql" />
+    <None Remove="Schema\spGetContact.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Data\Data.yaml" />
+    <EmbeddedResource Include="Migrations\002-create-test-contact-type-table.sql" />
+    <EmbeddedResource Include="Migrations\003-create-test-gender-table.sql" />
+    <EmbeddedResource Include="Migrations\004-create-test-contact-table.sql" />
+    <EmbeddedResource Include="Migrations\005-create-test-multipk-table.sql" />
+    <EmbeddedResource Include="Schema\spGetContact.sql" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,6 @@
+﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
+TRUNCATE
+{{#each .}}
+    {{QualifiedName}}{{#unless @last}},{{/unless}}
+{{/each}}
+  RESTART IDENTITY;

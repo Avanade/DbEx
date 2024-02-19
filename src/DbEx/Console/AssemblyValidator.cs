@@ -29,11 +29,8 @@ namespace DbEx.Console
         /// <returns>The <see cref="ValidationResult"/>.</returns>
         public ValidationResult GetValidationResult(CommandOption option, ValidationContext context)
         {
-            if (option == null)
-                throw new ArgumentNullException(nameof(option));
-
-            if (context == null)
-                throw new ArgumentNullException(nameof(context));
+            option.ThrowIfNull(nameof(option));
+            context.ThrowIfNull(nameof(context));
 
             var list = new List<Assembly>();
             foreach (var name in option.Values.Where(x => !string.IsNullOrEmpty(x)))

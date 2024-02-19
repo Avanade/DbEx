@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using System;
 using System.IO;
 using System.Reflection;
@@ -19,36 +20,47 @@ namespace DbEx.Migration
         /// <summary>
         /// Initializes a new instance of the <see cref="DatabaseMigrationScript"/> class for a <paramref name="file"/>.
         /// </summary>
+        /// <param name="databaseMigation">The owning <see cref="DatabaseMigrationBase"/>.</param>
         /// <param name="file">The <see cref="FileInfo"/>.</param>
         /// <param name="name">The file name.</param>
-        public DatabaseMigrationScript(FileInfo file, string name)
+        public DatabaseMigrationScript(DatabaseMigrationBase databaseMigation, FileInfo file, string name)
         {
-            _file = file ?? throw new ArgumentNullException(nameof(file));
-            Name = name ?? throw new ArgumentNullException(nameof(name));
+            DatabaseMigration = databaseMigation.ThrowIfNull(nameof(databaseMigation));
+            _file = file.ThrowIfNull(nameof(file));
+            Name = name.ThrowIfNullOrEmpty(nameof(name));
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DatabaseMigrationScript"/> class for an embedded resource.
         /// </summary>
+        /// <param name="databaseMigation">The owning <see cref="DatabaseMigrationBase"/>.</param>
         /// <param name="assembly">The <see cref="Assembly"/>.</param>
         /// <param name="name">The resource name.</param>
-        public DatabaseMigrationScript(Assembly assembly, string name)
+        public DatabaseMigrationScript(DatabaseMigrationBase databaseMigation, Assembly assembly, string name)
         {
-            _assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
-            Name = name ?? throw new ArgumentNullException(nameof(name));
+            DatabaseMigration = databaseMigation.ThrowIfNull(nameof(databaseMigation));
+            _assembly = assembly.ThrowIfNull(nameof(assembly));
+            Name = name.ThrowIfNullOrEmpty(nameof(name));
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DatabaseMigrationScript"/> class for the specified <paramref name="sql"/>.
         /// </summary>
+        /// <param name="databaseMigation">The owning <see cref="DatabaseMigrationBase"/>.</param>
         /// <param name="sql"></param>
         /// <param name="name">The sql name.</param>
         /// <exception cref="ArgumentNullException"></exception>
-        public DatabaseMigrationScript(string sql, string name)
+        public DatabaseMigrationScript(DatabaseMigrationBase databaseMigation, string sql, string name)
         {
-            _sql = sql ?? throw new ArgumentNullException(nameof(sql));
-            Name = name ?? throw new ArgumentNullException(nameof(name));
+            DatabaseMigration = databaseMigation.ThrowIfNull(nameof(databaseMigation));
+            _sql = sql.ThrowIfNull(nameof(sql));
+            Name = name.ThrowIfNullOrEmpty(nameof(name));
         }
+
+        /// <summary>
+        /// Gets the owning <see cref="DatabaseMigrationBase"/>.
+        /// </summary>
+        public DatabaseMigrationBase DatabaseMigration { get; }
 
         /// <summary>
         /// Gets the name used for journaling.
