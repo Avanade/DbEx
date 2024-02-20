@@ -35,6 +35,7 @@
     <None Remove="Resources\ScriptCreate_sql.hbs" />
     <None Remove="Resources\ScriptDefault_sql.hbs" />
     <None Remove="Resources\ScriptRefData_sql.hbs" />
+    <None Remove="Resources\ScriptSchema_sql.hbs" />
     <None Remove="Resources\SelectTableAndColumns.sql" />
     <None Remove="resources\SelectTableForeignKeys.sql" />
     <None Remove="resources\SelectTablePrimaryKey.sql" />

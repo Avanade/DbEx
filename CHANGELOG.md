@@ -3,7 +3,10 @@
 Represents the **NuGet** versions.
 
 ## v2.5.0
-- *Enhancement:* Added PostgreSQL database migrations support.
+- *Enhancement:* Added [PostgreSQL](https://www.postgresql.org/) database migrations support.
+- *Internal*: 
+  - All `throw new ArgumentNullException` checking migrated to the `xxx.ThrowIfNull` extension method equivalent.
+  - All	_Run Code Analysis_ issues resolved.
 
 ## v2.4.0
 - *Enhancement:* Added `MigrationAssemblyArgs` to allow for the specification of zero or more `Data` folder names.

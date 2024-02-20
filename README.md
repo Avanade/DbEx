@@ -18,6 +18,7 @@ Package | Status | Source & documentation
 -|-|-
 `DbEx` | [![NuGet version](https://badge.fury.io/nu/DbEx.svg)](https://badge.fury.io/nu/DbEx) | [Link](./src/DbEx)
 `DbEx.MySql` | [![NuGet version](https://badge.fury.io/nu/DbEx.MySql.svg)](https://badge.fury.io/nu/DbEx.MySql) | [Link](./src/DbEx.MySql)
+`DbEx.Postgres` | [![NuGet version](https://badge.fury.io/nu/DbEx.Postgres.svg)](https://badge.fury.io/nu/DbEx.Postgres) | [Link](./src/DbEx.Postgres)
 `DbEx.SqlServer` | [![NuGet version](https://badge.fury.io/nu/DbEx.SqlServer.svg)](https://badge.fury.io/nu/DbEx.SqlServer) | [Link](./src/DbEx.SqlServer)
 
 
