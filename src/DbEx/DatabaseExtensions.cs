@@ -2,13 +2,13 @@
 
 using CoreEx;
 using CoreEx.Database;
+using CoreEx.Text;
 using DbEx.DbSchema;
 using DbEx.Migration;
 using DbEx.Migration.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -173,7 +173,7 @@ namespace DbEx
 
                     sb.Clear();
                     c.Name.Split(_separatorChars, StringSplitOptions.RemoveEmptyEntries).ForEach(part => sb.Append(StringConverter.ToPascalCase(part)));
-                    var words = Regex.Split(sb.ToString(), DbTableSchema.WordSplitPattern).Where(x => !string.IsNullOrEmpty(x));
+                    var words = SentenceCase.WordSplit(sb.ToString()).Where(x => !string.IsNullOrEmpty(x));
                     if (words.Count() > 1 && _sourceArray.Contains(words.Last(), StringComparer.InvariantCultureIgnoreCase))
                     {
                         var name = string.Join(string.Empty, words.Take(words.Count() - 1));

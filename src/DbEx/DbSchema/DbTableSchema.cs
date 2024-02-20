@@ -2,6 +2,7 @@
 
 using CoreEx;
 using CoreEx.RefData;
+using CoreEx.Text;
 using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,6 @@ using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace DbEx.DbSchema
 {
@@ -17,18 +17,13 @@ namespace DbEx.DbSchema
     /// Represents the Database <b>Table</b> schema definition.
     /// </summary>
     [DebuggerDisplay("{QualifiedName}")]
-    public class DbTableSchema
+    public partial class DbTableSchema
     {
         private static readonly char[] _separators = ['_', '-'];
         private static readonly string[] _suffixes = ["Id", "Code", "Json"];
 
         private string? _dotNetName;
         private string? _pluralName;
-
-        /// <summary>
-        /// The <see cref="Regex"/> expression pattern for splitting strings into words.
-        /// </summary>
-        public const string WordSplitPattern = "([a-z](?=[A-Z])|[A-Z](?=[A-Z][a-z]))";
 
         /// <summary>
         /// Create an alias from the name.
@@ -58,7 +53,7 @@ namespace DbEx.DbSchema
 
             if (removeKnownSuffix)
             {
-                var words = Regex.Split(dotNet, WordSplitPattern).Where(x => !string.IsNullOrEmpty(x));
+                var words = SentenceCase.WordSplit(dotNet).Where(x => !string.IsNullOrEmpty(x));
                 if (words.Count() > 1 && _suffixes.Contains(words.Last(), StringComparer.InvariantCultureIgnoreCase))
                     dotNet = string.Join(string.Empty, words.Take(words.Count() - 1));
             }
@@ -74,7 +69,7 @@ namespace DbEx.DbSchema
         public static string CreatePluralName(string name)
         {
             name.ThrowIfNullOrEmpty(nameof(name));
-            var words = Regex.Split(name, WordSplitPattern).Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var words = SentenceCase.WordSplit(name).Where(x => !string.IsNullOrEmpty(x)).ToList();
             words[^1] = StringConverter.ToPlural(words[^1]);
             return string.Join(string.Empty, words);
         }
@@ -87,7 +82,7 @@ namespace DbEx.DbSchema
         public static string CreateSingularName(string name)
         {
             name.ThrowIfNullOrEmpty(nameof(name));
-            var words = Regex.Split(name, WordSplitPattern).Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var words = SentenceCase.WordSplit(name).Where(x => !string.IsNullOrEmpty(x)).ToList();
             words[^1] = StringConverter.ToSingle(words[^1]);
             return string.Join(string.Empty, words);
         }
