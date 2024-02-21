@@ -8,7 +8,6 @@ using DbEx.Migration.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,43 +22,43 @@ namespace DbEx.SqlServer
     {
         /// <inheritdoc/>
         /// <remarks>Value is '<c>Id</c>'.</remarks>
-        public override string IdColumnNameSuffix => "Id";
+        public override string IdColumnNameSuffix { get; set; } = "Id";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>CreatedDate</c>'.</remarks>
-        public override string CreatedDateColumnName => "CreatedDate";
+        public override string CreatedDateColumnName { get; set; } = "CreatedDate";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>CreatedBy</c>'.</remarks>
-        public override string CreatedByColumnName => "CreatedBy";
+        public override string CreatedByColumnName { get; set; } = "CreatedBy";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>UpdatedDate</c>'.</remarks>
-        public override string UpdatedDateColumnName => "UpdatedDate";
+        public override string UpdatedDateColumnName { get; set; } = "UpdatedDate";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>UpdatedBy</c>'.</remarks>
-        public override string UpdatedByColumnName => "UpdatedBy";
+        public override string UpdatedByColumnName { get; set; } = "UpdatedBy";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>TenantId</c>'.</remarks>
-        public override string TenantIdColumnName => "TenantId";
+        public override string TenantIdColumnName { get; set; } = "TenantId";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>RowVersion</c>'.</remarks>
-        public override string RowVersionColumnName => "RowVersion";
+        public override string RowVersionColumnName { get; set; } = "RowVersion";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>IsDeleted</c>'.</remarks>
-        public override string IsDeletedColumnName => "IsDeleted";
+        public override string IsDeletedColumnName { get; set; } = "IsDeleted";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>Code</c>'.</remarks>
-        public override string RefDataCodeColumnName => "Code";
+        public override string RefDataCodeColumnName { get; set; } = "Code";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>Text</c>'.</remarks>
-        public override string RefDataTextColumnName => "Text";
+        public override string RefDataTextColumnName { get; set; } = "Text";
 
         /// <inheritdoc/>
         public override string ToFullyQualifiedTableName(string? schema, string table) => $"[{schema}].[{table}]";
@@ -67,25 +66,13 @@ namespace DbEx.SqlServer
         /// <inheritdoc/>
         public override void PrepareDataParserArgs(DataParserArgs dataParserArgs)
         {
-            if (dataParserArgs == null)
-                return;
+            base.PrepareDataParserArgs(dataParserArgs);
 
             if (dataParserArgs.RefDataColumnDefaults.Count == 0)
             {
                 dataParserArgs.RefDataColumnDefaults.TryAdd("IsActive", _ => true);
                 dataParserArgs.RefDataColumnDefaults.TryAdd("SortOrder", i => i);
             }
-
-            dataParserArgs.IdColumnNameSuffix ??= IdColumnNameSuffix;
-            dataParserArgs.CreatedByColumnName ??= CreatedByColumnName;
-            dataParserArgs.CreatedDateColumnName ??= CreatedDateColumnName;
-            dataParserArgs.UpdatedByColumnName ??= UpdatedByColumnName;
-            dataParserArgs.UpdatedDateColumnName ??= UpdatedDateColumnName;
-            dataParserArgs.TenantIdColumnName ??= TenantIdColumnName;
-            dataParserArgs.RowVersionColumnName ??= RowVersionColumnName;
-            dataParserArgs.IsDeletedColumnName ??= IsDeletedColumnName;
-            dataParserArgs.RefDataCodeColumnName ??= RefDataCodeColumnName;
-            dataParserArgs.RefDataTextColumnName ??= RefDataTextColumnName;
         }
 
         /// <inheritdoc/>

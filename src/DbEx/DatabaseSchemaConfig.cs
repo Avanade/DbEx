@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using CoreEx.Database;
 using CoreEx.Entities;
 using CoreEx.RefData;
@@ -54,49 +55,55 @@ namespace DbEx
             : throw new NotSupportedException("The database does not support per-database schema-based separation.");
 
         /// <summary>
-        /// Gets the name of the <see cref="IChangeLogAudit.CreatedDate"/> column (where it exists).
+        /// Gets or sets the suffix of the identifier column where not fully specified.
         /// </summary>
-        public abstract string CreatedDateColumnName { get; }
+        /// <remarks>Where matching reference data columns and the specified column is not found, then the suffix will be appended to the specified column name and an additional match will be performed.</remarks>
+        public abstract string IdColumnNameSuffix { get; set; }
 
         /// <summary>
-        /// Gets the name of the <see cref="IChangeLogAudit.CreatedBy"/> column (where it exists).
+        /// Gets or sets the name of the <see cref="IChangeLogAudit.CreatedDate"/> column (where it exists).
         /// </summary>
-        public abstract string CreatedByColumnName { get; }
+        public abstract string CreatedDateColumnName { get; set; }
 
         /// <summary>
-        /// Gets the name of the <see cref="IChangeLogAudit.UpdatedDate"/> column (where it exists).
+        /// Gets or sets the name of the <see cref="IChangeLogAudit.CreatedBy"/> column (where it exists).
         /// </summary>
-        public abstract string UpdatedDateColumnName { get; }
+        public abstract string CreatedByColumnName { get; set; }
 
         /// <summary>
-        /// Gets the name of the <see cref="IChangeLogAudit.UpdatedBy"/> column (where it exists).
+        /// Gets or sets the name of the <see cref="IChangeLogAudit.UpdatedDate"/> column (where it exists).
         /// </summary>
-        public abstract string UpdatedByColumnName { get; }
+        public abstract string UpdatedDateColumnName { get; set; }
 
         /// <summary>
-        /// Gets the name of the <see cref="ITenantId.TenantId"/> column (where it exists).
+        /// Gets or sets the name of the <see cref="IChangeLogAudit.UpdatedBy"/> column (where it exists).
         /// </summary>
-        public abstract string TenantIdColumnName { get; }
+        public abstract string UpdatedByColumnName { get; set; }
 
         /// <summary>
-        /// Gets the name of the row-version (<see cref="IETag.ETag"/> equivalent) column (where it exists).
+        /// Gets or sets the name of the <see cref="ITenantId.TenantId"/> column (where it exists).
         /// </summary>
-        public abstract string RowVersionColumnName { get; }
+        public abstract string TenantIdColumnName { get; set; }
 
         /// <summary>
-        /// Gets the default <see cref="IReferenceData.Code"/> column.
+        /// Gets or sets the name of the row-version (<see cref="IETag.ETag"/> equivalent) column (where it exists).
         /// </summary>
-        public abstract string RefDataCodeColumnName { get; }
+        public abstract string RowVersionColumnName { get; set; }
 
         /// <summary>
-        /// Gets the default <see cref="IReferenceData.Text"/> column.
+        /// Gets or sets the default <see cref="ILogicallyDeleted.IsDeleted"/> column.
         /// </summary>
-        public abstract string RefDataTextColumnName { get; }
+        public abstract string IsDeletedColumnName { get; set; }
 
         /// <summary>
-        /// Gets the default <see cref="ILogicallyDeleted.IsDeleted"/> column.
+        /// Gets or sets the default <see cref="IReferenceData.Code"/> column.
         /// </summary>
-        public abstract string IsDeletedColumnName { get; }
+        public abstract string RefDataCodeColumnName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the default <see cref="IReferenceData.Text"/> column.
+        /// </summary>
+        public abstract string RefDataTextColumnName { get; set; }
 
         /// <summary>
         /// Gets the default reference data predicate to determine <see cref="DbTableSchema.IsRefData"/>.
@@ -106,16 +113,25 @@ namespace DbEx
         public virtual Func<DbTableSchema, bool> RefDataPredicate { get; }
 
         /// <summary>
-        /// Gets or sets the suffix of the identifier column where not fully specified.
-        /// </summary>
-        /// <remarks>Where matching reference data columns and the specified column is not found, then the suffix will be appended to the specified column name and an additional match will be performed.</remarks>
-        public abstract string IdColumnNameSuffix { get; }
-
-        /// <summary>
         /// Prepares the <paramref name="dataParserArgs"/> prior to parsing as a final opportunity to finalize any standard defaults.
         /// </summary>
         /// <param name="dataParserArgs">The <see cref="DataParserArgs"/>.</param>
-        public abstract void PrepareDataParserArgs(DataParserArgs dataParserArgs);
+        public virtual void PrepareDataParserArgs(DataParserArgs dataParserArgs)
+        {
+            dataParserArgs.ThrowIfNull(nameof(dataParserArgs));
+
+            // Override/set the values - ensure consistency between the two.
+            IdColumnNameSuffix = dataParserArgs.IdColumnNameSuffix ??= IdColumnNameSuffix;
+            CreatedByColumnName = dataParserArgs.CreatedByColumnName ??= CreatedByColumnName;
+            CreatedDateColumnName = dataParserArgs.CreatedDateColumnName ??= CreatedDateColumnName;
+            UpdatedByColumnName =dataParserArgs.UpdatedByColumnName ??= UpdatedByColumnName;
+            UpdatedDateColumnName = dataParserArgs.UpdatedDateColumnName ??= UpdatedDateColumnName;
+            TenantIdColumnName = dataParserArgs.TenantIdColumnName ??= TenantIdColumnName;
+            RowVersionColumnName = dataParserArgs.RowVersionColumnName ??= RowVersionColumnName;
+            IsDeletedColumnName = dataParserArgs.IsDeletedColumnName ??= IsDeletedColumnName;
+            RefDataCodeColumnName = dataParserArgs.RefDataCodeColumnName ??= RefDataCodeColumnName;
+            RefDataTextColumnName = dataParserArgs.RefDataTextColumnName ??= RefDataTextColumnName;
+        }
 
         /// <summary>
         /// Creates the <see cref="DbColumnSchema"/> from the `InformationSchema.Columns` <see cref="DatabaseRecord"/>.

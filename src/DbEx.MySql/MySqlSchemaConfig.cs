@@ -6,7 +6,6 @@ using DbEx.Migration.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
@@ -23,43 +22,43 @@ namespace DbEx.MySql
     {
         /// <inheritdoc/>
         /// <remarks>Value is '<c>_id</c>'.</remarks>
-        public override string IdColumnNameSuffix => "_id";
+        public override string IdColumnNameSuffix { get; set; } = "_id";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>created_date</c>'.</remarks>
-        public override string CreatedDateColumnName => "created_date";
+        public override string CreatedDateColumnName { get; set; } = "created_date";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>created_by</c>'.</remarks>
-        public override string CreatedByColumnName => "created_by";
+        public override string CreatedByColumnName { get; set; } = "created_by";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>updated_date</c>'.</remarks>
-        public override string UpdatedDateColumnName => "updated_date";
+        public override string UpdatedDateColumnName { get; set; } = "updated_date";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>updated_by</c>'.</remarks>
-        public override string UpdatedByColumnName => "updated_by";
+        public override string UpdatedByColumnName { get; set; } = "updated_by";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>tenant_id</c>'.</remarks>
-        public override string TenantIdColumnName => "tenant_id";
+        public override string TenantIdColumnName { get; set; } = "tenant_id";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>row_version</c>'.</remarks>
-        public override string RowVersionColumnName => "row_version";
+        public override string RowVersionColumnName { get; set; } = "row_version";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>is_deleted</c>'.</remarks>
-        public override string IsDeletedColumnName => "is_deleted";
+        public override string IsDeletedColumnName { get; set; } = "is_deleted";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>code</c>'.</remarks>
-        public override string RefDataCodeColumnName => "code";
+        public override string RefDataCodeColumnName { get; set; } = "code";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>text</c>'.</remarks>
-        public override string RefDataTextColumnName => "text";
+        public override string RefDataTextColumnName { get; set; } = "text";
 
         /// <inheritdoc/>
         public override string ToFullyQualifiedTableName(string? schema, string table) => $"`{table}`";
@@ -67,25 +66,13 @@ namespace DbEx.MySql
         /// <inheritdoc/>
         public override void PrepareDataParserArgs(DataParserArgs dataParserArgs)
         {
-            if (dataParserArgs == null)
-                return;
+            base.PrepareDataParserArgs(dataParserArgs);
 
             if (dataParserArgs.RefDataColumnDefaults.Count == 0)
             {
                 dataParserArgs.RefDataColumnDefaults.TryAdd("is_active", _ => true);
                 dataParserArgs.RefDataColumnDefaults.TryAdd("sort_order", i => i);
             }
-
-            dataParserArgs.IdColumnNameSuffix ??= IdColumnNameSuffix;
-            dataParserArgs.CreatedByColumnName ??= CreatedByColumnName;
-            dataParserArgs.CreatedDateColumnName ??= CreatedDateColumnName;
-            dataParserArgs.UpdatedByColumnName ??= UpdatedByColumnName;
-            dataParserArgs.UpdatedDateColumnName ??= UpdatedDateColumnName;
-            dataParserArgs.TenantIdColumnName ??= TenantIdColumnName;
-            dataParserArgs.RowVersionColumnName ??= RowVersionColumnName;
-            dataParserArgs.IsDeletedColumnName ??= IsDeletedColumnName;
-            dataParserArgs.RefDataCodeColumnName ??= RefDataCodeColumnName;
-            dataParserArgs.RefDataTextColumnName ??= RefDataTextColumnName;
         }
 
         /// <inheritdoc/>
