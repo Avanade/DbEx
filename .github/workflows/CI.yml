@@ -44,7 +44,7 @@ jobs:
       run: docker pull postgres
 
     - name: Start Postgres
-      run: docker run --name db-postgres -p 5432:5432 -e POSTGRES_PASSWORD=yourStrong(!)Password -d postgres
+      run: docker run --name db-postgres -p 5432:5432 -e POSTGRES_PASSWORD=yourStrong#1Password -d postgres
       
     - name: Sleep (allow databases to complete startup)
       run: sleep 10
