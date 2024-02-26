@@ -55,6 +55,6 @@ namespace DbEx.Migration.Data
         /// Gets the value formatted for use in a SQL statement.
         /// </summary>
         /// <returns>The value formatted for use in a SQL statement.</returns>
-        public string SqlValue => Table.DbTable.Config.ToFormattedSqlStatementValue(DbColumn ?? throw new InvalidOperationException("The DbColumn property must not be null."), Table.Args, Value);
+        public string SqlValue => Table.DbTable.Migration.SchemaConfig.ToFormattedSqlStatementValue(DbColumn ?? throw new InvalidOperationException("The DbColumn property must not be null."), Value);
     }
 }

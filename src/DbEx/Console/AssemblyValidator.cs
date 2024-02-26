@@ -16,7 +16,7 @@ namespace DbEx.Console
     /// <summary>
     /// Validates the assembly name(s).
     /// </summary>
-    /// <param name="args">The <see cref="MigrationArgs"/> to update.</param>
+    /// <param name="args">The <see cref="MigrationArgsBase"/> to update.</param>
     public class AssemblyValidator(MigrationArgsBase args) : IOptionValidator
     {
         private readonly MigrationArgsBase _args = args.ThrowIfNull(nameof(args));

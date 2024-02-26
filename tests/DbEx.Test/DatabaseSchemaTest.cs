@@ -2,11 +2,8 @@
 using CoreEx.Database.Postgres;
 using CoreEx.Database.SqlServer;
 using DbEx.Migration;
-using DbEx.MySql;
 using DbEx.MySql.Migration;
-using DbEx.Postgres;
 using DbEx.Postgres.Migration;
-using DbEx.SqlServer;
 using DbEx.SqlServer.Migration;
 using DbEx.Test.PostgresConsole;
 using Microsoft.Data.SqlClient;
@@ -33,7 +30,7 @@ namespace DbEx.Test
             Assert.IsTrue(r);
 
             using var db = new SqlServerDatabase(() => new SqlConnection(cs));
-            var tables = await db.SelectSchemaAsync(new SqlServerSchemaConfig("DbEx.Console")).ConfigureAwait(false);
+            var tables = await db.SelectSchemaAsync(m).ConfigureAwait(false);
             Assert.IsNotNull(tables);
 
             // [Test].[ContactType]
@@ -107,7 +104,7 @@ namespace DbEx.Test
             Assert.AreEqual("[Test].[Contact]", tab.QualifiedName);
             Assert.IsFalse(tab.IsAView);
             Assert.IsFalse(tab.IsRefData);
-            Assert.AreEqual(8, tab.Columns.Count);
+            Assert.AreEqual(9, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
             Assert.AreEqual("Contact", tab.DotNetName);
             Assert.AreEqual("Contacts", tab.PluralName);
@@ -222,6 +219,10 @@ namespace DbEx.Test
             Assert.IsFalse(col.IsComputed);
             Assert.IsFalse(col.IsForeignRefData);
             Assert.IsNull(col.DefaultValue);
+
+            col = tab.Columns[8];
+            Assert.AreEqual("ContactTypeCode", col.Name);
+            Assert.IsTrue(col.IsRefData);
 
             // [Test].[MultiPk]
             tab = tables.Where(x => x.Name == "MultiPk").SingleOrDefault();
@@ -368,7 +369,7 @@ namespace DbEx.Test
             Assert.IsTrue(r);
 
             using var db = new MySqlDatabase(() => new MySqlConnection(cs));
-            var tables = await db.SelectSchemaAsync(new MySqlSchemaConfig("dbex_test")).ConfigureAwait(false);
+            var tables = await db.SelectSchemaAsync(m).ConfigureAwait(false);
             Assert.IsNotNull(tables);
 
             // [Test].[ContactType]
@@ -445,11 +446,10 @@ namespace DbEx.Test
             Assert.AreEqual("`contact`", tab.QualifiedName);
             Assert.IsFalse(tab.IsAView);
             Assert.IsFalse(tab.IsRefData);
-            Assert.AreEqual(11, tab.Columns.Count);
+            Assert.AreEqual(12, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
             Assert.AreEqual("Contact", tab.DotNetName);
             Assert.AreEqual("Contacts", tab.PluralName);
-
 
             col = tab.Columns[0];
             Assert.AreEqual("contact_id", col.Name);
@@ -556,6 +556,10 @@ namespace DbEx.Test
             Assert.IsFalse(col.IsComputed);
             Assert.IsFalse(col.IsForeignRefData);
             Assert.IsNull(col.DefaultValue);
+
+            col = tab.Columns[11];
+            Assert.AreEqual("contact_type_code", col.Name);
+            Assert.IsTrue(col.IsRefData);
 
             // [Test].[MultiPk]
             tab = tables.Where(x => x.Name == "multi_pk").SingleOrDefault();
@@ -667,7 +671,7 @@ namespace DbEx.Test
             Assert.IsTrue(r);
 
             using var db = new PostgresDatabase(() => new Npgsql.NpgsqlConnection(cs));
-            var tables = await db.SelectSchemaAsync(new PostgresSchemaConfig("dbex_test")).ConfigureAwait(false);
+            var tables = await db.SelectSchemaAsync(m).ConfigureAwait(false);
             Assert.IsNotNull(tables);
 
             // [Test].[ContactType]
@@ -768,7 +772,7 @@ namespace DbEx.Test
             Assert.AreEqual("\"public\".\"contact\"", tab.QualifiedName);
             Assert.IsFalse(tab.IsAView);
             Assert.IsFalse(tab.IsRefData);
-            Assert.AreEqual(12, tab.Columns.Count);
+            Assert.AreEqual(13, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
             Assert.AreEqual("Contact", tab.DotNetName);
             Assert.AreEqual("Contacts", tab.PluralName);
@@ -878,6 +882,10 @@ namespace DbEx.Test
             Assert.IsFalse(col.IsComputed);
             Assert.IsFalse(col.IsForeignRefData);
             Assert.IsNull(col.DefaultValue);
+
+            col = tab.Columns[11];
+            Assert.AreEqual("contact_type_code", col.Name);
+            Assert.IsTrue(col.IsRefData);
 
             // [Test].[MultiPk]
             tab = tables.Where(x => x.Name == "multi_pk").SingleOrDefault();

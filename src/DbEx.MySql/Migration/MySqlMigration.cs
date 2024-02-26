@@ -31,6 +31,8 @@ namespace DbEx.MySql.Migration
         /// <param name="args">The <see cref="MigrationArgsBase"/>.</param>
         public MySqlMigration(MigrationArgsBase args) : base(args)
         {
+            SchemaConfig = new MySqlSchemaConfig(this);
+
             var csb = new MySqlConnectionStringBuilder(Args.ConnectionString);
             _databaseName = csb.Database;
             if (string.IsNullOrEmpty(_databaseName))
@@ -49,9 +51,9 @@ namespace DbEx.MySql.Migration
                 SchemaObjectTypes = ["FUNCTION", "VIEW", "PROCEDURE"];
 
             // Add/set standard parameters.
-            Args.Parameter(MigrationArgsBase.DatabaseNameParamName, _databaseName, true);
-            Args.Parameter(MigrationArgsBase.JournalSchemaParamName, null, true);
-            Args.Parameter(MigrationArgsBase.JournalTableParamName, "schemaversions");
+            Args.AddParameter(MigrationArgsBase.DatabaseNameParamName, _databaseName, true);
+            Args.AddParameter(MigrationArgsBase.JournalSchemaParamName, null, true);
+            Args.AddParameter(MigrationArgsBase.JournalTableParamName, "schemaversions");
         }
 
         /// <inheritdoc/>
@@ -67,7 +69,7 @@ namespace DbEx.MySql.Migration
         public override IDatabase MasterDatabase => _masterDatabase;
 
         /// <inheritdoc/>
-        public override DatabaseSchemaConfig DatabaseSchemaConfig => new MySqlSchemaConfig(DatabaseName);
+        public override DatabaseSchemaConfig SchemaConfig { get; }
 
         /// <inheritdoc/>
         protected override DatabaseSchemaScriptBase CreateSchemaScript(DatabaseMigrationScript migrationScript) => MySqlSchemaScript.Create(migrationScript);
@@ -76,7 +78,7 @@ namespace DbEx.MySql.Migration
         protected override async Task<bool> DatabaseResetAsync(CancellationToken cancellationToken = default)
         {
             // Filter out the versioning table.
-            _resetBypass.Add(DatabaseSchemaConfig.ToFullyQualifiedTableName(Journal.Schema!, Journal.Table!));
+            _resetBypass.Add(SchemaConfig.ToFullyQualifiedTableName(Journal.Schema!, Journal.Table!));
 
             // Carry on as they say ;-)
             return await base.DatabaseResetAsync(cancellationToken).ConfigureAwait(false);

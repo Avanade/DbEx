@@ -38,7 +38,7 @@ namespace DbEx.Console
         /// <summary>
         /// Initializes a new instance of the <see cref="MigrationConsoleBase"/> class.
         /// </summary>
-        /// <param name="args">The default <see cref="MigrationArgs"/> that will be overridden/updated by the command-line argument values.</param>
+        /// <param name="args">The default <see cref="MigrationArgsBase"/> that will be overridden/updated by the command-line argument values.</param>
         protected MigrationConsoleBase(MigrationArgsBase args) => Args = args.ThrowIfNull(nameof(args));
 
         /// <summary>
@@ -121,10 +121,10 @@ namespace DbEx.Console
             _commandArg = app.Argument<MigrationCommand>("command", "Database migration command (see https://github.com/Avanade/dbex#commands-functions).").IsRequired();
             ConsoleOptions.Add(nameof(OnRamp.CodeGeneratorDbArgsBase.ConnectionString), app.Option("-cs|--connection-string", "Database connection string.", CommandOptionType.SingleValue));
             ConsoleOptions.Add(nameof(OnRamp.CodeGeneratorDbArgsBase.ConnectionStringEnvironmentVariableName), app.Option("-cv|--connection-varname", "Database connection string environment variable name.", CommandOptionType.SingleValue));
-            ConsoleOptions.Add(nameof(MigrationArgs.SchemaOrder), app.Option("-so|--schema-order", "Database schema name (multiple can be specified in priority order).", CommandOptionType.MultipleValue));
-            ConsoleOptions.Add(nameof(MigrationArgs.OutputDirectory), app.Option("-o|--output", "Output directory path.", CommandOptionType.MultipleValue).Accepts(v => v.ExistingDirectory("Output directory path does not exist.")));
-            ConsoleOptions.Add(nameof(MigrationArgs.Assemblies), app.Option("-a|--assembly", "Assembly containing embedded resources (multiple can be specified in probing order).", CommandOptionType.MultipleValue));
-            ConsoleOptions.Add(nameof(MigrationArgs.Parameters), app.Option("-p|--param", "Parameter expressed as a 'Name=Value' pair (multiple can be specified).", CommandOptionType.MultipleValue));
+            ConsoleOptions.Add(nameof(MigrationArgsBase.SchemaOrder), app.Option("-so|--schema-order", "Database schema name (multiple can be specified in priority order).", CommandOptionType.MultipleValue));
+            ConsoleOptions.Add(nameof(MigrationArgsBase.OutputDirectory), app.Option("-o|--output", "Output directory path.", CommandOptionType.MultipleValue).Accepts(v => v.ExistingDirectory("Output directory path does not exist.")));
+            ConsoleOptions.Add(nameof(MigrationArgsBase.Assemblies), app.Option("-a|--assembly", "Assembly containing embedded resources (multiple can be specified in probing order).", CommandOptionType.MultipleValue));
+            ConsoleOptions.Add(nameof(MigrationArgsBase.Parameters), app.Option("-p|--param", "Parameter expressed as a 'Name=Value' pair (multiple can be specified).", CommandOptionType.MultipleValue));
             ConsoleOptions.Add(EntryAssemblyOnlyOptionName, app.Option("-eo|--entry-assembly-only", "Use the entry assembly only (ignore all other assemblies).", CommandOptionType.NoValue));
             ConsoleOptions.Add(AcceptPromptsOptionName, app.Option("--accept-prompts", "Accept prompts; command should _not_ stop and wait for user confirmation (DROP or RESET commands).", CommandOptionType.NoValue));
             _additionalArgs = app.Argument("args", "Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each a SQL statement to invoke).", multipleValues: true);
@@ -139,16 +139,16 @@ namespace DbEx.Console
                     return new ValidationResult($"The specified database migration command is not supported.");
 
                 // Update the options from command line.
-                var so = GetCommandOption(nameof(MigrationArgs.SchemaOrder));
+                var so = GetCommandOption(nameof(MigrationArgsBase.SchemaOrder));
                 if (so.HasValue())
                 {
                     Args.SchemaOrder.Clear();
                     Args.SchemaOrder.AddRange(so.Values.Where(x => !string.IsNullOrEmpty(x)).OfType<string>().Distinct());
                 }
 
-                UpdateStringOption(nameof(MigrationArgs.OutputDirectory), v => Args.OutputDirectory = new DirectoryInfo(v));
+                UpdateStringOption(nameof(MigrationArgsBase.OutputDirectory), v => Args.OutputDirectory = new DirectoryInfo(v));
 
-                var vr = ValidateMultipleValue(nameof(MigrationArgs.Assemblies), ctx, (ctx, co) => new AssemblyValidator(Args).GetValidationResult(co, ctx));
+                var vr = ValidateMultipleValue(nameof(MigrationArgsBase.Assemblies), ctx, (ctx, co) => new AssemblyValidator(Args).GetValidationResult(co, ctx));
                 if (vr != ValidationResult.Success)
                     return vr;
 
@@ -158,7 +158,7 @@ namespace DbEx.Console
                     Args.AddAssembly(Assembly.GetEntryAssembly()!);
                 });
 
-                vr = ValidateMultipleValue(nameof(MigrationArgs.Parameters), ctx, (ctx, co) => new ParametersValidator(Args).GetValidationResult(co, ctx));
+                vr = ValidateMultipleValue(nameof(MigrationArgsBase.Parameters), ctx, (ctx, co) => new ParametersValidator(Args).GetValidationResult(co, ctx));
                 if (vr != ValidationResult.Success)
                     return vr;
 

@@ -23,10 +23,10 @@ namespace DbEx.Migration
         private bool _journalExists;
 
         /// <inheritdoc/>
-        public string? Schema => Migrator.Args.Parameters[MigrationArgsBase.JournalSchemaParamName]?.ToString();
+        public string? Schema => Migrator.Args.Parameters[MigrationArgs.JournalSchemaParamName]?.ToString();
 
         /// <inheritdoc/>
-        public string? Table => Migrator.Args.Parameters[MigrationArgsBase.JournalTableParamName]?.ToString();
+        public string? Table => Migrator.Args.Parameters[MigrationArgs.JournalTableParamName]?.ToString();
 
         /// <summary>
         /// Gets the <see cref="DatabaseMigrationBase"/>.

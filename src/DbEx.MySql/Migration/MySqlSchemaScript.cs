@@ -59,6 +59,8 @@ namespace DbEx.MySql.Migration
 
         private class SqlCommandTokenizer(string sqlText) : SqlCommandReader(sqlText)
         {
+            private readonly char[] delimiters = ['(', ')', ';', ',', '='];
+
             public string[] ReadAllTokens()
             {
                 var words = new List<string>();
@@ -79,7 +81,7 @@ namespace DbEx.MySql.Migration
                                     sb.Clear();
                                     break;
                                 }
-                                else if (new char[] { '(', ')', ';', ',', '=' }.Contains(c))
+                                else if (delimiters.Contains(c))
                                 {
                                     if (sb.Length > 0)
                                         words.Add(sb.ToString());

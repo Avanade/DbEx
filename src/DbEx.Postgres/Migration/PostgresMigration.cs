@@ -29,6 +29,8 @@ namespace DbEx.Postgres.Migration
         /// <param name="args">The <see cref="MigrationArgsBase"/>.</param>
         public PostgresMigration(MigrationArgsBase args) : base(args)
         {
+            SchemaConfig = new PostgresSchemaConfig(this);
+
             var csb = new NpgsqlConnectionStringBuilder(Args.ConnectionString);
             if (string.IsNullOrEmpty(csb.Database))
                 throw new ArgumentException($"The {nameof(OnRamp.CodeGeneratorDbArgsBase.ConnectionString)} property must contain a database name.", nameof(args));
@@ -44,9 +46,9 @@ namespace DbEx.Postgres.Migration
             if (SchemaObjectTypes.Length == 0)
                 SchemaObjectTypes = ["FUNCTION", "VIEW", "PROCEDURE"];
 
-            Args.Parameter(MigrationArgsBase.DatabaseNameParamName, _databaseName, true);
-            Args.Parameter(MigrationArgsBase.JournalSchemaParamName, DatabaseSchemaConfig.DefaultSchema, true);
-            Args.Parameter(MigrationArgsBase.JournalTableParamName, "schemaversions");
+            Args.AddParameter(MigrationArgsBase.DatabaseNameParamName, _databaseName, true);
+            Args.AddParameter(MigrationArgsBase.JournalSchemaParamName, SchemaConfig.DefaultSchema, true);
+            Args.AddParameter(MigrationArgsBase.JournalTableParamName, "schemaversions");
         }
 
         /// <inheritdoc/>
@@ -62,7 +64,7 @@ namespace DbEx.Postgres.Migration
         public override IDatabase MasterDatabase => _masterDatabase;
 
         /// <inheritdoc/>
-        public override DatabaseSchemaConfig DatabaseSchemaConfig => new PostgresSchemaConfig(DatabaseName);
+        public override DatabaseSchemaConfig SchemaConfig { get; }
 
         /// <inheritdoc/>
         protected override DatabaseSchemaScriptBase CreateSchemaScript(DatabaseMigrationScript migrationScript) => PostgresSchemaScript.Create(migrationScript);
@@ -71,7 +73,7 @@ namespace DbEx.Postgres.Migration
         protected override async Task<bool> DatabaseResetAsync(CancellationToken cancellationToken = default)
         {
             // Filter out the versioning table.
-            _resetBypass.Add(DatabaseSchemaConfig.ToFullyQualifiedTableName(Journal.Schema!, Journal.Table!));
+            _resetBypass.Add(SchemaConfig.ToFullyQualifiedTableName(Journal.Schema!, Journal.Table!));
 
             // Carry on as they say ;-)
             return await base.DatabaseResetAsync(cancellationToken).ConfigureAwait(false);

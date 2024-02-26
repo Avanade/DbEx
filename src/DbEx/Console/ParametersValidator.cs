@@ -31,7 +31,7 @@ namespace DbEx.Console
 
             foreach (var p in option.Values.Where(x => !string.IsNullOrEmpty(x)))
             {
-                var pos = p!.IndexOf("=", StringComparison.InvariantCultureIgnoreCase);
+                var pos = p!.IndexOf("=", StringComparison.Ordinal);
                 if (pos <= 0)
                     AddParameter(p, null);
                 else

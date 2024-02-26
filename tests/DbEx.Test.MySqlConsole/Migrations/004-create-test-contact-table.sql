@@ -10,5 +10,6 @@
       `created_date` DATETIME NULL,
       `updated_by` VARCHAR (50) NULL,
       `updated_date` DATETIME NULL,
+      `contact_type_code` VARCHAR(50) NULL,
       CONSTRAINT `FK_Test_Contact_ContactType` FOREIGN KEY (`contact_type_id`) REFERENCES `contact_type` (`contact_type_id`)
     )

@@ -46,7 +46,7 @@ namespace DbEx.Postgres.Migration
                     var index = script.FullyQualifiedName.IndexOf('.');
                     if (index < 0)
                     {
-                        script.Schema = migrationScript.DatabaseMigration.DatabaseSchemaConfig.DefaultSchema;
+                        script.Schema = migrationScript.DatabaseMigration.SchemaConfig.DefaultSchema;
                         script.Name = script.FullyQualifiedName;
                     }
                     else
@@ -77,6 +77,8 @@ namespace DbEx.Postgres.Migration
 
         private class SqlCommandTokenizer(string sqlText) : SqlCommandReader(sqlText)
         {
+            private readonly char[] delimiters = ['(', ')', ';', ',', '='];
+
             public string[] ReadAllTokens()
             {
                 var words = new List<string>();
@@ -97,7 +99,7 @@ namespace DbEx.Postgres.Migration
                                     sb.Clear();
                                     break;
                                 }
-                                else if (new char[] { '(', ')', ';', ',', '=' }.Contains(c))
+                                else if (delimiters.Contains(c))
                                 {
                                     if (sb.Length > 0)
                                         words.Add(sb.ToString());

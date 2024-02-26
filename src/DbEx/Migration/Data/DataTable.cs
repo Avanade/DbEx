@@ -40,14 +40,14 @@ namespace DbEx.Migration.Data
             }
 
             // Determine the schema, table and column name mappings.
-            var mappings = parser.Args.TableNameMappings.Get(schema, name);
+            var mappings = parser.ParserArgs.TableNameMappings.Get(schema, name);
             schema = mappings.Schema;
             name = mappings.Table;
             ColumnNameMappings = mappings.ColumnMappings ?? new Dictionary<string, string>();
 
             // Get the database table.
             SchemaTableName = $"'{(schema == string.Empty ? name : $"{schema}.{name}")}'";
-            DbTable = Parser.DbTables.Where(t => (!Parser.DatabaseSchemaConfig.SupportsSchema || t.Schema == schema) && t.Name == name).SingleOrDefault() ??
+            DbTable = Parser.DbTables.Where(t => (!Parser.Migration.SchemaConfig.SupportsSchema || t.Schema == schema) && t.Name == name).SingleOrDefault() ??
                 throw new DataParserException($"Table {SchemaTableName} does not exist within the specified database.");
 
             // Check that an identifier generator can be used.
@@ -68,7 +68,7 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Gets the <see cref="DataParserArgs"/>.
         /// </summary>
-        public DataParserArgs Args => Parser.Args;
+        public DataParserArgs ParserArgs => Parser.ParserArgs;
 
         /// <summary>
         /// Gets the schema name.
@@ -199,22 +199,22 @@ namespace DbEx.Migration.Data
         /// </summary>
         internal async Task PrepareAsync(CancellationToken cancellationToken)
         {
-            var cds = Args.ColumnDefaults.GetDefaultsForTable(DbTable);
+            var cds = ParserArgs.ColumnDefaults.GetDefaultsForTable(DbTable);
 
             for (int i = 0; i < Rows.Count; i++)
             {
                 var row = Rows[i];
 
                 // Apply the configured auditing defaults.
-                await AddColumnWhereNotSpecifiedAsync(row, Args.CreatedDateColumnName ?? Parser.DatabaseSchemaConfig.CreatedDateColumnName, () => Task.FromResult<object?>(Args.DateTimeNow)).ConfigureAwait(false);
-                await AddColumnWhereNotSpecifiedAsync(row, Args.CreatedByColumnName ?? Parser.DatabaseSchemaConfig.CreatedByColumnName, () => Task.FromResult<object?>(Args.UserName)).ConfigureAwait(false);
-                await AddColumnWhereNotSpecifiedAsync(row, Args.UpdatedDateColumnName ?? Parser.DatabaseSchemaConfig.UpdatedDateColumnName, () => Task.FromResult<object?>(Args.DateTimeNow)).ConfigureAwait(false);
-                await AddColumnWhereNotSpecifiedAsync(row, Args.UpdatedByColumnName ?? Parser.DatabaseSchemaConfig.UpdatedByColumnName, () => Task.FromResult<object?>(Args.UserName)).ConfigureAwait(false);
+                await AddColumnWhereNotSpecifiedAsync(row, DbTable.Migration.Args.CreatedDateColumnName!, () => Task.FromResult<object?>(ParserArgs.DateTimeNow)).ConfigureAwait(false);
+                await AddColumnWhereNotSpecifiedAsync(row, DbTable.Migration.Args.CreatedByColumnName!, () => Task.FromResult<object?>(ParserArgs.UserName)).ConfigureAwait(false);
+                await AddColumnWhereNotSpecifiedAsync(row, DbTable.Migration.Args.UpdatedDateColumnName!, () => Task.FromResult<object?>(ParserArgs.DateTimeNow)).ConfigureAwait(false);
+                await AddColumnWhereNotSpecifiedAsync(row, DbTable.Migration.Args.UpdatedByColumnName!, () => Task.FromResult<object?>(ParserArgs.UserName)).ConfigureAwait(false);
 
                 // Apply an reference data defaults.
-                if (IsRefData && Args.RefDataColumnDefaults != null)
+                if (IsRefData && ParserArgs.RefDataColumnDefaults != null)
                 {
-                    foreach (var rdd in Args.RefDataColumnDefaults)
+                    foreach (var rdd in ParserArgs.RefDataColumnDefaults)
                     {
                         await AddColumnWhereNotSpecifiedAsync(row, rdd.Key, () => Task.FromResult(rdd.Value(i + 1))).ConfigureAwait(false);
                     }
@@ -230,19 +230,19 @@ namespace DbEx.Migration.Data
                         switch (IdentifierType)
                         {
                             case DataTableIdentifierType.Guid:
-                                await AddColumnWhereNotSpecifiedAsync(row, pkc.Name!, async () => await Args.IdentifierGenerator.GenerateGuidIdentifierAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                                await AddColumnWhereNotSpecifiedAsync(row, pkc.Name!, async () => await ParserArgs.IdentifierGenerator.GenerateGuidIdentifierAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                                 break;
 
                             case DataTableIdentifierType.String:
-                                await AddColumnWhereNotSpecifiedAsync(row, pkc.Name!, async () => await Args.IdentifierGenerator.GenerateStringIdentifierAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                                await AddColumnWhereNotSpecifiedAsync(row, pkc.Name!, async () => await ParserArgs.IdentifierGenerator.GenerateStringIdentifierAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                                 break;
 
                             case DataTableIdentifierType.Int:
-                                await AddColumnWhereNotSpecifiedAsync(row, pkc.Name!, async () => await Args.IdentifierGenerator.GenerateInt32IdentifierAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                                await AddColumnWhereNotSpecifiedAsync(row, pkc.Name!, async () => await ParserArgs.IdentifierGenerator.GenerateInt32IdentifierAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                                 break;
 
                             case DataTableIdentifierType.Long:
-                                await AddColumnWhereNotSpecifiedAsync (row, pkc.Name!, async () => await Args.IdentifierGenerator.GenerateInt64IdentifierAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                                await AddColumnWhereNotSpecifiedAsync (row, pkc.Name!, async () => await ParserArgs.IdentifierGenerator.GenerateInt64IdentifierAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                                 break;
                         }
                     }

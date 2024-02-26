@@ -54,7 +54,7 @@ namespace DbEx.Migration
         {
             Args = args.ThrowIfNull(nameof(args));
             if (string.IsNullOrEmpty(Args.ConnectionString))
-                throw new ArgumentException($"{nameof(MigrationArgs.ConnectionString)} property must have a value.", nameof(args));
+                throw new ArgumentException($"{nameof(MigrationArgsBase.ConnectionString)} property must have a value.", nameof(args));
 
             Args.Logger ??= NullLogger.Instance;
             Args.OutputDirectory ??= new DirectoryInfo(CodeGenConsole.GetBaseExeDirectory());
@@ -94,7 +94,7 @@ namespace DbEx.Migration
         /// <summary>
         /// Gets the <see cref="DbEx.DatabaseSchemaConfig"/>.
         /// </summary>
-        public abstract DatabaseSchemaConfig DatabaseSchemaConfig { get; }
+        public abstract DatabaseSchemaConfig SchemaConfig { get; }
 
         /// <summary>
         /// Gets the <see cref="IDatabaseJournal"/>.
@@ -222,14 +222,15 @@ namespace DbEx.Migration
         }
 
         /// <summary>
-        /// Performs any pre-execution initialization.
+        /// Performs the pre-execution initialization.
         /// </summary>
-        private void PreExecutionInitialization()
+        public void PreExecutionInitialization()
         {
             if (_hasInitialized)
                 return;
 
             _hasInitialized = true;
+            SchemaConfig.PrepareMigrationArgs();
 
             var list = (List<string>)Namespaces;
             Args.ProbeAssemblies.ForEach(x => list.Add(x.Assembly.GetName().Name!));
@@ -654,7 +655,7 @@ namespace DbEx.Migration
         {
             Logger.LogInformation("{Content}", "  Querying database to infer table(s) schema...");
 
-            var tables = await Database.SelectSchemaAsync(DatabaseSchemaConfig, Args.DataParserArgs, cancellationToken).ConfigureAwait(false);
+            var tables = await Database.SelectSchemaAsync(this, cancellationToken).ConfigureAwait(false);
             var query = tables.Where(DataResetFilterPredicate);
             if (Args.DataResetFilterPredicate != null)
                 query = query.Where(Args.DataResetFilterPredicate);
@@ -732,10 +733,10 @@ namespace DbEx.Migration
 
             // Infer database schema.
             Logger.LogInformation("{Content}", "  Querying database to infer table(s)/column(s) schema...");
-            var dbTables = await Database.SelectSchemaAsync(DatabaseSchemaConfig, Args.DataParserArgs, cancellationToken).ConfigureAwait(false);
+            var dbTables = await Database.SelectSchemaAsync(this, cancellationToken).ConfigureAwait(false);
 
             // Iterate through each resource - parse the data, then insert/merge as requested.
-            var parser = new DataParser(DatabaseSchemaConfig, dbTables, Args.DataParserArgs);
+            var parser = new DataParser(this, dbTables);
             foreach (var item in list)
             {
                 using var sr = new StreamReader(item.Assembly.GetManifestResourceStream(item.ResourceName)!);
@@ -790,7 +791,11 @@ namespace DbEx.Migration
             if (_dataCodeGen == null)
             {
                 using var sr = GetRequiredResourcesStreamReader($"DatabaseData_sql", ArtefactResourceAssemblies.ToArray(), StreamLocator.HandlebarsExtensions);
+#if NET7_0_OR_GREATER
+                _dataCodeGen = new HandlebarsCodeGenerator(await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false));
+#else
                 _dataCodeGen = new HandlebarsCodeGenerator(await sr.ReadToEndAsync().ConfigureAwait(false));
+#endif
             }
 
             foreach (var table in dataTables)
@@ -874,7 +879,11 @@ namespace DbEx.Migration
             }
 
             // Read the resource stream.
+#if NET7_0_OR_GREATER
+            var txt = await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+#else
             var txt = await sr.ReadToEndAsync().ConfigureAwait(false);
+#endif
 
             // Extract the filename from content if specified.
             var data = new { Parameters = parameters ?? new Dictionary<string, string?>() };

@@ -35,6 +35,8 @@ namespace DbEx.SqlServer.Migration
         /// <param name="args">The <see cref="MigrationArgsBase"/>.</param>
         public SqlServerMigration(MigrationArgsBase args) : base(args)
         {
+            SchemaConfig = new SqlServerSchemaConfig(this);
+
             var csb = new SqlConnectionStringBuilder(Args.ConnectionString);
             _databaseName = csb.InitialCatalog;
             if (string.IsNullOrEmpty(_databaseName))
@@ -53,13 +55,13 @@ namespace DbEx.SqlServer.Migration
                 SchemaObjectTypes = ["TYPE", "FUNCTION", "VIEW", "PROCEDURE", "PROC"];
 
             // Always add the dbo schema _first_ unless already specified.
-            if (!Args.SchemaOrder.Contains(DatabaseSchemaConfig.DefaultSchema))
-                Args.SchemaOrder.Insert(0, DatabaseSchemaConfig.DefaultSchema);
+            if (!Args.SchemaOrder.Contains(SchemaConfig.DefaultSchema))
+                Args.SchemaOrder.Insert(0, SchemaConfig.DefaultSchema);
 
             // Add/set standard parameters.
-            Args.Parameter(MigrationArgsBase.DatabaseNameParamName, _databaseName, true);
-            Args.Parameter(MigrationArgsBase.JournalSchemaParamName, DatabaseSchemaConfig.DefaultSchema);
-            Args.Parameter(MigrationArgsBase.JournalTableParamName, "SchemaVersions");
+            Args.AddParameter(MigrationArgsBase.DatabaseNameParamName, _databaseName, true);
+            Args.AddParameter(MigrationArgsBase.JournalSchemaParamName, SchemaConfig.DefaultSchema);
+            Args.AddParameter(MigrationArgsBase.JournalTableParamName, "SchemaVersions");
         }
 
         /// <inheritdoc/>
@@ -75,7 +77,7 @@ namespace DbEx.SqlServer.Migration
         public override IDatabase MasterDatabase => _masterDatabase;
 
         /// <inheritdoc/>
-        public override DatabaseSchemaConfig DatabaseSchemaConfig => new SqlServerSchemaConfig(DatabaseName);
+        public override DatabaseSchemaConfig SchemaConfig { get; }
 
         /// <inheritdoc/>
         protected override DatabaseSchemaScriptBase CreateSchemaScript(DatabaseMigrationScript migrationScript) => SqlServerSchemaScript.Create(migrationScript);

@@ -3,6 +3,7 @@
 using CoreEx;
 using CoreEx.RefData;
 using CoreEx.Text;
+using DbEx.Migration;
 using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
@@ -42,23 +43,14 @@ namespace DbEx.DbSchema
         /// Create a .NET friendly name.
         /// </summary>
         /// <param name="name">The name.</param>
-        /// <param name="removeKnownSuffix">Indicates whether to remove the known suffix.</param>
         /// <returns>The .NET friendly name.</returns>
-        public static string CreateDotNetName(string name, bool removeKnownSuffix = false)
+        /// <remarks>Removes any snake/camel case separator characters and converts each separated work into Pascal case before combining.</remarks>
+        public static string CreateDotNetName(string name)
         {
             name.ThrowIfNullOrEmpty(nameof(name));
             var sb = new StringBuilder();
             name.Split(_separators, StringSplitOptions.RemoveEmptyEntries).ForEach(part => sb.Append(StringConverter.ToPascalCase(part)));
-            var dotNet = sb.ToString();
-
-            if (removeKnownSuffix)
-            {
-                var words = SentenceCase.WordSplit(dotNet).Where(x => !string.IsNullOrEmpty(x));
-                if (words.Count() > 1 && _suffixes.Contains(words.Last(), StringComparer.InvariantCultureIgnoreCase))
-                    dotNet = string.Join(string.Empty, words.Take(words.Count() - 1));
-            }
-
-            return dotNet;
+            return sb.ToString();
         }
 
         /// <summary>
@@ -90,15 +82,15 @@ namespace DbEx.DbSchema
         /// <summary>
         /// Initializes a new instance of the <see cref="DbTableSchema"/> class.
         /// </summary>
-        /// <param name="config">The database schema configuration.</param>
+        /// <param name="migration">The <see cref="DatabaseMigrationBase"/>.</param>
         /// <param name="schema">The schema name.</param>
         /// <param name="name">The table name.</param>
-        public DbTableSchema(DatabaseSchemaConfig config, string schema, string name)
+        public DbTableSchema(DatabaseMigrationBase migration, string? schema, string name)
         {
-            Config = config.ThrowIfNull(nameof(config));
-            Schema = config.SupportsSchema ? schema.ThrowIfNull(nameof(schema)) : string.Empty;
+            Migration = migration.ThrowIfNull(nameof(migration));
+            Schema = Migration.SchemaConfig.SupportsSchema ? schema.ThrowIfNull(nameof(schema)) : string.Empty;
             Name = name.ThrowIfNullOrEmpty(nameof(name));
-            QualifiedName = config.ToFullyQualifiedTableName(schema, name);
+            QualifiedName = Migration.SchemaConfig.ToFullyQualifiedTableName(schema, name);
             Alias = CreateAlias(Name);
         }
 
@@ -108,7 +100,7 @@ namespace DbEx.DbSchema
         /// <param name="table">The existing <see cref="DbTableSchema"/>.</param>
         public DbTableSchema(DbTableSchema table)
         {
-            Config = table.Config;
+            Migration = table.Migration;
             Schema = table.Schema;
             Name = table.Name;
             QualifiedName = table.QualifiedName;
@@ -120,9 +112,14 @@ namespace DbEx.DbSchema
         }
 
         /// <summary>
-        /// Gets the <see cref="DatabaseSchemaConfig"/>.
+        /// Gets the schema name.
         /// </summary>
-        public DatabaseSchemaConfig Config { get; }
+        public string Schema { get; }
+
+        /// <summary>
+        /// Gets the <see cref="DatabaseMigrationBase"/>.
+        /// </summary>
+        public DatabaseMigrationBase Migration { get; }
 
         /// <summary>
         /// Gets the table name.
@@ -138,11 +135,6 @@ namespace DbEx.DbSchema
         /// Gets the <see cref="DotNetName"/> in plural form.
         /// </summary>
         public string PluralName => _pluralName ??= CreatePluralName(DotNetName);
-
-        /// <summary>
-        /// Gets the schema name.
-        /// </summary>
-        public string Schema { get; }
 
         /// <summary>
         /// Gets or sets the alias (automatically updated from the <see cref="Name"/> when instantiated).
@@ -162,6 +154,8 @@ namespace DbEx.DbSchema
         /// <summary>
         /// Indicates whether the Table is considered reference data.
         /// </summary>
+        /// <remarks>By default determined by existence of columns named <see cref="MigrationArgsBase.RefDataCodeColumnName"/> and <see cref="MigrationArgsBase.RefDataTextColumnName"/>, that are <see cref="DbColumnSchema.IsPrimaryKey"/> equal <c>false</c> 
+        /// and <see cref="DbColumnSchema.DotNetType"/> equal '<c>string</c>'.</remarks>
         public bool IsRefData { get; set; }
 
         /// <summary>

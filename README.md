@@ -314,8 +314,8 @@ To simplify the database management here are some further considerations that ma
 ## Other repos
 
 These other _Avanade_ repositories leverage _DbEx_:
-- [NTangle](https://github.com/Avanade/NTangle) - Change Data Capture (CDC) code generation tool and runtime.
-- [Beef](https://github.com/Avanade/Beef) - Business Entity Execution Framework to enable industralisation of API development.
+- [*NTangle*](https://github.com/Avanade/NTangle) - Change Data Capture (CDC) code generation tool and runtime.
+- [*Beef*](https://github.com/Avanade/Beef) - Business Entity Execution Framework to enable industralisation of API development.
 
 <br/>
 

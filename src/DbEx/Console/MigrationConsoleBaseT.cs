@@ -18,7 +18,7 @@ namespace DbEx.Console
         /// <summary>
         /// Initializes a new instance of the <see cref="MigrationConsoleBase"/> class.
         /// </summary>
-        /// <param name="args">The default <see cref="MigrationArgs"/> that will be overridden/updated by the command-line argument values.</param>
+        /// <param name="args">The default <see cref="MigrationArgsBase"/> that will be overridden/updated by the command-line argument values.</param>
         protected MigrationConsoleBase(MigrationArgsBase args) : base(args) { }
 
         /// <summary>

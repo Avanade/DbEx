@@ -40,7 +40,7 @@ namespace DbEx.SqlServer.Migration
                     var index = script.FullyQualifiedName.IndexOf('.');
                     if (index < 0)
                     {
-                        script.Schema = migrationScript.DatabaseMigration.DatabaseSchemaConfig.DefaultSchema;
+                        script.Schema = migrationScript.DatabaseMigration.SchemaConfig.DefaultSchema;
                         script.Name = script.FullyQualifiedName;
                     }
                     else
@@ -71,6 +71,8 @@ namespace DbEx.SqlServer.Migration
 
         private class SqlCommandTokenizer(string sqlText) : SqlCommandReader(sqlText)
         {
+            private readonly char[] delimiters = ['(', ')', ';', ',', '='];
+
             public string[] ReadAllTokens()
             {
                 var words = new List<string>();
