@@ -35,12 +35,14 @@
     <None Remove="Resources\ScriptCreate_sql.hbs" />
     <None Remove="Resources\ScriptDefault_sql.hbs" />
     <None Remove="Resources\ScriptRefData_sql.hbs" />
+    <None Remove="Resources\SelectTableAndColumns.sql" />
     <None Remove="Resources\SelectTableForeignKeys.sql" />
+    <None Remove="Resources\SelectTablePrimaryKey.sql" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database.MySql" Version="3.9.0" />
-    <PackageReference Include="dbup-mysql" Version="5.0.37" />
+    <PackageReference Include="CoreEx.Database.MySql" Version="3.12.0" />
+    <PackageReference Include="dbup-mysql" Version="5.0.40" />
   </ItemGroup>
 
   <ItemGroup>

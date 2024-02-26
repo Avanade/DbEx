@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using DbEx.Console;
 using DbEx.Migration;
 using DbEx.SqlServer.Migration;
@@ -32,7 +33,7 @@ namespace DbEx.SqlServer.Console
         /// Initializes a new instance of the <see cref="SqlServerMigrationConsole"/> class that provides a default for the <paramref name="connectionString"/>.
         /// </summary>
         /// <param name="connectionString">The database connection string.</param>
-        public SqlServerMigrationConsole(string connectionString) : base(new MigrationArgs { ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString)) }) { }
+        public SqlServerMigrationConsole(string connectionString) : base(new MigrationArgs { ConnectionString = connectionString.ThrowIfNull(nameof(connectionString)) }) { }
 
         /// <summary>
         /// Gets the <see cref="MigrationArgs"/>.

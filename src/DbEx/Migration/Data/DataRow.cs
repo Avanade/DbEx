@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +16,7 @@ namespace DbEx.Migration.Data
         /// Initializes a new instance of the <see cref="DataRow"/> class.
         /// </summary>
         /// <param name="table">The parent <see cref="DataTable"/>.</param>
-        internal DataRow(DataTable table) => Table = table ?? throw new ArgumentNullException(nameof(table));
+        internal DataRow(DataTable table) => Table = table.ThrowIfNull(nameof(table));
 
         /// <summary>
         /// Gets the <see cref="DataTable"/>.
@@ -55,9 +56,7 @@ namespace DbEx.Migration.Data
         /// <param name="column">The <see cref="DataColumn"/>.</param>
         public void AddColumn(DataColumn column)
         {
-            if (column == null)
-                throw new ArgumentNullException(nameof(column));
-
+            column.ThrowIfNull(nameof(column));
             if (string.IsNullOrEmpty(column.Name))
                 throw new ArgumentException("Column.Name must have a value.", nameof(column));
 
@@ -65,11 +64,11 @@ namespace DbEx.Migration.Data
             if (col == null)
             {
                 // Check and see if it is a reference data id.
-                col = Table.DbTable.Columns.Where(c => c.Name == column.Name + (Table.Parser.Args.IdColumnNameSuffix ?? Table.Parser.DatabaseSchemaConfig.IdColumnNameSuffix)).SingleOrDefault();
+                col = Table.DbTable.Columns.Where(c => c.Name == column.Name + Table.DbTable.Migration.Args.IdColumnNameSuffix!).SingleOrDefault();
                 if (col == null || !col.IsForeignRefData)
-                    throw new DataParserException($"Table {Table.SchemaTableName} does not have a column named '{column.Name}' or '{column.Name}{Table.Parser.Args.IdColumnNameSuffix ?? Table.Parser.DatabaseSchemaConfig.IdColumnNameSuffix}'; or was not identified as a foreign key to Reference Data.");
+                    throw new DataParserException($"Table {Table.SchemaTableName} does not have a column named '{column.Name}' or '{column.Name}{Table.DbTable.Migration.Args.IdColumnNameSuffix!}'; or was not identified as a foreign key to Reference Data.");
 
-                column.Name += Table.Parser.Args.IdColumnNameSuffix ?? Table.Parser.DatabaseSchemaConfig.IdColumnNameSuffix;
+                column.Name += Table.DbTable.Migration.Args.IdColumnNameSuffix!;
             }
 
             if (Columns.Any(x => x.Name == column.Name))
@@ -84,20 +83,28 @@ namespace DbEx.Migration.Data
             string? str = null;
             try
             {
-                str = column.Value is DateTime time ? time.ToString(Table.Parser.Args.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture) : column.Value.ToString()!;
+                str = column.Value is DateTime time ? time.ToString(Table.Parser.ParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture) : column.Value.ToString()!;
 
                 switch (col.DotNetType)
                 {
                     case "string": column.Value = str; break;
-                    case "decimal": column.Value = string.IsNullOrEmpty(str) ? 0m : decimal.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
-                    case "DateTime": column.Value = string.IsNullOrEmpty(str) ? DateTime.MinValue : DateTime.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
                     case "bool": column.Value = str switch { "1" or "Y" => true, "0" or "N" or "" => false, _ => bool.Parse(str) }; break;
+                    case "DateTime": column.Value = string.IsNullOrEmpty(str) ? DateTime.MinValue : DateTime.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
                     case "DateTimeOffset": column.Value = string.IsNullOrEmpty(str) ? DateTimeOffset.MinValue : DateTimeOffset.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "decimal": column.Value = string.IsNullOrEmpty(str) ? 0m : decimal.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
                     case "double": column.Value = string.IsNullOrEmpty(str) ? 0d : double.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
                     case "short": column.Value = string.IsNullOrEmpty(str) ? (short)0 : short.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "ushort": column.Value = string.IsNullOrEmpty(str) ? (ushort)0 : ushort.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "uint": column.Value = string.IsNullOrEmpty(str) ? 0 : uint.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "ulong": column.Value = string.IsNullOrEmpty(str) ? 0 : ulong.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
                     case "byte": column.Value = string.IsNullOrEmpty(str) ? byte.MinValue : byte.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
                     case "float": column.Value = string.IsNullOrEmpty(str) ? 0f : float.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "byte[]": column.Value = string.IsNullOrEmpty(str) ? [] : Convert.FromBase64String(str); break;
                     case "TimeSpan": column.Value = string.IsNullOrEmpty(str) ? TimeSpan.Zero : TimeSpan.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+#if NET7_0_OR_GREATER
+                    case "DateOnly": column.Value = string.IsNullOrEmpty(str) ? DateOnly.MinValue : DateOnly.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "TimeOnly": column.Value = string.IsNullOrEmpty(str) ? TimeOnly.MinValue : TimeOnly.Parse(str, System.Globalization.CultureInfo.InvariantCulture); break;
+#endif
 
                     case "int":
                         if (int.TryParse(str, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int i))

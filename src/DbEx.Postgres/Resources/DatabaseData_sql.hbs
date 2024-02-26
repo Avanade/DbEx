@@ -1,0 +1,20 @@
+﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
+{{#if PreSql}}
+{{PreSql}}
+
+{{/if}}
+{{#if IsMerge}}
+  {{#each Rows}}
+INSERT INTO "{{Table.Schema}}"."{{Table.Name}}" ({{#each MergeInsertColumns}}"{{Name}}"{{#unless @last}}, {{/unless}}{{/each}}) VALUES ({{#each MergeInsertColumns}}{{#if UseForeignKeyQueryForId}}(SELECT "{{DbColumn.ForeignColumn}}" FROM "{{DbColumn.ForeignSchema}}"."{{DbColumn.ForeignTable}}" WHERE "{{DbColumn.ForeignRefDataCodeColumn}}" = {{{SqlValue}}} LIMIT 1){{else}}{{{SqlValue}}}{{/if}}{{#unless @last}}, {{/unless}}{{/each}}) ON CONFLICT ({{#each Table.DbTable.ConstraintColumns}}"{{Name}}"{{#unless @last}}, {{/unless}}{{/each}}) DO UPDATE SET {{#each MergeUpdateColumns}}"{{Name}}" = {{{SqlValue}}}{{#unless @last}}, {{/unless}}{{/each}};
+  {{/each}}
+SELECT {{Rows.Count}}; -- Total rows upserted
+{{else}}
+  {{#each Rows}}
+INSERT INTO "{{Table.Schema}}"."{{Table.Name}}" ({{#each InsertColumns}}"{{Name}}"{{#unless @last}}, {{/unless}}{{/each}}) VALUES ({{#each InsertColumns}}{{#if UseForeignKeyQueryForId}}(SELECT "{{DbColumn.ForeignColumn}}" FROM "{{DbColumn.ForeignSchema}}"."{{DbColumn.ForeignTable}}" WHERE "{{DbColumn.ForeignRefDataCodeColumn}}" = {{{SqlValue}}} LIMIT 1){{else}}{{{SqlValue}}}{{/if}}{{#unless @last}}, {{/unless}}{{/each}});
+  {{/each}}
+SELECT {{Rows.Count}}; -- Total rows inserted
+{{/if}}
+{{#if PostSql}}
+
+{{PostSql}}
+{{/if}}

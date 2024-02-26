@@ -39,8 +39,14 @@ jobs:
 
     - name: Start MySQL
       run: docker run --name db-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=yourStrong#!Password -d mysql
+
+    - name: Pull Postgres
+      run: docker pull postgres
+
+    - name: Start Postgres
+      run: docker run --name db-postgres -p 5432:5432 -e POSTGRES_PASSWORD=yourStrong#!Password -d postgres
       
-    - name: Sleep (allow SqlServer and MySQL to complete startup)
+    - name: Sleep (allow databases to complete startup)
       run: sleep 10
 
     - name: Set EnvVar for Test
@@ -50,6 +56,7 @@ jobs:
         echo "DbEx_ConnectionStrings__EmptyDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Empty;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
         echo "DbEx_ConnectionStrings__ConsoleDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Console;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
         echo "DbEx_ConnectionStrings__MySqlDb=Server=localhost; Port=3306; Database=dbex_test; Uid=root; Pwd=yourStrong#!Password;" >> $GITHUB_ENV
+        echo "DbEx_ConnectionStrings__PostgresDb=Server=localhost; Port=5432; Database=dbex_test; Username=postgres; Pwd=yourStrong#!Password; Pooling=false" >> $GITHUB_ENV
         
     - name: Test
       run: dotnet test --no-build --verbosity normal

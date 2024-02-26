@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using System;
 
 namespace DbEx.Migration
@@ -7,38 +8,28 @@ namespace DbEx.Migration
     /// <summary>
     /// Enables the base database schema script.
     /// </summary>
-    public abstract class DatabaseSchemaScriptBase
+    /// <param name="migrationScript">The <see cref="DatabaseMigrationScript"/>.</param>
+    /// <param name="quotePrefix">The optional quote prefix.</param>
+    /// <param name="quoteSuffix">The optional quote suffix.</param>
+    public abstract class DatabaseSchemaScriptBase(DatabaseMigrationScript migrationScript, string? quotePrefix = null, string? quoteSuffix = null)
     {
         private string? _schema;
         private string _name = string.Empty;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DatabaseSchemaScriptBase"/> class.
-        /// </summary>
-        /// <param name="migrationScript">The <see cref="DatabaseMigrationScript"/>.</param>
-        /// <param name="quotePrefix">The optional quote prefix.</param>
-        /// <param name="quoteSuffix">The optional quote suffix.</param>
-        public DatabaseSchemaScriptBase(DatabaseMigrationScript migrationScript, string? quotePrefix = null, string? quoteSuffix = null)
-        {
-            MigrationScript = migrationScript ?? throw new ArgumentNullException(nameof(migrationScript));
-            QuotePrefix = quotePrefix;
-            QuoteSuffix = quoteSuffix;
-        }
-
-        /// <summary>
         /// Gets the parent <see cref="DatabaseMigrationScript"/>.
         /// </summary>
-        public DatabaseMigrationScript MigrationScript { get; }
+        public DatabaseMigrationScript MigrationScript { get; } = migrationScript.ThrowIfNull(nameof(migrationScript));
 
         /// <summary>
         /// Gets the optional quote prefix.
         /// </summary>
-        public string? QuotePrefix { get; }
+        public string? QuotePrefix { get; } = quotePrefix;
 
         /// <summary>
         /// Gets the optional quote suffix.
         /// </summary>
-        public string? QuoteSuffix { get; }
+        public string? QuoteSuffix { get; } = quoteSuffix;
 
         /// <summary>
         /// Gets or sets the fully qualified name (as per script).
@@ -81,6 +72,11 @@ namespace DbEx.Migration
         /// Indicates whether the schema script has an error.
         /// </summary>
         public bool HasError => ErrorMessage != null;
+
+        /// <summary>
+        /// Indicates whether the schema script supports a create or replace; i.e. does not require a drop and create as two separate operations.
+        /// </summary>
+        public bool SupportsReplace { get; protected set; }
 
         /// <summary>
         /// Gets the corresponding SQL drop statement for the underlying <see cref="Type"/> and <see cref="Name"/>.

@@ -1,13 +1,13 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using CoreEx.Database;
 using CoreEx.Entities;
 using CoreEx.RefData;
 using DbEx.DbSchema;
-using DbEx.Migration.Data;
+using DbEx.Migration;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,30 +16,47 @@ namespace DbEx
     /// <summary>
     /// Enables database provider specific configuration and capabilities.
     /// </summary>
-    public abstract class DatabaseSchemaConfig
+    /// <param name="migration">The owning <see cref="DatabaseMigrationBase"/>.</param>
+    /// <param name="supportsSchema">Indicates whether the database supports per-database schema-based separation.</param>
+    /// <param name="defaultSchema">The default schema name used where not explicitly specified.</param>
+    public abstract class DatabaseSchemaConfig(DatabaseMigrationBase migration, bool supportsSchema = false, string? defaultSchema = null)
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DatabaseSchemaConfig"/> class.
-        /// </summary>
-        /// <param name="databaseName">The database name.</param>
-        /// <param name="supportsSchema">Indicates whether the database supports per-database schema-based separation.</param>
-        protected DatabaseSchemaConfig(string databaseName, bool supportsSchema = true)
-        {
-            DatabaseName = databaseName;
-            SupportsSchema = supportsSchema;
-            RefDataPredicate = new Func<DbTableSchema, bool>(t => t.Columns.Any(c => c.Name == RefDataCodeColumnName && !c.IsPrimaryKey && c.DotNetType == "string") && t.Columns.Any(c => c.Name == RefDataTextColumnName && !c.IsPrimaryKey && c.DotNetType == "string"));
-        }
+        private readonly string? _defaultSchema = defaultSchema;
 
         /// <summary>
-        /// Gets or sets the database name.
+        /// Gets the owning <see cref="DatabaseMigrationBase"/>.
         /// </summary>
-        /// <remarks>Used to filter schemas for database that do not <see cref="SupportsSchema"/>.</remarks>
-        public string DatabaseName { get; }
+        public DatabaseMigrationBase Migration { get; } = migration.ThrowIfNull(nameof(migration));
 
         /// <summary>
         /// Indicates whether the database supports per-database schema-based separation.
         /// </summary>
-        public bool SupportsSchema { get; }
+        public bool SupportsSchema { get; } = supportsSchema;
+
+        /// <summary>
+        /// Gets the default schema name used where not explicitly specified.
+        /// </summary>
+        /// <remarks>Will throw an appropriate exception where accessed incorrectly.</remarks>
+        public string DefaultSchema => SupportsSchema
+            ? (_defaultSchema ?? throw new InvalidOperationException("The database supports per-database schema-based separation and a default is required."))
+            : throw new NotSupportedException("The database does not support per-database schema-based separation.");
+
+        /// <summary>
+        /// Gets the suffix of the identifier column.
+        /// </summary>
+        /// <remarks>Where matching reference data columns and the specified column is not found, then the suffix will be appended to the specified column name and an additional match will be performed.</remarks>
+        public abstract string IdColumnNameSuffix { get; }
+
+        /// <summary>
+        /// Gets the suffix of the code column.
+        /// </summary>
+        /// <remarks>Where matching reference data columns and the specified column is not found, then the suffix will be appended to the specified column name and an additional match will be performed.</remarks>
+        public abstract string CodeColumnNameSuffix { get; }
+
+        /// <summary>
+        /// Gets the suffix of the JSON column.
+        /// </summary>
+        public abstract string JsonColumnNameSuffix { get; }
 
         /// <summary>
         /// Gets the name of the <see cref="IChangeLogAudit.CreatedDate"/> column (where it exists).
@@ -72,6 +89,11 @@ namespace DbEx
         public abstract string RowVersionColumnName { get; }
 
         /// <summary>
+        /// Gets the default <see cref="ILogicallyDeleted.IsDeleted"/> column.
+        /// </summary>
+        public abstract string IsDeletedColumnName { get; }
+
+        /// <summary>
         /// Gets the default <see cref="IReferenceData.Code"/> column.
         /// </summary>
         public abstract string RefDataCodeColumnName { get; }
@@ -82,28 +104,25 @@ namespace DbEx
         public abstract string RefDataTextColumnName { get; }
 
         /// <summary>
-        /// Gets the default <see cref="ILogicallyDeleted.IsDeleted"/> column.
+        /// Prepares the <see cref="DatabaseMigrationBase"/> <see cref="MigrationArgs"/> as the final opportunity to finalize any standard defaults.
         /// </summary>
-        public abstract string IsDeletedColumnName { get; }
-
-        /// <summary>
-        /// Gets the default reference data predicate to determine <see cref="DbTableSchema.IsRefData"/>.
-        /// </summary>
-        /// <remarks>By default determined by existence of columns named <see cref="RefDataCodeColumnName"/> and <see cref="RefDataTextColumnName"/> (case-insensitive), that are <see cref="DbColumnSchema.IsPrimaryKey"/> equal <c>false</c> 
-        /// and <see cref="DbColumnSchema.DotNetType"/> equal '<c>string</c>'.</remarks>
-        public virtual Func<DbTableSchema, bool> RefDataPredicate { get; }
-
-        /// <summary>
-        /// Gets or sets the suffix of the identifier column where not fully specified.
-        /// </summary>
-        /// <remarks>Where matching reference data columns and the specified column is not found, then the suffix will be appended to the specified column name and an additional match will be performed.</remarks>
-        public abstract string IdColumnNameSuffix { get; }
-
-        /// <summary>
-        /// Prepares the <paramref name="dataParserArgs"/> prior to parsing as a final opportunity to finalize any standard defaults.
-        /// </summary>
-        /// <param name="dataParserArgs">The <see cref="DataParserArgs"/>.</param>
-        public abstract void PrepareDataParserArgs(DataParserArgs dataParserArgs);
+        /// <remarks>Where overriding this base method should be invoked first to perform the standardized preparation.</remarks>
+        public virtual void PrepareMigrationArgs()
+        {
+            // Override/set the values - ensure consistency between the two.
+            Migration.Args.IdColumnNameSuffix ??= IdColumnNameSuffix;
+            Migration.Args.CodeColumnNameSuffix ??= CodeColumnNameSuffix;
+            Migration.Args.JsonColumnNameSuffix ??= JsonColumnNameSuffix;
+            Migration.Args.CreatedByColumnName ??= CreatedByColumnName;
+            Migration.Args.CreatedDateColumnName ??= CreatedDateColumnName;
+            Migration.Args.UpdatedByColumnName ??= UpdatedByColumnName;
+            Migration.Args.UpdatedDateColumnName ??= UpdatedDateColumnName;
+            Migration.Args.TenantIdColumnName ??= TenantIdColumnName;
+            Migration.Args.RowVersionColumnName ??= RowVersionColumnName;
+            Migration.Args.IsDeletedColumnName ??= IsDeletedColumnName;
+            Migration.Args.RefDataCodeColumnName ??= RefDataCodeColumnName;
+            Migration.Args.RefDataTextColumnName ??= RefDataTextColumnName;
+        }
 
         /// <summary>
         /// Creates the <see cref="DbColumnSchema"/> from the `InformationSchema.Columns` <see cref="DatabaseRecord"/>.
@@ -118,9 +137,8 @@ namespace DbEx
         /// </summary>
         /// <param name="database">The <see cref="IDatabase"/>.</param>
         /// <param name="tables">The <see cref="DbTableSchema"/> list to load additional data into.</param>
-        /// <param name="dataParserArgs">The <see cref="DataParserArgs"/>.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
-        public virtual Task LoadAdditionalInformationSchema(IDatabase database, List<DbTableSchema> tables, DataParserArgs? dataParserArgs, CancellationToken cancellationToken) => Task.CompletedTask;
+        public virtual Task LoadAdditionalInformationSchema(IDatabase database, List<DbTableSchema> tables, CancellationToken cancellationToken) => Task.CompletedTask;
 
         /// <summary>
         /// Gets the <paramref name="schema"/> and <paramref name="table"/> formatted as the fully qualified name.
@@ -128,7 +146,7 @@ namespace DbEx
         /// <param name="schema">The schema name.</param>
         /// <param name="table">The table name.</param>
         /// <returns>The fully qualified name.</returns>
-        public abstract string ToFullyQualifiedTableName(string schema, string table);
+        public abstract string ToFullyQualifiedTableName(string? schema, string table);
 
         /// <summary>
         /// Gets the corresponding .NET <see cref="Type"/> name for the specified <see cref="DbColumnSchema"/>.
@@ -149,30 +167,8 @@ namespace DbEx
         /// Gets the formatted SQL statement representation of the <paramref name="value"/>.
         /// </summary>
         /// <param name="dbColumnSchema">The <see cref="DbColumnSchema"/>.</param>
-        /// <param name="dataParserArgs">The <see cref="DataParserArgs"/>.</param>
         /// <param name="value">The value.</param>
         /// <returns>The formatted SQL statement representation.</returns>
-        public abstract string ToFormattedSqlStatementValue(DbColumnSchema dbColumnSchema, DataParserArgs dataParserArgs, object? value);
-
-        /// <summary>
-        /// Indicates whether the <paramref name="dbType"/> is considered an integer.
-        /// </summary>
-        /// <param name="dbType">The database type.</param>
-        /// <returns><c>true</c> indicates it is; otherwise, <c>false</c>.</returns>
-        public abstract bool IsDbTypeInteger(string? dbType);
-
-        /// <summary>
-        /// Indicates whether the <paramref name="dbType"/> is considered a decimal.
-        /// </summary>
-        /// <param name="dbType">The database type.</param>
-        /// <returns><c>true</c> indicates it is; otherwise, <c>false</c>.</returns>
-        public abstract bool IsDbTypeDecimal(string? dbType);
-
-        /// <summary>
-        /// Indicates whether the <paramref name="dbType"/> is considered a string.
-        /// </summary>
-        /// <param name="dbType">The database type.</param>
-        /// <returns><c>true</c> indicates it is; otherwise, <c>false</c>.</returns>
-        public abstract bool IsDbTypeString(string? dbType);
+        public abstract string ToFormattedSqlStatementValue(DbColumnSchema dbColumnSchema, object? value);
     }
 }

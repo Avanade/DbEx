@@ -1,6 +1,9 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using CoreEx.RefData;
+using CoreEx.Text;
+using DbEx.Migration;
 using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
@@ -8,7 +11,6 @@ using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace DbEx.DbSchema
 {
@@ -16,15 +18,13 @@ namespace DbEx.DbSchema
     /// Represents the Database <b>Table</b> schema definition.
     /// </summary>
     [DebuggerDisplay("{QualifiedName}")]
-    public class DbTableSchema
+    public partial class DbTableSchema
     {
+        private static readonly char[] _separators = ['_', '-'];
+        private static readonly string[] _suffixes = ["Id", "Code", "Json"];
+
         private string? _dotNetName;
         private string? _pluralName;
-
-        /// <summary>
-        /// The <see cref="Regex"/> expression pattern for splitting strings into words.
-        /// </summary>
-        public const string WordSplitPattern = "([a-z](?=[A-Z])|[A-Z](?=[A-Z][a-z]))";
 
         /// <summary>
         /// Create an alias from the name.
@@ -34,9 +34,7 @@ namespace DbEx.DbSchema
         /// <remarks>Converts the name into sentence case and takes first character from each word and converts to lowercase; e.g. '<c>SalesOrder</c>' will result in an alias of '<c>so</c>'.</remarks>
         public static string CreateAlias(string name)
         {
-            if (string.IsNullOrEmpty(name))
-                throw new ArgumentNullException(nameof(name));
-
+            name.ThrowIfNullOrEmpty(nameof(name));
             var s = StringConverter.ToSentenceCase(name)!;
             return new string(s.Replace(" ", " ").Replace("_", " ").Replace("-", " ").Split(' ').Where(x => !string.IsNullOrEmpty(x)).Select(x => x[..1].ToLower(System.Globalization.CultureInfo.InvariantCulture).ToCharArray()[0]).ToArray());
         }
@@ -45,25 +43,14 @@ namespace DbEx.DbSchema
         /// Create a .NET friendly name.
         /// </summary>
         /// <param name="name">The name.</param>
-        /// <param name="removeKnownSuffix">Indicates whether to remove the known suffix.</param>
         /// <returns>The .NET friendly name.</returns>
-        public static string CreateDotNetName(string name, bool removeKnownSuffix = false)
+        /// <remarks>Removes any snake/camel case separator characters and converts each separated work into Pascal case before combining.</remarks>
+        public static string CreateDotNetName(string name)
         {
-            if (string.IsNullOrEmpty(name))
-                throw new ArgumentNullException(nameof(name));
-
+            name.ThrowIfNullOrEmpty(nameof(name));
             var sb = new StringBuilder();
-            name.Split(new char[] { '_', '-' }, StringSplitOptions.RemoveEmptyEntries).ForEach(part => sb.Append(StringConverter.ToPascalCase(part)));
-            var dotNet = sb.ToString();
-
-            if (removeKnownSuffix)
-            {
-                var words = Regex.Split(dotNet, WordSplitPattern).Where(x => !string.IsNullOrEmpty(x));
-                if (words.Count() > 1 && new string[] { "Id", "Code", "Json" }.Contains(words.Last(), StringComparer.InvariantCultureIgnoreCase))
-                    dotNet = string.Join(string.Empty, words.Take(words.Count() - 1));
-            }
-
-            return dotNet;
+            name.Split(_separators, StringSplitOptions.RemoveEmptyEntries).ForEach(part => sb.Append(StringConverter.ToPascalCase(part)));
+            return sb.ToString();
         }
 
         /// <summary>
@@ -73,10 +60,8 @@ namespace DbEx.DbSchema
         /// <returns>The pluralized name.</returns>
         public static string CreatePluralName(string name)
         {
-            if (string.IsNullOrEmpty(name))
-                throw new ArgumentNullException(nameof(name));
-
-            var words = Regex.Split(name, WordSplitPattern).Where(x => !string.IsNullOrEmpty(x)).ToList();
+            name.ThrowIfNullOrEmpty(nameof(name));
+            var words = SentenceCase.SplitIntoWords(name).Where(x => !string.IsNullOrEmpty(x)).ToList();
             words[^1] = StringConverter.ToPlural(words[^1]);
             return string.Join(string.Empty, words);
         }
@@ -88,10 +73,8 @@ namespace DbEx.DbSchema
         /// <returns>The singular name.</returns>
         public static string CreateSingularName(string name)
         {
-            if (string.IsNullOrEmpty(name))
-                throw new ArgumentNullException(nameof(name));
-
-            var words = Regex.Split(name, WordSplitPattern).Where(x => !string.IsNullOrEmpty(x)).ToList();
+            name.ThrowIfNullOrEmpty(nameof(name));
+            var words = SentenceCase.SplitIntoWords(name).Where(x => !string.IsNullOrEmpty(x)).ToList();
             words[^1] = StringConverter.ToSingle(words[^1]);
             return string.Join(string.Empty, words);
         }
@@ -99,15 +82,15 @@ namespace DbEx.DbSchema
         /// <summary>
         /// Initializes a new instance of the <see cref="DbTableSchema"/> class.
         /// </summary>
-        /// <param name="config">The database schema configuration.</param>
+        /// <param name="migration">The <see cref="DatabaseMigrationBase"/>.</param>
         /// <param name="schema">The schema name.</param>
         /// <param name="name">The table name.</param>
-        public DbTableSchema(DatabaseSchemaConfig config, string schema, string name)
+        public DbTableSchema(DatabaseMigrationBase migration, string? schema, string name)
         {
-            Config = config ?? throw new ArgumentNullException(nameof(config));
-            Schema = config.SupportsSchema ? (schema ?? throw new ArgumentNullException(nameof(schema))) : string.Empty;
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            QualifiedName = config.ToFullyQualifiedTableName(schema, name);
+            Migration = migration.ThrowIfNull(nameof(migration));
+            Schema = Migration.SchemaConfig.SupportsSchema ? schema.ThrowIfNull(nameof(schema)) : string.Empty;
+            Name = name.ThrowIfNullOrEmpty(nameof(name));
+            QualifiedName = Migration.SchemaConfig.ToFullyQualifiedTableName(schema, name);
             Alias = CreateAlias(Name);
         }
 
@@ -117,7 +100,7 @@ namespace DbEx.DbSchema
         /// <param name="table">The existing <see cref="DbTableSchema"/>.</param>
         public DbTableSchema(DbTableSchema table)
         {
-            Config = table.Config;
+            Migration = table.Migration;
             Schema = table.Schema;
             Name = table.Name;
             QualifiedName = table.QualifiedName;
@@ -129,9 +112,14 @@ namespace DbEx.DbSchema
         }
 
         /// <summary>
-        /// Gets the <see cref="DatabaseSchemaConfig"/>.
+        /// Gets the schema name.
         /// </summary>
-        public DatabaseSchemaConfig Config { get; }
+        public string Schema { get; }
+
+        /// <summary>
+        /// Gets the <see cref="DatabaseMigrationBase"/>.
+        /// </summary>
+        public DatabaseMigrationBase Migration { get; }
 
         /// <summary>
         /// Gets the table name.
@@ -147,11 +135,6 @@ namespace DbEx.DbSchema
         /// Gets the <see cref="DotNetName"/> in plural form.
         /// </summary>
         public string PluralName => _pluralName ??= CreatePluralName(DotNetName);
-
-        /// <summary>
-        /// Gets the schema name.
-        /// </summary>
-        public string Schema { get; }
 
         /// <summary>
         /// Gets or sets the alias (automatically updated from the <see cref="Name"/> when instantiated).
@@ -171,6 +154,8 @@ namespace DbEx.DbSchema
         /// <summary>
         /// Indicates whether the Table is considered reference data.
         /// </summary>
+        /// <remarks>By default determined by existence of columns named <see cref="MigrationArgsBase.RefDataCodeColumnName"/> and <see cref="MigrationArgsBase.RefDataTextColumnName"/>, that are <see cref="DbColumnSchema.IsPrimaryKey"/> equal <c>false</c> 
+        /// and <see cref="DbColumnSchema.DotNetType"/> equal '<c>string</c>'.</remarks>
         public bool IsRefData { get; set; }
 
         /// <summary>
@@ -212,5 +197,10 @@ namespace DbEx.DbSchema
         /// Gets or sets the <see cref="IReferenceData.Code"/> <see cref="DbColumnSchema"/>.
         /// </summary>
         public DbColumnSchema? RefDataCodeColumn { get; set; }
+
+        /// <summary>
+        /// Gets the <see cref="DbColumnSchema"/> list that are part of a constraint (i.e. unique or foreign key).
+        /// </summary>
+        public List<DbColumnSchema> ConstraintColumns => Columns?.Where(x => x.IsUnique || !string.IsNullOrEmpty(x.ForeignTable)).ToList() ?? [];
     }
 }

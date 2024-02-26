@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using DbEx.DbSchema;
 using System;
 
@@ -17,8 +18,8 @@ namespace DbEx.Migration.Data
         /// <param name="name"></param>
         internal DataColumn(DataTable table, string name)
         {
-            Table = table ?? throw new ArgumentNullException(nameof(table));
-            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Table = table.ThrowIfNull(nameof(table));
+            Name = name.ThrowIfNullOrEmpty(nameof(name));
 
             // Map the column name where specified.
             if (table.ColumnNameMappings is not null && table.ColumnNameMappings.TryGetValue(name, out var mappedName))
@@ -54,6 +55,6 @@ namespace DbEx.Migration.Data
         /// Gets the value formatted for use in a SQL statement.
         /// </summary>
         /// <returns>The value formatted for use in a SQL statement.</returns>
-        public string SqlValue => Table.DbTable.Config.ToFormattedSqlStatementValue(DbColumn ?? throw new InvalidOperationException("The DbColumn property must not be null."), Table.Args, Value);
+        public string SqlValue => Table.DbTable.Migration.SchemaConfig.ToFormattedSqlStatementValue(DbColumn ?? throw new InvalidOperationException("The DbColumn property must not be null."), Value);
     }
 }

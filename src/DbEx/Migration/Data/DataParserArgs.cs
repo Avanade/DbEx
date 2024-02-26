@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx.Entities;
-using CoreEx.RefData;
+using CoreEx;
 using DbEx.DbSchema;
 using System;
 using System.Collections.Generic;
@@ -40,67 +39,6 @@ namespace DbEx.Migration.Data
         public DateTime DateTimeNow { get; set; } = DateTime.UtcNow;
 
         /// <summary>
-        /// Gets or sets the suffix of the identifier column where not fully specified.
-        /// </summary>
-        /// <remarks>Where matching columns and the specified column is not found, then the suffix will be appended to the specified column name and an additional match will be performed.
-        /// <para>Defaults to <see cref="DatabaseSchemaConfig.IdColumnNameSuffix"/> where not specified (i.e. <c>null</c>).</para></remarks>
-        public string? IdColumnNameSuffix { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the <see cref="IChangeLogAudit.CreatedDate"/> column (where it exists).
-        /// </summary>
-        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.CreatedDateColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
-        public string? CreatedDateColumnName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the <see cref="IChangeLogAudit.CreatedBy"/> column (where it exists).
-        /// </summary>
-        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.CreatedByColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
-        public string? CreatedByColumnName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the <see cref="IChangeLogAudit.UpdatedDate"/> column (where it exists).
-        /// </summary>
-        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.UpdatedDateColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
-        public string? UpdatedDateColumnName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the <see cref="IChangeLogAudit.UpdatedBy"/> column (where it exists).
-        /// </summary>
-        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.UpdatedByColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
-        public string? UpdatedByColumnName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the <see cref="ITenantId.TenantId"/> column (where it exists).
-        /// </summary>
-        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.TenantIdColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
-        public string? TenantIdColumnName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the row-version (<see cref="IETag.ETag"/> equivalent) column (where it exists).
-        /// </summary>
-        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.RowVersionColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
-        public string? RowVersionColumnName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the <see cref="ILogicallyDeleted.IsDeleted"/> column (where it exists).
-        /// </summary>
-        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.IsDeletedColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
-        public string? IsDeletedColumnName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the <see cref="IReferenceData.Code"/> column.
-        /// </summary>
-        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.RefDataCodeColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
-        public string? RefDataCodeColumnName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the <see cref="IReferenceData.Text"/> column.
-        /// </summary>
-        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.RefDataTextColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
-        public string? RefDataTextColumnName { get; set; }
-
-        /// <summary>
         /// Gets or sets the <see cref="IIdentifierGenerator"/>.
         /// </summary>
         /// <remarks>Defaults to <see cref="GuidIdentifierGenerator"/>.</remarks>
@@ -109,8 +47,20 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Gets or sets the <see cref="DateTime"/> format.
         /// </summary>
-        /// <remarks>Defaults to '<c>yyyy-MM-ddTHH:mm:ss.fffffff</c>'.</remarks>
-        public string DateTimeFormat { get; set; } = "yyyy-MM-ddTHH:mm:ss.fffffff";
+        /// <remarks>Defaults to '<c>yyyy-MM-ddTHH:mm:ss.FFFFFFF</c>'.</remarks>
+        public string DateTimeFormat { get; set; } = "yyyy-MM-ddTHH:mm:ss.FFFFFFF";
+
+        /// <summary>
+        /// Gets or sets the <see cref="DateTime"/> format.
+        /// </summary>
+        /// <remarks>Defaults to '<c>yyyy-MM-dd</c>'.</remarks>
+        public string DateOnlyFormat { get; set; } = "yyyy-MM-dd";
+
+        /// <summary>
+        /// Gets or sets the <see cref="DateTime"/> format.
+        /// </summary>
+        /// <remarks>Defaults to '<c>HH:mm:ss.FFFFFFF</c>'.</remarks>
+        public string TimeOnlyFormat { get; set; } = "HH:mm:ss.FFFFFFF";
 
         /// <summary>
         /// Gets or sets the reference data column defaults dictionary.
@@ -187,20 +137,10 @@ namespace DbEx.Migration.Data
         /// <param name="args">The <see cref="DataParserArgs"/> to copy from.</param>
         public void CopyFrom(DataParserArgs args)
         {
-            if (args == null)
-                throw new ArgumentNullException(nameof(args));
+            args.ThrowIfNull(nameof(args));
 
             UserName = args.UserName;
             DateTimeNow = args.DateTimeNow;
-            IdColumnNameSuffix = args.IdColumnNameSuffix;
-            CreatedDateColumnName = args.CreatedDateColumnName;
-            CreatedByColumnName = args.CreatedByColumnName;
-            UpdatedDateColumnName = args.UpdatedDateColumnName;
-            UpdatedByColumnName = args.UpdatedByColumnName;
-            RowVersionColumnName = args.RowVersionColumnName;
-            TenantIdColumnName = args.TenantIdColumnName;
-            RefDataCodeColumnName = args.RefDataCodeColumnName;
-            RefDataTextColumnName = args.RefDataTextColumnName;
             IdentifierGenerator = args.IdentifierGenerator;
             DateTimeFormat = args.DateTimeFormat;
             DbSchemaUpdaterAsync = args.DbSchemaUpdaterAsync;

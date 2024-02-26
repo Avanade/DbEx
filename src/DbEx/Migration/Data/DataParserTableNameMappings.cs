@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -37,7 +38,7 @@ namespace DbEx.Migration.Data
         /// <returns>The <see cref="DataParserTableNameMappings"/> instance to support fluent-style method-chaining.</returns>
         public DataParserTableNameMappings Add(string? schema, string table, Dictionary<string, string> columnMappings)
         {
-            _dict.Add((EmptyWhereNull(schema), table), (EmptyWhereNull(schema), table, columnMappings ?? throw new ArgumentNullException(nameof(columnMappings))));
+            _dict.Add((EmptyWhereNull(schema), table), (EmptyWhereNull(schema), table, columnMappings.ThrowIfNull(nameof(columnMappings))));
             return this;
         }
 

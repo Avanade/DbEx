@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;net7.0;net8.0;netstandard2.1</TargetFrameworks>
+    <RootNamespace>DbEx.Postgres</RootNamespace>
+    <Product>DbEx</Product>
+    <Title>DbEx PostgreSQL Migration Tool.</Title>
+    <Description>DbEX Database Migration tool for PostgreSQL.</Description>
+    <PackageTags>dbex database dbup db-up postgres postgresql sql</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\**\*" />
+    <EmbeddedResource Include="Migrations\**\*" />
+    <EmbeddedResource Include="Data\**\*" />
+    <EmbeddedResource Include="Templates\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="resources\DatabaseCreate.sql" />
+    <None Remove="Resources\DatabaseData_sql.hbs" />
+    <None Remove="Resources\DatabaseDrop.sql" />
+    <None Remove="resources\DatabaseExists.sql" />
+    <None Remove="Resources\DatabaseReset_sql.hbs" />
+    <None Remove="Resources\JournalAudit.sql" />
+    <None Remove="Resources\JournalCreate.sql" />
+    <None Remove="Resources\JournalExists.sql" />
+    <None Remove="Resources\JournalPrevious.sql" />
+    <None Remove="Resources\ScriptAlter_sql.hbs" />
+    <None Remove="Resources\ScriptCreate_sql.hbs" />
+    <None Remove="Resources\ScriptDefault_sql.hbs" />
+    <None Remove="Resources\ScriptRefData_sql.hbs" />
+    <None Remove="Resources\ScriptSchema_sql.hbs" />
+    <None Remove="Resources\SelectTableAndColumns.sql" />
+    <None Remove="resources\SelectTableForeignKeys.sql" />
+    <None Remove="resources\SelectTablePrimaryKey.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CoreEx.Database.Postgres" Version="3.12.0" />
+    <PackageReference Include="dbup-postgresql" Version="5.0.40" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DbEx\DbEx.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\..\Common.targets" />
+
+</Project>

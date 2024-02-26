@@ -50,6 +50,7 @@ param(
     [String[]]$ProjectsToPublish = @(
         "src\DbEx",
         "src\DbEx.MySql",
+        "src\DbEx.Postgres",
         "src\DbEx.SqlServer")
     )
 

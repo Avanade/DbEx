@@ -7,5 +7,6 @@
       [GenderId] INT NULL,
       [TenantId] NVARCHAR(50),
       [Notes] NVARCHAR(MAX) NULL,
+      [ContactTypeCode] NVARCHAR(50) NULL,
       CONSTRAINT [FK_Test_Contact_ContactType] FOREIGN KEY ([ContactTypeId]) REFERENCES [Test].[ContactType] ([ContactTypeId])
     )

@@ -16,7 +16,7 @@ namespace DbEx.Console
     /// <summary>
     /// Validates the assembly name(s).
     /// </summary>
-    /// <param name="args">The <see cref="MigrationArgs"/> to update.</param>
+    /// <param name="args">The <see cref="MigrationArgsBase"/> to update.</param>
     public class AssemblyValidator(MigrationArgsBase args) : IOptionValidator
     {
         private readonly MigrationArgsBase _args = args.ThrowIfNull(nameof(args));
@@ -29,11 +29,8 @@ namespace DbEx.Console
         /// <returns>The <see cref="ValidationResult"/>.</returns>
         public ValidationResult GetValidationResult(CommandOption option, ValidationContext context)
         {
-            if (option == null)
-                throw new ArgumentNullException(nameof(option));
-
-            if (context == null)
-                throw new ArgumentNullException(nameof(context));
+            option.ThrowIfNull(nameof(option));
+            context.ThrowIfNull(nameof(context));
 
             var list = new List<Assembly>();
             foreach (var name in option.Values.Where(x => !string.IsNullOrEmpty(x)))

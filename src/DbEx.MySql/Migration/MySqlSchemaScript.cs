@@ -57,9 +57,9 @@ namespace DbEx.MySql.Migration
         /// <inheritdoc/>
         public override string SqlCreateStatement => $"CREATE {Type.ToUpperInvariant()} `{Name}`";
 
-        private class SqlCommandTokenizer : SqlCommandReader
+        private class SqlCommandTokenizer(string sqlText) : SqlCommandReader(sqlText)
         {
-            public SqlCommandTokenizer(string sqlText) : base(sqlText) { }
+            private readonly char[] delimiters = ['(', ')', ';', ',', '='];
 
             public string[] ReadAllTokens()
             {
@@ -81,7 +81,7 @@ namespace DbEx.MySql.Migration
                                     sb.Clear();
                                     break;
                                 }
-                                else if (new char[] { '(', ')', ';', ',', '=' }.Contains(c))
+                                else if (delimiters.Contains(c))
                                 {
                                     if (sb.Length > 0)
                                         words.Add(sb.ToString());
@@ -114,7 +114,7 @@ namespace DbEx.MySql.Migration
                 if (sb.Length > 0)
                     words.Add(sb.ToString());
 
-                return words.ToArray();
+                return [.. words];
             }
         }
     }

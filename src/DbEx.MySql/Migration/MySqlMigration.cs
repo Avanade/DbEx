@@ -16,10 +16,8 @@ namespace DbEx.MySql.Migration
     /// <summary>
     /// Provides the <see href="https://dev.mysql.com/">MySQL</see> migration orchestration.
     /// </summary>
-    /// <remarks>The following <see cref="DatabaseMigrationBase.SchemaObjectTypes"/> are supported by default: '<c>TYPE</c>', '<c>FUNCTION</c>', '<c>VIEW</c>', '<c>PROCEDURE</c>' and '<c>PROC</c>'.
-    /// <para>Where the <see cref="DatabaseMigrationBase.Args"/> <see cref="MigrationArgsBase.DataResetFilterPredicate"/> is not specified it will default to '<c>schema => schema.Schema != "dbo" || schema.Schema != "cdc"</c>' which will 
-    /// filter out a data reset where a table is in the '<c>dbo</c>' and '<c>cdc</c>' schemas.</para>
-    /// <para>The base <see cref="DatabaseMigrationBase.Journal"/> instance is updated; the <see cref="IDatabaseJournal.Schema"/> and <see cref="IDatabaseJournal.Table"/> properties are set to `<c>dbo</c>` and `<c>SchemaVersions</c>` respectively.</para></remarks>
+    /// <remarks>The following <see cref="DatabaseMigrationBase.SchemaObjectTypes"/> are supported by default: ''<c>FUNCTION</c>', '<c>VIEW</c>', '<c>PROCEDURE</c>'.
+    /// <para>The base <see cref="DatabaseMigrationBase.Journal"/> instance is updated; the <see cref="IDatabaseJournal.Schema"/> and <see cref="IDatabaseJournal.Table"/> properties are set to `<c>null</c>` and `<c>schemaversions</c>` respectively.</para></remarks>
     public class MySqlMigration : DatabaseMigrationBase
     {
         private readonly string _databaseName;
@@ -33,6 +31,8 @@ namespace DbEx.MySql.Migration
         /// <param name="args">The <see cref="MigrationArgsBase"/>.</param>
         public MySqlMigration(MigrationArgsBase args) : base(args)
         {
+            SchemaConfig = new MySqlSchemaConfig(this);
+
             var csb = new MySqlConnectionStringBuilder(Args.ConnectionString);
             _databaseName = csb.Database;
             if (string.IsNullOrEmpty(_databaseName))
@@ -51,9 +51,9 @@ namespace DbEx.MySql.Migration
                 SchemaObjectTypes = ["FUNCTION", "VIEW", "PROCEDURE"];
 
             // Add/set standard parameters.
-            Args.Parameter(MigrationArgsBase.DatabaseNameParamName, _databaseName, true);
-            Args.Parameter(MigrationArgsBase.JournalSchemaParamName, null, true);
-            Args.Parameter(MigrationArgsBase.JournalTableParamName, "schemaversions");
+            Args.AddParameter(MigrationArgsBase.DatabaseNameParamName, _databaseName, true);
+            Args.AddParameter(MigrationArgsBase.JournalSchemaParamName, null, true);
+            Args.AddParameter(MigrationArgsBase.JournalTableParamName, "schemaversions");
         }
 
         /// <inheritdoc/>
@@ -69,7 +69,7 @@ namespace DbEx.MySql.Migration
         public override IDatabase MasterDatabase => _masterDatabase;
 
         /// <inheritdoc/>
-        public override DatabaseSchemaConfig DatabaseSchemaConfig => new MySqlSchemaConfig(DatabaseName);
+        public override DatabaseSchemaConfig SchemaConfig { get; }
 
         /// <inheritdoc/>
         protected override DatabaseSchemaScriptBase CreateSchemaScript(DatabaseMigrationScript migrationScript) => MySqlSchemaScript.Create(migrationScript);
@@ -78,7 +78,7 @@ namespace DbEx.MySql.Migration
         protected override async Task<bool> DatabaseResetAsync(CancellationToken cancellationToken = default)
         {
             // Filter out the versioning table.
-            _resetBypass.Add($"`{Journal.Table}`");
+            _resetBypass.Add(SchemaConfig.ToFullyQualifiedTableName(Journal.Schema!, Journal.Table!));
 
             // Carry on as they say ;-)
             return await base.DatabaseResetAsync(cancellationToken).ConfigureAwait(false);

@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using DbEx.DbSchema;
 using HandlebarsDotNet;
 using System;
@@ -7,7 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using YamlDotNet.Core.Events;
@@ -53,20 +53,18 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Initializes a new instance of the <see cref="DataParser"/> class.
         /// </summary>
-        /// <param name="databaseSchemaConfig">The <see cref="DbEx.DatabaseSchemaConfig"/>.</param>
+        /// <param name="migration">The owning <see cref="DatabaseMigrationBase"/>.</param>
         /// <param name="dbTables">The <see cref="DbTableSchema"/> list.</param>
-        /// <param name="args">The optional <see cref="DataParserArgs"/> (will use defaults where not specified).</param>
-        public DataParser(DatabaseSchemaConfig databaseSchemaConfig, List<DbTableSchema> dbTables, DataParserArgs? args = null)
+        internal DataParser(DatabaseMigrationBase migration, List<DbTableSchema> dbTables)
         {
-            DatabaseSchemaConfig = databaseSchemaConfig ?? throw new ArgumentNullException(nameof(databaseSchemaConfig));
-            DbTables = dbTables ?? throw new ArgumentNullException(nameof(dbTables));
-            databaseSchemaConfig.PrepareDataParserArgs(Args = args ?? new DataParserArgs());
+            Migration = migration.ThrowIfNull(nameof(migration));
+            DbTables = dbTables.ThrowIfNull(nameof(dbTables));
         }
 
         /// <summary>
-        /// Gets the <see cref="DbEx.DatabaseSchemaConfig"/>.
+        /// Gets the owning <see cref="DatabaseMigrationBase"/>.
         /// </summary>
-        public DatabaseSchemaConfig DatabaseSchemaConfig { get; }
+        public DatabaseMigrationBase Migration { get; }
 
         /// <summary>
         /// Gets the <see cref="DbTableSchema"/> list.
@@ -76,7 +74,7 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Gets the <see cref="DataParserArgs"/>.
         /// </summary>
-        public DataParserArgs Args { get; }
+        public DataParserArgs ParserArgs => Migration.Args.DataParserArgs;
 
         /// <summary>
         /// Reads and parses the database using the specified YAML <see cref="string"/>.
@@ -157,8 +155,8 @@ namespace DbEx.Migration.Data
         private async Task<List<DataTable>> ParseJsonAsync(JsonDocument json, CancellationToken cancellationToken)
         {
             // Further update/manipulate the schema.
-            if (Args.DbSchemaUpdaterAsync != null)
-                DbTables = await Args.DbSchemaUpdaterAsync(DbTables, cancellationToken).ConfigureAwait(false);
+            if (ParserArgs.DbSchemaUpdaterAsync != null)
+                DbTables = await ParserArgs.DbSchemaUpdaterAsync(DbTables, cancellationToken).ConfigureAwait(false);
 
             // Parse table/row/column data.
             var tables = new List<DataTable>();
@@ -205,7 +203,7 @@ namespace DbEx.Migration.Data
         private async Task ParseTableJsonAsync(List<DataTable> tables, DataRow? parent, string schema, JsonProperty jp, CancellationToken cancellationToken)
         {
             // Get existing or create new table.
-            var sdt = new DataTable(this, DatabaseSchemaConfig.SupportsSchema ? schema : string.Empty, jp.Name);
+            var sdt = new DataTable(this, Migration.SchemaConfig.SupportsSchema ? schema : string.Empty, jp.Name);
             var prev = tables.SingleOrDefault(x => x.Schema == sdt.Schema && x.Name == sdt.Name);
             if (prev is null)
                 tables.Add(sdt);
@@ -232,8 +230,8 @@ namespace DbEx.Migration.Data
                         default:
                             if (sdt.IsRefData && jro.EnumerateObject().Count() == 1)
                             {
-                                row.AddColumn(Args.RefDataCodeColumnName ?? DatabaseSchemaConfig.RefDataCodeColumnName, jr.Name);
-                                row.AddColumn(Args.RefDataTextColumnName ?? DatabaseSchemaConfig.RefDataTextColumnName, jr.Value.GetString());
+                                row.AddColumn(Migration.Args.RefDataCodeColumnName!, jr.Name);
+                                row.AddColumn(Migration.Args.RefDataTextColumnName!, jr.Value.GetString());
                             }
                             else
                                 row.AddColumn(jr.Name, GetColumnValue(jr.Value));
@@ -256,77 +254,23 @@ namespace DbEx.Migration.Data
                 sdt.AddRow(row);
             }
 
-            //// Loop through the collection of rows.
-            //foreach (var jro in GetChildObjects(jp))
-            //{
-            //    var row = new DataRow(sdt);
-
-            //    foreach (var jr in jro.Children<JProperty>())
-            //    {
-            //        if (jr.Value.Type == JTokenType.Object)
-            //        {
-            //            throw new DataParserException($"Table '{sdt.Schema}.{sdt.Name}' has unsupported '{jr.Name}' column value; must not be an object: {jr.Value}.");
-            //        }
-            //        else if (jr.Value.Type == JTokenType.Array)
-            //        {
-            //            // Try parsing as a further described nested table configuration; i.e. representing a relationship.
-            //            await ParseTableJsonAsync(tables, row, sdt.Schema, jr, cancellationToken).ConfigureAwait(false);
-            //        }
-            //        else
-            //        {
-            //            if (sdt.IsRefData && jro.Children().Count() == 1)
-            //            {
-            //                row.AddColumn(Args.RefDataCodeColumnName ?? DatabaseSchemaConfig.RefDataCodeColumnName, GetColumnValue(jr.Name));
-            //                row.AddColumn(Args.RefDataTextColumnName ?? DatabaseSchemaConfig.RefDataTextColumnName, GetColumnValue(jr.Value));
-            //            }
-            //            else
-            //                row.AddColumn(jr.Name, GetColumnValue(jr.Value));
-            //        }
-            //    }
-
-            //    // Where specified within a hierarchy attempt to be fancy and auto-update from the parent's primary key where same name.
-            //    if (parent is not null)
-            //    {
-            //        foreach (var pktc in parent.Table.DbTable.PrimaryKeyColumns)
-            //        {
-            //            var pkc = parent.Columns.SingleOrDefault(x => x.Name == pktc.Name);
-            //            if (pkc is not null && row.Table.DbTable.Columns.Any(x => x.Name == pktc.Name) && row.Columns.SingleOrDefault(x => x.Name == pktc.Name) is null)
-            //                row.AddColumn(pkc.Name, pkc.Value);
-            //        }
-            //    }
-
-            //    sdt.AddRow(row);
-            //}
-
             if (sdt.Columns.Count > 0)
                 await sdt.PrepareAsync(cancellationToken).ConfigureAwait(false);
         }
-
-        ///// <summary>
-        ///// Gets the child objects.
-        ///// </summary>
-        //private static IEnumerable<JObject> GetChildObjects(JToken j)
-        //{
-        //    foreach (var jc in j.Children<JArray>())
-        //    {
-        //        return jc.Children<JObject>();
-        //    }
-
-        //    return Array.Empty<JObject>();
-        //}
 
         /// <summary>
         /// Gets the column value.
         /// </summary>
         private object? GetColumnValue(JsonElement j)
         {
+            // TODO: Can we be smarter about the datetime parsing?!?
             return j.ValueKind switch
             {
                 JsonValueKind.Null => null,
                 JsonValueKind.True => true,
                 JsonValueKind.False => false,
                 JsonValueKind.Number => j.GetDecimal(),
-                JsonValueKind.String => j.TryGetDateTime(out var dt) ? dt : GetRuntimeParameterValue(j.GetString()),
+                JsonValueKind.String => GetRuntimeParameterValue(j.GetString()),
                 _ => null
             };
         }
@@ -347,10 +291,10 @@ namespace DbEx.Migration.Data
                 // Check against known values and runtime parameters.
                 switch (key)
                 {
-                    case "UserName": return Args.UserName;
-                    case "DateTimeNow": return Args.DateTimeNow;
+                    case "UserName": return ParserArgs.UserName;
+                    case "DateTimeNow": return ParserArgs.DateTimeNow;
                     default:
-                        if (Args.Parameters.TryGetValue(key, out object? dval))
+                        if (ParserArgs.Parameters.TryGetValue(key, out object? dval))
                             return dval;
 
                         break;

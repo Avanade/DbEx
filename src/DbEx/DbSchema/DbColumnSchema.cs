@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+using CoreEx;
 using System;
 using System.Diagnostics;
 
@@ -8,41 +9,32 @@ namespace DbEx.DbSchema
     /// <summary>
     /// Represents the Database <b>Column</b> schema definition.
     /// </summary>
+    /// <param name="dbTable">The owning (parent) <see cref="DbTableSchema"/>.</param>
+    /// <param name="name">The column name.</param>
+    /// <param name="type">The column type.</param>
+    /// <param name="dotNetNameOverride">The .NET name override (optional).</param>
     [DebuggerDisplay("{Name} {SqlType} ({DotNetType})")]
-    public class DbColumnSchema
+    public class DbColumnSchema(DbTableSchema dbTable, string name, string type, string? dotNetNameOverride = null)
     {
         private string? _dotNetType;
-        private string? _dotNetName;
+        private string? _dotNetName = dotNetNameOverride;
         private string? _dotNetCleanedName;
         private string? _sqlType;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DbColumnSchema"/> class.
-        /// </summary>
-        /// <param name="dbTable">The owning (parent) <see cref="DbTableSchema"/>.</param>
-        /// <param name="name">The column name.</param>
-        /// <param name="type">The column type.</param>
-        public DbColumnSchema(DbTableSchema dbTable, string name, string type)
-        {
-            DbTable = dbTable ?? throw new ArgumentNullException(nameof(dbTable));
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            Type = type ?? throw new ArgumentNullException(nameof(type));
-        }
-
-        /// <summary>
         /// Gets the owning (parent) <see cref="DbTable"/>.
         /// </summary>
-        public DbTableSchema DbTable { get; }
+        public DbTableSchema DbTable { get; } = dbTable.ThrowIfNull(nameof(dbTable));
 
         /// <summary>
         /// Gets the column name.
         /// </summary>
-        public string Name { get; }
+        public string Name { get; } = name.ThrowIfNull(nameof(name));
 
         /// <summary>
         /// Gets the SQL Server data type.
         /// </summary>
-        public string Type { get; }
+        public string Type { get; } = type.ThrowIfNull(nameof(type));
 
         /// <summary>
         /// Indicates whether the column is nullable.
@@ -165,14 +157,14 @@ namespace DbEx.DbSchema
         public bool IsIsDeleted { get; set; }
 
         /// <summary>
-        /// Indicates whether the column <i>may</i> contain JSON content by convention (<see cref="DotNetType"/> is a `<c>string</c>` and the <see cref="Name"/> ends with `<c>Json</c>`) .
+        /// Indicates whether the column <i>may</i> contain JSON content by convention (<see cref="DotNetType"/> is a `<c>string</c>` and the <see cref="Name"/> ends with `<c>Json</c>` or is a native JSON database type).
         /// </summary>
-        public bool IsJsonContent => DotNetType == "string" && Name.EndsWith("Json", StringComparison.OrdinalIgnoreCase);
+        public bool IsJsonContent { get; set; }
 
         /// <summary>
         /// Gets the corresponding .NET <see cref="System.Type"/> name.
         /// </summary>
-        public string DotNetType => _dotNetType ??= DbTable?.Config.ToDotNetTypeName(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(DotNetType)} property can be accessed.");
+        public string DotNetType => _dotNetType ??= DbTable?.Migration.SchemaConfig.ToDotNetTypeName(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(DotNetType)} property can be accessed.");
 
         /// <summary>
         /// Gets the corresponding .NET name.
@@ -182,17 +174,38 @@ namespace DbEx.DbSchema
         /// <summary>
         /// Gets the corresponding .NET name cleaned; by removing any known suffixes where <see cref="IsRefData"/> or <see cref="IsJsonContent"/> 
         /// </summary>
-        public string DotNetCleanedName => _dotNetCleanedName ??= DbTableSchema.CreateDotNetName(Name, IsRefData || IsJsonContent);
+        public string DotNetCleanedName { get => _dotNetCleanedName ?? DotNetName; set => _dotNetCleanedName = value; }
 
         /// <summary>
         /// Gets the fully defined SQL type.
         /// </summary>
-        public string SqlType => _sqlType ??= DbTable?.Config.ToFormattedSqlType(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(SqlType)} property can be accessed.");
+        public string SqlType => _sqlType ??= DbTable?.Migration.SchemaConfig.ToFormattedSqlType(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(SqlType)} property can be accessed.");
+
+#if NET7_0_OR_GREATER
+        /// <summary>
+        /// Indicates that the type can be expressed as a <see cref="DateOnly"/> .NET type.
+        /// </summary>
+#else
+        /// <summary>
+        /// Indicates that the type can be expressed as a <c>DateOnly</c> .NET type.
+        /// </summary>
+#endif
+        public bool IsDotNetDateOnly { get; set; }
+
+#if NET7_0_OR_GREATER
+        /// <summary>
+        /// Indicates that the type can be expressed as a <see cref="TimeOnly"/> .NET type.
+        /// </summary>
+#else
+        /// <summary>
+        /// Indicates that the type can be expressed as a <c>TimeOnly</c> .NET type.
+        /// </summary>
+#endif
+        public bool IsDotNetTimeOnly { get; set; }
 
         /// <summary>
         /// Clones the <see cref="DbColumnSchema"/> creating a new instance.
         /// </summary>
-        /// <returns></returns>
         public DbColumnSchema Clone()
         {
             var c = new DbColumnSchema(DbTable, Name, Type);
@@ -206,7 +219,11 @@ namespace DbEx.DbSchema
         /// <param name="column">The <see cref="DbColumnSchema"/> to copy from.</param>
         public void CopyFrom(DbColumnSchema column)
         {
-            IsNullable = (column ?? throw new ArgumentNullException(nameof(column))).IsNullable;
+            _dotNetType = column.ThrowIfNull(nameof(column))._dotNetType;
+            _dotNetName = column._dotNetName;
+            _dotNetCleanedName = column._dotNetCleanedName;
+            _sqlType = column._sqlType;
+            IsNullable = column.IsNullable;
             Length = column.Length;
             Precision = column.Precision;
             Scale = column.Scale;
@@ -228,10 +245,8 @@ namespace DbEx.DbSchema
             IsRowVersion = column.IsRowVersion;
             IsTenantId = column.IsTenantId;
             IsIsDeleted = column.IsIsDeleted;
-            _dotNetType = column._dotNetType;
-            _dotNetName = column._dotNetName;
-            _dotNetCleanedName = column._dotNetCleanedName;
-            _sqlType = column._sqlType;
+            IsDotNetDateOnly = column.IsDotNetDateOnly;
+            IsDotNetTimeOnly = column.IsDotNetTimeOnly;
         }
     }
 }

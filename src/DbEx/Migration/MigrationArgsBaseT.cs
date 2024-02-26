@@ -64,9 +64,9 @@ namespace DbEx.Migration
         /// <param name="value">The parameter value.</param>
         /// <param name="overrideExisting">Indicates whether to override the existing value where it is pre-existing; otherwise, will not add/update.</param>
         /// <returns>The current <see cref="MigrationArgs"/> instance to support fluent-style method-chaining.</returns>
-        public new TSelf Parameter(string key, object? value, bool overrideExisting = false)
+        public new TSelf AddParameter(string key, object? value, bool overrideExisting = false)
         {
-            base.Parameter(key, value, overrideExisting);
+            base.AddParameter(key, value, overrideExisting);
             return (TSelf)this;
         }
 

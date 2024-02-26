@@ -40,7 +40,7 @@ namespace DbEx.SqlServer.Migration
                     var index = script.FullyQualifiedName.IndexOf('.');
                     if (index < 0)
                     {
-                        script.Schema = "dbo";
+                        script.Schema = migrationScript.DatabaseMigration.SchemaConfig.DefaultSchema;
                         script.Name = script.FullyQualifiedName;
                     }
                     else
@@ -69,9 +69,9 @@ namespace DbEx.SqlServer.Migration
         /// <inheritdoc/>
         public override string SqlCreateStatement => $"CREATE {Type.ToUpperInvariant()} [{Schema}].[{Name}]";
 
-        private class SqlCommandTokenizer : SqlCommandReader
+        private class SqlCommandTokenizer(string sqlText) : SqlCommandReader(sqlText)
         {
-            public SqlCommandTokenizer(string sqlText) : base(sqlText) { }
+            private readonly char[] delimiters = ['(', ')', ';', ',', '='];
 
             public string[] ReadAllTokens()
             {
@@ -126,7 +126,7 @@ namespace DbEx.SqlServer.Migration
                 if (sb.Length > 0)
                     words.Add(sb.ToString());
 
-                return words.ToArray();
+                return [.. words];
             }
         }
     }

@@ -1,0 +1,1 @@
+select datname from pg_database where datname = '{{DatabaseName}}'

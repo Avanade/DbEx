@@ -18,6 +18,7 @@ Package | Status | Source & documentation
 -|-|-
 `DbEx` | [![NuGet version](https://badge.fury.io/nu/DbEx.svg)](https://badge.fury.io/nu/DbEx) | [Link](./src/DbEx)
 `DbEx.MySql` | [![NuGet version](https://badge.fury.io/nu/DbEx.MySql.svg)](https://badge.fury.io/nu/DbEx.MySql) | [Link](./src/DbEx.MySql)
+`DbEx.Postgres` | [![NuGet version](https://badge.fury.io/nu/DbEx.Postgres.svg)](https://badge.fury.io/nu/DbEx.Postgres) | [Link](./src/DbEx.Postgres)
 `DbEx.SqlServer` | [![NuGet version](https://badge.fury.io/nu/DbEx.SqlServer.svg)](https://badge.fury.io/nu/DbEx.SqlServer) | [Link](./src/DbEx.SqlServer)
 
 
@@ -313,8 +314,8 @@ To simplify the database management here are some further considerations that ma
 ## Other repos
 
 These other _Avanade_ repositories leverage _DbEx_:
-- [NTangle](https://github.com/Avanade/NTangle) - Change Data Capture (CDC) code generation tool and runtime.
-- [Beef](https://github.com/Avanade/Beef) - Business Entity Execution Framework to enable industralisation of API development.
+- [*NTangle*](https://github.com/Avanade/NTangle) - Change Data Capture (CDC) code generation tool and runtime.
+- [*Beef*](https://github.com/Avanade/Beef) - Business Entity Execution Framework to enable industralisation of API development.
 
 <br/>
 
