@@ -61,7 +61,7 @@ namespace DbEx.DbSchema
         public static string CreatePluralName(string name)
         {
             name.ThrowIfNullOrEmpty(nameof(name));
-            var words = SentenceCase.WordSplit(name).Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var words = SentenceCase.SplitIntoWords(name).Where(x => !string.IsNullOrEmpty(x)).ToList();
             words[^1] = StringConverter.ToPlural(words[^1]);
             return string.Join(string.Empty, words);
         }
@@ -74,7 +74,7 @@ namespace DbEx.DbSchema
         public static string CreateSingularName(string name)
         {
             name.ThrowIfNullOrEmpty(nameof(name));
-            var words = SentenceCase.WordSplit(name).Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var words = SentenceCase.SplitIntoWords(name).Where(x => !string.IsNullOrEmpty(x)).ToList();
             words[^1] = StringConverter.ToSingle(words[^1]);
             return string.Join(string.Empty, words);
         }
