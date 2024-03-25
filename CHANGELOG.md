@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v2.5.1
+- *Fixed:* Updated `CoreEx` to version `3.15.0`.
+- *Fixed* Simplify event outbox C# code-generation templates for primary constructor usage.
+
 ## v2.5.0
 - *Enhancement:* Added [PostgreSQL](https://www.postgresql.org/) database migrations support.
 - *Enhancement:* Added `DateOnly` and `TimeOnly` support (requires `net7.0`+) (see also `MigrationArgs.EmitDotNetDateOnly` and `MigrationArgs.EmitDotNetTimeOnly` to explicitly enable).
