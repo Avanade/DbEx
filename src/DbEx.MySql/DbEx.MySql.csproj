@@ -41,8 +41,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database.MySql" Version="3.12.0" />
-    <PackageReference Include="dbup-mysql" Version="5.0.40" />
+    <PackageReference Include="CoreEx.Database.MySql" Version="3.15.0" />
+    <PackageReference Include="dbup-mysql" Version="5.0.44" />
   </ItemGroup>
 
   <ItemGroup>
