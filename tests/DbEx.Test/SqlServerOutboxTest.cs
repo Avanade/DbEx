@@ -246,10 +246,10 @@ namespace DbEx.Test
             eoe.SetPrimaryEventSender(new TestSenderFail());
             await eoe.SendAsync(new EventSendData[] 
             { 
-                new EventSendData { Id = "1", PartitionKey = null, Destination = "A" },
-                new EventSendData { Id = "2", PartitionKey = null, Destination = "B" },
-                new EventSendData { Id = "3", PartitionKey = null, Destination = "A" },
-                new EventSendData { Id = "4", PartitionKey = null, Destination = "B" }
+                new() { Id = "1", PartitionKey = null, Destination = "A" },
+                new() { Id = "2", PartitionKey = null, Destination = "B" },
+                new() { Id = "3", PartitionKey = null, Destination = "A" },
+                new() { Id = "4", PartitionKey = null, Destination = "B" }
             }).ConfigureAwait(false);
 
             var ims = new InMemorySender();
@@ -265,11 +265,15 @@ namespace DbEx.Test
 
         private class TestSender : IEventSender
         {
+            public event EventHandler AfterSend;
+
             public Task SendAsync(IEnumerable<EventSendData> events, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         }
 
         private class TestSenderFail : IEventSender
         {
+            public event EventHandler AfterSend;
+
             public Task SendAsync(IEnumerable<EventSendData> events, CancellationToken cancellationToken = default)
             {
                 var elist = events.ToArray();
