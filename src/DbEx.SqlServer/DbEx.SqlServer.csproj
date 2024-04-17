@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database.SqlServer" Version="3.15.0" />
+    <PackageReference Include="CoreEx.Database.SqlServer" Version="3.18.0" />
     <PackageReference Include="dbup-sqlserver" Version="5.0.40" />
   </ItemGroup>
 

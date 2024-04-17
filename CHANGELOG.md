@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v2.5.2
+- *Fixed:* Updated `CoreEx` to version `3.18.0`.
+  - Includes removal of `Azure.Identity` dependency; related to `https://github.com/advisories/GHSA-wvxc-855f-jvrv`.
+
 ## v2.5.1
 - *Fixed:* Updated `CoreEx` to version `3.15.0`.
 - *Fixed* Simplify event outbox C# code-generation templates for primary constructor usage.
