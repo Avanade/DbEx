@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v2.5.3
+- *Fixed:* Updated `CoreEx` to version `3.20.0`.
+- *Fixed:* Fixed logging of SQL statements to include the source: `FILE`, `RES` (embedded resource) or `SQL` (specified statement).
+
 ## v2.5.2
 - *Fixed:* Updated `CoreEx` to version `3.18.0`.
   - Includes removal of `Azure.Identity` dependency; related to `https://github.com/advisories/GHSA-wvxc-855f-jvrv`.
