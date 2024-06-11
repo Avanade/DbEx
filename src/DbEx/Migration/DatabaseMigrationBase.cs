@@ -343,7 +343,7 @@ namespace DbEx.Migration
                 }
 
                 if (includeExecutionLogging)
-                    Logger.LogInformation("{Content}", $"    {script.Name}{(string.IsNullOrEmpty(script.Tag) ? "" : $" > {script.Tag}")}");
+                    Logger.LogInformation("{Content}", $"    {script.Name} ({script.Source}){(string.IsNullOrEmpty(script.Tag) ? "" : $" > {script.Tag}")}");
 
                 try
                 {
@@ -748,7 +748,7 @@ namespace DbEx.Migration
                     Logger.LogInformation("{Content}", $"** Executing: {item.ResourceName}");
 
                     var ss = new DatabaseMigrationScript(this, item.Assembly, item.ResourceName) { RunAlways = true };
-                    if (!await ExecuteScriptsAsync(new DatabaseMigrationScript[] { ss }, false, cancellationToken).ConfigureAwait(false))
+                    if (!await ExecuteScriptsAsync([ss], false, cancellationToken).ConfigureAwait(false))
                         return false;
                 }
                 else
@@ -865,7 +865,6 @@ namespace DbEx.Migration
         /// </summary>
         private async Task<bool> CreateScriptInternalAsync(string? name, IDictionary<string, string?>? parameters, CancellationToken cancellationToken)
         {
-
             name ??= "Default";
             var rn = $"Script{name}_sql";
 

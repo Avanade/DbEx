@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 using CoreEx;
-using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -47,9 +46,8 @@ namespace DbEx.Migration
         /// Initializes a new instance of the <see cref="DatabaseMigrationScript"/> class for the specified <paramref name="sql"/>.
         /// </summary>
         /// <param name="databaseMigation">The owning <see cref="DatabaseMigrationBase"/>.</param>
-        /// <param name="sql"></param>
+        /// <param name="sql">The SQL statement.</param>
         /// <param name="name">The sql name.</param>
-        /// <exception cref="ArgumentNullException"></exception>
         public DatabaseMigrationScript(DatabaseMigrationBase databaseMigation, string sql, string name)
         {
             DatabaseMigration = databaseMigation.ThrowIfNull(nameof(databaseMigation));
@@ -82,6 +80,11 @@ namespace DbEx.Migration
         /// Gets or sets additional tag text to output to the log.
         /// </summary>
         public string? Tag { get; set; }
+
+        /// <summary>
+        /// Gets the underlying SQL statement source.
+        /// </summary>
+        public string Source => _assembly is not null ? "RES" : (_file is not null ? "FILE" : "SQL");
 
         /// <summary>
         /// Gets the resource or file <see cref="System.IO.StreamReader"/>.
