@@ -220,11 +220,16 @@ namespace DbEx.Migration.Data
                     switch (jr.Value.ValueKind)
                     {
                         case JsonValueKind.Object:
-                            throw new DataParserException($"Table '{sdt.Schema}.{sdt.Name}' has unsupported '{jr.Name}' column value; must not be an object: {jr.Value}.");
+                            row.AddColumn(jr.Name, jr.Value.GetRawText());
+                            break;
 
                         case JsonValueKind.Array:
-                            // Try parsing as a further described nested table configuration; i.e. representing a relationship.
-                            await ParseTableJsonAsync(tables, row, sdt.Schema, jr, cancellationToken).ConfigureAwait(false);
+                            // Try parsing as a further described nested table configuration (i.e. representing a relationship) or update column with JSON string.
+                            if (sdt.DbTable.Columns.SingleOrDefault(x => x.Name == jr.Name) is null)
+                                await ParseTableJsonAsync(tables, row, sdt.Schema, jr, cancellationToken).ConfigureAwait(false);
+                            else
+                                row.AddColumn(jr.Name, jr.Value.GetRawText());
+
                             break;
 
                         default:

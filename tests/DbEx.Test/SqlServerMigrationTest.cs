@@ -124,6 +124,8 @@ namespace DbEx.Test
                 Name = dr.GetValue<string>("Name"),
                 CreatedBy = dr.GetValue<string>("CreatedBy"),
                 CreatedDate = dr.GetValue<DateTime>("CreatedDate"),
+                AddressJson = dr.GetValue<string>("AddressJson"),
+                NicknamesJson = dr.GetValue<string>("NicknamesJson")
             }).ConfigureAwait(false)).ToList();
 
             Assert.AreEqual(3, res.Count);
@@ -138,6 +140,8 @@ namespace DbEx.Test
             Assert.AreEqual("Bazza", row2.Name);
             Assert.AreEqual(m.Args.DataParserArgs.UserName, row2.CreatedBy);
             Assert.AreEqual(m.Args.DataParserArgs.DateTimeNow, row2.CreatedDate);
+            Assert.AreEqual("{\"Street\": \"Main St\", \"City\": \"Maine\"}", row2.AddressJson);
+            Assert.AreEqual("[\"Gaz\", \"Baz\"]", row2.NicknamesJson);
 
             // Check that the stored procedure script was migrated and works!
             res = (await db.StoredProcedure("[Test].[spGetContact]").Param("@ContactId", 2).SelectQueryAsync(dr => new
