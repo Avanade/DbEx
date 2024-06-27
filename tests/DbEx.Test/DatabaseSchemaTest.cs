@@ -331,7 +331,7 @@ namespace DbEx.Test
             Assert.AreEqual("[Test].[Person]", tab.QualifiedName);
             Assert.IsFalse(tab.IsAView);
             Assert.IsFalse(tab.IsRefData);
-            Assert.AreEqual(6, tab.Columns.Count);
+            Assert.AreEqual(8, tab.Columns.Count);
             Assert.AreEqual(1, tab.PrimaryKeyColumns.Count);
             Assert.AreEqual("Person", tab.DotNetName);
             Assert.AreEqual("People", tab.PluralName);

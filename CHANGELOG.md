@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v2.5.4
+- *Fixed:* Updated `CoreEx` to version `3.21.0`.
+- *Fixed:* Updated `DataParser` to set column with JSON (`JsonElement.GetRawText`) value versus throwing an exception when the JSON is an object or an array.
+
 ## v2.5.3
 - *Fixed:* Updated `CoreEx` to version `3.20.0`.
 - *Fixed:* Fixed logging of SQL statements to include the source: `FILE`, `RES` (embedded resource) or `SQL` (specified statement).
