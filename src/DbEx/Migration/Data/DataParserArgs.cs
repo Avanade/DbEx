@@ -132,6 +132,11 @@ namespace DbEx.Migration.Data
         public DataParserTableNameMappings TableNameMappings { get; } = [];
 
         /// <summary>
+        /// Indiates whether to replace '<c>^n</c>' values where '<c>n</c>' is an integer with a <see cref="Guid"/> equivalent; e.g. '<c>^1</c>' will be '<c>00000001-0000-0000-0000-000000000000</c>'
+        /// </summary>
+        public bool ReplaceShorthandGuids { get; set; } = true;
+
+        /// <summary>
         /// Copy and replace from <paramref name="args"/>.
         /// </summary>
         /// <param name="args">The <see cref="DataParserArgs"/> to copy from.</param>
@@ -152,6 +157,7 @@ namespace DbEx.Migration.Data
             args.Parameters.ForEach(x => Parameters.Add(x.Key, x.Value));
             TableNameMappings.Clear();
             args.TableNameMappings.ForEach(x => TableNameMappings.Add(x.Key.ParsedSchema, x.Key.ParsedTable, x.Value.Schema, x.Value.Table, x.Value.ColumnMappings));
+            ReplaceShorthandGuids = args.ReplaceShorthandGuids;
         }
     }
 }

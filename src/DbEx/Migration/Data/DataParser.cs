@@ -317,6 +317,8 @@ namespace DbEx.Migration.Data
 
                 throw new DataParserException(msg);
             }
+            else if (ParserArgs.ReplaceShorthandGuids && int.TryParse(value[1..], out var i))
+                return new Guid(i, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
             else
                 return value;
         }
