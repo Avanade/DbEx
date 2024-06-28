@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v2.5.7
+- *Fixed:* Corrected issue introduced in version `2.5.5` where some strings were being incorrectly converted to a guid.
+
 ## v2.5.6
 - *Fixed:* Release build and publish; version `2.5.5` was not published correctly.
 

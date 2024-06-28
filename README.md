@@ -176,13 +176,17 @@ Demo:
     - { FirstName: Wendy, LastName: Jones, Gender: F, Birthday: 1985-03-18 }
 ```
 
-Runtime values can be used within the YAML using the value lookup notation; this notation is `^(Key)`. This will either reference the [`DataParserArgs`](./src/DbEx/Migration/Data/DataParserArgs.cs) `Parameters` property using the specified key. There are two special parameters, being `UserName` and `DateTimeNow`, that reference the same named `DataParserArgs` properties. Where not found the extended notation `^(Namespace.Type.Property.Method().etc, AssemblyName)` is used. Where the `AssemblyName` is not specified then the default `mscorlib` is assumed. The `System` root namespace is optional, i.e. it will be attempted by default. The initial property or method for a `Type` must be `static`, in that the `Type` will not be instantiated. Example as follows. These parameters (`Name=Value` pairs) can also be command-line specified.
+Runtime values can be used within the YAML using the value lookup notation; this notation is `^(Key)`. This will either reference the [`DataParserArgs`](./src/DbEx/Migration/Data/DataParserArgs.cs) `Parameters` property using the specified key. There are two special parameters, being `UserName` and `DateTimeNow`, that reference the same named `DataParserArgs` properties. An additional special parameter being `GuidNew`, that results in a `Guid.NewGuid`. Where not found the extended notation `^(Namespace.Type.Property.Method().etc, AssemblyName)` is used. Where the `AssemblyName` is not specified then the default `mscorlib` is assumed. The `System` root namespace is optional, i.e. it will be attempted by default. The initial property or method for a `Type` must be `static`, in that the `Type` will not be instantiated. These parameters (`Name=Value` pairs) can also be command-line specified.
+
+Additionally, a column can be set with a guid representation of an integer where specified using shorthand notation; i.e. replace `^n` values where `n` is an integer with a guid equivalent; e.g. `^1` will be converted to `00000001-0000-0000-0000-000000000000`. The `DataParserArgs.ReplaceShorthandGuids` had been added to control this behavior (defaults to `true`).
+
+Example as follows. 
 
 ``` yaml
 Demo:
   - Person:
-    - { FirstName: Wendy, Username: ^(System.Security.Principal.WindowsIdentity.GetCurrent().Name,System.Security.Principal.Windows), Birthday: ^(DateTimeNow) }
-    - { FirstName: Wendy, Username: ^(Beef.ExecutionContext.EnvironmentUsername,Beef.Core), Birthday: ^(DateTime.UtcNow) }
+    - { PersonId: ^1, FirstName: Wendy, Username: ^(System.Security.Principal.WindowsIdentity.GetCurrent().Name,System.Security.Principal.Windows), Birthday: ^(DateTimeNow) }
+    - { PersonId: ^2, FirstName: Wendy, Username: ^(Beef.ExecutionContext.EnvironmentUsername,Beef.Core), Birthday: ^(DateTime.UtcNow) }
 ```
 
 Advanced capabilities, such as nested YAML/JSON can be specified to represent hierarchical relationships (see `contact->addresses` within test [`data.yaml`](./tests/DbEx.Test.Console/Data/Data.yaml) and related [`TableNameMappings`](./tests/DbEx.Test.Console/Program.cs) to map to the correct underlying database table). [`DataConfig`](./src/Dbex/Migration/Data/DataConfig.cs) can also be specified using the `*` schema to control the behaviour within the context of a YAML/JSON file as demonstrated by the test [`ContactType.json`](./tests/DbEx.Test.Console/Data/ContactType.json).
