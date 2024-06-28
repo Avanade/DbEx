@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v2.5.6
+- *Fixed:* Release build and publish; version `2.5.5` was not published correctly.
+
 ## v2.5.5
 - *Fixed:* Updated `DataParser` to set column with a guid representation of an integer where specified using shorthand notation; i.e. replace `^n` values where `n` is an integer with a guid equivalent; e.g. `^1` will be converted to `00000001-0000-0000-0000-000000000000`. A new `DataParserArgs.ReplaceShorthandGuids` had been added to control this behavior (defaults to `true`).
 
