@@ -15,7 +15,7 @@ INSERT INTO #temp ({{#each Columns}}[{{Name}}]{{#unless @last}}, {{/unless}}{{/e
 
 MERGE INTO [{{Schema}}].[{{Name}}] WITH (HOLDLOCK) as [t]
   USING (SELECT {{#each Columns}}[{{Name}}]{{#unless @last}}, {{/unless}}{{/each}} FROM #temp) AS [s] 
-    ON ({{#if IsRefData}}[s].[{{DbTable.RefDataCodeColumn.Name}}] = [t].[{{DbTable.RefDataCodeColumn.Name}}]{{else}}{{#each PrimaryKeyColumns}}{{#unless @first}} ON {{/unless}}[s].[{{Name}}] = [t].[{{Name}}]{{/each}}{{/if}})
+    ON ({{#if IsRefData}}[s].[{{DbTable.RefDataCodeColumn.Name}}] = [t].[{{DbTable.RefDataCodeColumn.Name}}]{{else}}{{#each PrimaryKeyColumns}}{{#unless @first}} ON {{/unless}}[s].[{{Name}}] = [t].[{{Name}}]{{/each}}{{/if}}{{#ifval DbTable.TenantIdColumn}} AND [s].[{{DbTable.TenantIdColumn.Name}}] = [t].[{{DbTable.TenantIdColumn.Name}}]{{/ifval}})
   WHEN MATCHED AND EXISTS (
       SELECT {{#each MergeMatchColumns}}[s].[{{Name}}]{{#unless @last}}, {{/unless}}{{/each}}
       EXCEPT

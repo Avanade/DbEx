@@ -13,7 +13,9 @@
 
   <ItemGroup>
     <None Remove="Data\ContactType.json" />
+    <None Remove="Data\Data2.yaml" />
     <None Remove="Migrations\004a-create-test-contact-address-table.sql" />
+    <None Remove="Migrations\007-create-test-status-table.sql" />
   </ItemGroup>
 
   <ItemGroup>
