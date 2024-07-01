@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v2.5.8
+- *Fixed:* SQL Server `data` merge statement fixed to include the `TenantIdColumn` where applicable to avoid possible duplicate key.
+
 ## v2.5.7
 - *Fixed:* Corrected issue introduced in version `2.5.5` where some strings were being incorrectly converted to a guid.
 
