@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v2.5.9
+- *Fixed:* All related package dependencies updated to latest.
+
 ## v2.5.8
 - *Fixed:* SQL Server `data` merge statement fixed to include the `TenantIdColumn` where applicable to avoid possible duplicate key.
 
