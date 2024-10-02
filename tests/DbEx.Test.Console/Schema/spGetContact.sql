@@ -1,4 +1,4 @@
-﻿CREATE PROCEDURE Test.spGetContact
+﻿CREATE OR ALTER PROCEDURE Test.spGetContact
   @ContactId AS INT /* this is a comment */
 AS
 BEGIN

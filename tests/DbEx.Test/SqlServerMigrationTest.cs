@@ -278,10 +278,25 @@ SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
             using var m = new SqlServerMigration(a);
 
-            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript(m, "CREATE PROC [Ref].[USStates]", "blah"));
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript(m, "CREATE PROC [Ref].[USStates] ( )", "blah"));
             Assert.That(ss.HasError, Is.False);
             Assert.That(ss.Schema, Is.EqualTo("Ref"));
             Assert.That(ss.Name, Is.EqualTo("USStates"));
+            Assert.That(ss.SupportsReplace, Is.False);
+        }
+
+        [Test]
+        public async Task SqlServerSchemaScript_SchemaAndObjectWithAlter()
+        {
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            using var m = new SqlServerMigration(a);
+
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript(m, "CREATE OR ALTER PROC [Ref].[USStates] ( )", "blah"));
+            Assert.That(ss.HasError, Is.False);
+            Assert.That(ss.Schema, Is.EqualTo("Ref"));
+            Assert.That(ss.Name, Is.EqualTo("USStates"));
+            Assert.That(ss.SupportsReplace, Is.True);
         }
 
         [Test]
@@ -291,7 +306,7 @@ SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
             using var m = new SqlServerMigration(a);
 
-            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript(m, "CREATE PROC [USStates]", "blah"));
+            var ss = SqlServerSchemaScript.Create(new Migration.DatabaseMigrationScript(m, "CREATE PROC [USStates] ( )", "blah"));
             Assert.That(ss.HasError, Is.False);
             Assert.That(ss.Schema, Is.EqualTo("dbo"));
             Assert.That(ss.Name, Is.EqualTo("USStates"));

@@ -126,7 +126,12 @@ namespace DbEx.Migration
         /// </summary>
         /// <remarks>The objects will be added in the order specified, and removed in the reverse order. This is to allow for potential dependencies between the object types.
         /// <para>Where none are specified then the <see cref="MigrationCommand.Schema"/> phase will be skipped.</para></remarks>
-        public string[] SchemaObjectTypes { get; set; }
+        public string[] SchemaObjectTypes { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the list of schema object types that where found must result in all schema objects being dropped and then recreated.
+        /// </summary>
+        public string[] MustDropSchemaObjectTypes { get; set; } = [];
 
         /// <summary>
         /// Gets the assemblies used for probing the requisite artefact resources (used for providing the underlying requisite database statements for the specified <see cref="Provider"/>).
@@ -513,16 +518,17 @@ namespace DbEx.Migration
             var scripts = new List<DatabaseMigrationScript>();
 
             // See if there are any files out there that should take precedence over embedded resources.
-            if (Args.OutputDirectory != null)
+            var dir = new DirectoryInfo(CodeGenConsole.GetBaseExeDirectory());
+            if (dir != null && dir.Exists)
             {
-                var di = new DirectoryInfo(Path.Combine(Args.OutputDirectory.FullName, SchemaNamespace));
+                var di = new DirectoryInfo(Path.Combine(dir.FullName, SchemaNamespace));
                 Logger.LogInformation("{Content}", $"  Probing for files (recursively): {Path.Combine(di.FullName, "*", "*.sql")}");
 
                 if (di.Exists)
                 {
                     foreach (var fi in di.GetFiles("*.sql", SearchOption.AllDirectories))
                     {
-                        var rn = $"{fi.FullName[((Args.OutputDirectory?.Parent?.FullName.Length + 1) ?? 0)..]}".Replace(' ', '_').Replace('-', '_').Replace('\\', '.').Replace('/', '.');
+                        var rn = $"{fi.FullName[((dir.Parent?.FullName.Length + 1) ?? 0)..]}".Replace(' ', '_').Replace('-', '_').Replace('\\', '.').Replace('/', '.');
                         scripts.Add(new DatabaseMigrationScript(this, fi, rn));
                     }
                 }
@@ -573,7 +579,7 @@ namespace DbEx.Migration
                 var script = ValidateAndReadySchemaScript(CreateSchemaScript(migrationScript));
                 if (script.HasError)
                 {
-                    Logger.LogError("{Message}", $"SQL script '{migrationScript.Name}' is not valid: {script.ErrorMessage}");
+                    Logger.LogError("{Content}", $"SQL script '{migrationScript.Name}' is not valid: {script.ErrorMessage}");
                     return false;
                 }
 
@@ -581,19 +587,27 @@ namespace DbEx.Migration
             }
 
             // Drop all existing (in reverse order).
-            int i = 0;
-            var ss = new List<DatabaseMigrationScript>();
             Logger.LogInformation("{Content}", string.Empty);
             Logger.LogInformation("{Content}", "  Drop known schema objects...");
-            foreach (var sor in list.Where(x => !x.SupportsReplace).OrderByDescending(x => x.SchemaOrder).ThenByDescending(x => x.TypeOrder).ThenByDescending(x => x.Schema).ThenByDescending(x => x.Name))
-            {
-                ss.Add(new DatabaseMigrationScript(this, sor.SqlDropStatement, sor.SqlDropStatement) { GroupOrder = i++, RunAlways = true });
-            }
 
-            if (i == 0)
-                Logger.LogInformation("{Content}", "    None.");
-            else if (!await ExecuteScriptsAsync(ss, true, cancellationToken).ConfigureAwait(false))
-                return false;
+            var fullDrop = Args.DropSchemaObjects;
+            if (!fullDrop && MustDropSchemaObjectTypes.Length > 0)
+                fullDrop = list.Where(x => MustDropSchemaObjectTypes.Contains(x.Type, StringComparer.OrdinalIgnoreCase)).Any();
+
+            int i = 0;
+            var ss = new List<DatabaseMigrationScript>();
+            if (fullDrop || list.Where(x => !x.SupportsReplace).Any())
+            {
+                foreach (var sor in list.Where(x => fullDrop || !x.SupportsReplace).OrderByDescending(x => x.SchemaOrder).ThenByDescending(x => x.TypeOrder).ThenByDescending(x => x.Schema).ThenByDescending(x => x.Name))
+                {
+                    ss.Add(new DatabaseMigrationScript(this, sor.SqlDropStatement, sor.SqlDropStatement) { GroupOrder = i++, RunAlways = true });
+                }
+
+                if (!await ExecuteScriptsAsync(ss, true, cancellationToken).ConfigureAwait(false))
+                    return false;
+            }
+            else
+                Logger.LogInformation("{Content}", "    ** Note: All schema objects implement replace functionality and therefore there is no need to drop existing. **");
 
             // Execute each migration script proper (i.e. create 'em as scripted).
             i = 0;

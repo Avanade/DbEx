@@ -50,6 +50,10 @@ namespace DbEx.MySql.Migration
             if (SchemaObjectTypes.Length == 0)
                 SchemaObjectTypes = ["FUNCTION", "VIEW", "PROCEDURE"];
 
+            // MySql will require all schema objects to be dropped as replacements are not currently supported.
+            if (MustDropSchemaObjectTypes.Length == 0)
+                MustDropSchemaObjectTypes = ["FUNCTION", "VIEW", "PROCEDURE"];
+
             // Add/set standard parameters.
             Args.AddParameter(MigrationArgsBase.DatabaseNameParamName, _databaseName, true);
             Args.AddParameter(MigrationArgsBase.JournalSchemaParamName, null, true);

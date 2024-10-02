@@ -18,9 +18,6 @@ namespace {{NamespaceOutbox}}.Data;
 public sealed class EventOutboxEnqueue(IDatabase database, ILogger<EventOutboxEnqueue> logger) : EventOutboxEnqueueBase(database, logger)
 {
     /// <inheritdoc/>
-    protected override string DbTvpTypeName => "[{{OutboxSchema}}].[udt{{OutboxTable}}List]";
-
-    /// <inheritdoc/>
     protected override string EnqueueStoredProcedure => "[{{OutboxSchema}}].[{{OutboxEnqueueStoredProcedure}}]";
 }{{#if Root.PreprocessorDirectives}}
 
