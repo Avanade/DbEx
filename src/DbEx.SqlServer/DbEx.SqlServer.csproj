@@ -34,6 +34,7 @@
   <ItemGroup>
     <PackageReference Include="CoreEx.Database.SqlServer" Version="3.25.6" />
     <PackageReference Include="dbup-sqlserver" Version="5.0.41" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>
 
   <ItemGroup>
