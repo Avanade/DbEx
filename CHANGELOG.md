@@ -2,10 +2,13 @@
 
 Represents the **NuGet** versions.
 
+## v2.6.1
+- *Fixed:* Added `MigrationCommand.CreateMigrateAndCodeGen`. This can be useful in development scenarios where the `CodeGen` phase results in a new migration script that needs to be applied before any corresponding `Schema` operations are performed; in this case, a secondary 
+
 ## v2.6.0
 - *Enhancement:* Added a `DbColumnSchema.SqlType2` that does _not_ include nullability.
 - *Enhancement:* The `SqlServerSchemaScript.SupportsReplace` is enabled where a `CREATE OR ALTER` is specified.
-- *Enhancement:* The SQL Server [Event Outbox](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx.Database.SqlServer/Outbox/EventOutboxEnqueueBase.cs) (_CoreEx_ `v3.26.0`) capabilities now support events as JSON versus existing TVP removing database dependency on a UDT (user-defined type).
+- *Enhancement:* The SQL Server [Event Outbox](https://github.com/Avanade/CoreEx/blob/main/src/CoreEx.Database.SqlServer/Outbox/EventOutboxEnqueueBase.cs) (_CoreEx_ `v3.25.6`) capabilities now support events as JSON versus existing TVP removing database dependency on a UDT (user-defined type).
 - *Fixed:* The logic for finding file-based SQL schema scripts has been corrected.
 
 ## v2.5.9

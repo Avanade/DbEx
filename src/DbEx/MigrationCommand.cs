@@ -60,6 +60,12 @@ namespace DbEx
         All = Create | Migrate | CodeGen | Schema | Data,
 
         /// <summary>
+        /// Performs <see cref="Create"/>, <see cref="Migrate"/> and <see cref="CodeGen"/>.
+        /// </summary>
+        /// <remarks>This can be useful in development scenarios where the <see cref="CodeGen"/> results in a new migration script that needs to be applied before any corresponding <see cref="Schema"/> operations are performed.</remarks>
+        CreateMigrateAndCodeGen = Create | Migrate | CodeGen,
+
+        /// <summary>
         /// Performs <see cref="Migrate"/> and <see cref="Schema"/>.
         /// </summary>
         Deploy = Migrate | Schema,
