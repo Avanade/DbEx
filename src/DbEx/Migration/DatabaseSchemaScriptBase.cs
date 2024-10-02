@@ -74,7 +74,7 @@ namespace DbEx.Migration
         public bool HasError => ErrorMessage != null;
 
         /// <summary>
-        /// Indicates whether the schema script supports a create or replace; i.e. does not require a drop and create as two separate operations.
+        /// Indicates whether the schema script supports a create or replace/alter; i.e. does not require a drop and create as two separate operations.
         /// </summary>
         public bool SupportsReplace { get; protected set; }
 

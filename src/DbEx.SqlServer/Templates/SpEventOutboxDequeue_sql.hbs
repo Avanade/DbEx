@@ -1,5 +1,5 @@
 ﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/NTangle }}
-CREATE PROCEDURE [{{OutboxSchema}}].[sp{{OutboxTable}}Dequeue]
+CREATE OR ALTER PROCEDURE [{{OutboxSchema}}].[sp{{OutboxTable}}Dequeue]
   @MaxDequeueSize INT = 10,  -- Maximum number of events to dequeue.
   @PartitionKey NVARCHAR(127) NULL = NULL,  -- Partition key; null indicates all.
   @Destination NVARCHAR(127) NULL = NULL  -- Destination (queue or topic); null indicates all.

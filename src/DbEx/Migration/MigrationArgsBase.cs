@@ -168,6 +168,11 @@ namespace DbEx.Migration
         public bool AcceptPrompts { get; set; }
 
         /// <summary>
+        /// Indicates whether to drop all the known schema objects before creating them.
+        /// </summary>
+        public bool DropSchemaObjects { get; set; }
+
+        /// <summary>
         /// Gets or sets the <see cref="MigrationCommand.Reset"/> table filtering predicate.
         /// </summary>
         /// <remarks>This is additional to any pre-configured database provider specified <see cref="DatabaseMigrationBase.DataResetFilterPredicate"/>.</remarks>

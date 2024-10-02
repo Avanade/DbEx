@@ -32,8 +32,14 @@ namespace DbEx.SqlServer.Migration
                 if (string.Compare(tokens[i], "create", StringComparison.OrdinalIgnoreCase) != 0)
                     continue;
 
-                if (i + 2 < tokens.Length)
+                if (i + 4 < tokens.Length)
                 {
+                    if (string.Compare(tokens[i + 1], "or", StringComparison.OrdinalIgnoreCase) == 0 && string.Compare(tokens[i + 2], "alter", StringComparison.OrdinalIgnoreCase) == 0)
+                    {
+                        i = +2;
+                        script.SupportsReplace = true;
+                    }
+
                     script.Type = tokens[i + 1];
                     script.FullyQualifiedName = tokens[i + 2];
 
@@ -67,7 +73,7 @@ namespace DbEx.SqlServer.Migration
         public override string SqlDropStatement => $"DROP {Type.ToUpperInvariant()} IF EXISTS [{Schema}].[{Name}]";
 
         /// <inheritdoc/>
-        public override string SqlCreateStatement => $"CREATE {Type.ToUpperInvariant()} [{Schema}].[{Name}]";
+        public override string SqlCreateStatement => $"CREATE {(SupportsReplace ? "OR ALTER " : "")}{Type.ToUpperInvariant()} [{Schema}].[{Name}]";
 
         private class SqlCommandTokenizer(string sqlText) : SqlCommandReader(sqlText)
         {
@@ -93,7 +99,7 @@ namespace DbEx.SqlServer.Migration
                                     sb.Clear();
                                     break;
                                 }
-                                else if (new char[] { '(', ')', ';', ',', '=' }.Contains(c))
+                                else if (delimiters.Contains(c))
                                 {
                                     if (sb.Length > 0)
                                         words.Add(sb.ToString());

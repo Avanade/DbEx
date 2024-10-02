@@ -54,6 +54,10 @@ namespace DbEx.SqlServer.Migration
             if (SchemaObjectTypes.Length == 0)
                 SchemaObjectTypes = ["TYPE", "FUNCTION", "VIEW", "PROCEDURE", "PROC"];
 
+            // A schema object type that is a user-defined type will require all schema objects to be dropped (as it may be referenced).
+            if (MustDropSchemaObjectTypes.Length == 0)
+                MustDropSchemaObjectTypes = ["TYPE"];
+
             // Always add the dbo schema _first_ unless already specified.
             if (!Args.SchemaOrder.Contains(SchemaConfig.DefaultSchema))
                 Args.SchemaOrder.Insert(0, SchemaConfig.DefaultSchema);

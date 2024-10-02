@@ -20,6 +20,7 @@ namespace DbEx.DbSchema
         private string? _dotNetName = dotNetNameOverride;
         private string? _dotNetCleanedName;
         private string? _sqlType;
+        private string? _sqlType2;
 
         /// <summary>
         /// Gets the owning (parent) <see cref="DbTable"/>.
@@ -177,9 +178,14 @@ namespace DbEx.DbSchema
         public string DotNetCleanedName { get => _dotNetCleanedName ?? DotNetName; set => _dotNetCleanedName = value; }
 
         /// <summary>
-        /// Gets the fully defined SQL type.
+        /// Gets the fully defined SQL type (includes nullability).
         /// </summary>
         public string SqlType => _sqlType ??= DbTable?.Migration.SchemaConfig.ToFormattedSqlType(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(SqlType)} property can be accessed.");
+
+        /// <summary>
+        /// Gets the fully defined SQL type (excludes nullability).
+        /// </summary>
+        public string SqlType2 => _sqlType2 ??= DbTable?.Migration.SchemaConfig.ToFormattedSqlType(this, false) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(SqlType)} property can be accessed.");
 
 #if NET7_0_OR_GREATER
         /// <summary>
