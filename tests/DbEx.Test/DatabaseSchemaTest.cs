@@ -12,6 +12,7 @@ using MySql.Data.MySqlClient;
 using NUnit.Framework;
 using System.Linq;
 using System.Threading.Tasks;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace DbEx.Test
 {

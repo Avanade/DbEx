@@ -1,4 +1,4 @@
-﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/Beef }}
+﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
 {{! PARAM:Param1=Schema }}
 {{! PARAM:Param2=Table }}
 {{! FILENAME:create-[lookup Parameters 'Param1']-[lookup Parameters 'Param2']-table }}

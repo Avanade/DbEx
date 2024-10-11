@@ -1,7 +1,10 @@
-﻿using CoreEx.Database;
+﻿using CoreEx;
+using CoreEx.Database;
+using CoreEx.Database.Postgres;
 using CoreEx.Database.SqlServer;
 using DbEx.Migration;
 using DbEx.Migration.Data;
+using DbEx.SqlServer.Console;
 using DbEx.SqlServer.Migration;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -10,6 +13,7 @@ using NUnit.Framework;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace DbEx.Test
 {
@@ -169,7 +173,7 @@ namespace DbEx.Test
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
             var l = UnitTest.GetLogger<SqlServerMigrationTest>();
-            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Console.Program));
+            var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Console.Program)).IncludeExtendedSchemaScripts();
             using var m = new SqlServerMigration(a);
 
             m.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
@@ -183,6 +187,47 @@ namespace DbEx.Test
             Assert.IsTrue(r);
 
             return (cs, l, m);
+        }
+
+        [Test]
+        public async Task C110_Throw_Exceptions()
+        {
+            var (cs, l, m) = await CreateConsoleDb().ConfigureAwait(false);
+            using var db = new SqlServerDatabase(() => new SqlConnection(cs));
+
+            Assert.ThrowsAsync<AuthorizationException>(() => db.StoredProcedure("spThrowAuthorizationException").Param("message", null).NonQueryAsync());
+            Assert.ThrowsAsync<BusinessException>(() => db.StoredProcedure("spThrowBusinessException").Param("message", null).NonQueryAsync());
+            Assert.ThrowsAsync<ConcurrencyException>(() => db.StoredProcedure("spThrowConcurrencyException").Param("message", null).NonQueryAsync());
+            Assert.ThrowsAsync<ConflictException>(() => db.StoredProcedure("spThrowConflictException").Param("message", null).NonQueryAsync());
+            Assert.ThrowsAsync<DuplicateException>(() => db.StoredProcedure("spThrowDuplicateException").Param("message", null).NonQueryAsync());
+            Assert.ThrowsAsync<NotFoundException>(() => db.StoredProcedure("spThrowNotFoundException").Param("message", null).NonQueryAsync());
+            Assert.ThrowsAsync<ValidationException>(() => db.StoredProcedure("spThrowValidationException").Param("message", null).NonQueryAsync());
+            var vex = Assert.ThrowsAsync<ValidationException>(() => db.StoredProcedure("spThrowValidationException").Param("message", "On no!").NonQueryAsync());
+            Assert.AreEqual("On no!", vex.Message);
+        }
+
+        [Test]
+        public async Task C120_Set_Session_Context()
+        {
+            var (cs, l, m) = await CreateConsoleDb().ConfigureAwait(false);
+            using var db = new SqlServerDatabase(() => new SqlConnection(cs));
+
+            var now = DateTime.UtcNow;
+            var ts = new DateTime(2024, 09, 30, 23, 45, 08, 123, DateTimeKind.Utc);
+
+            await db.SetSqlSessionContextAsync("bob@gmail.com", ts, "banana", "bob2");
+
+            Assert.That(await db.SqlStatement("select dbo.fnGetTimestamp(null)").ScalarAsync<DateTime>(), Is.EqualTo(ts));
+            Assert.That(await db.SqlStatement("select dbo.fnGetUsername(null)").ScalarAsync<string>(), Is.EqualTo("bob@gmail.com"));
+            Assert.That(await db.SqlStatement("select dbo.fnGetTenantId(null)").ScalarAsync<string>(), Is.EqualTo("banana"));
+            Assert.That(await db.SqlStatement("select dbo.fnGetUserId(null)").ScalarAsync<string>(), Is.EqualTo("bob2"));
+
+            // Make sure the session context doesn't leak between connections.
+            using var db2 = new SqlServerDatabase(() => new SqlConnection(cs));
+            Assert.That(await db2.SqlStatement("select dbo.fnGetTimestamp(null)").ScalarAsync<DateTime>(), Is.GreaterThanOrEqualTo(now));
+            Assert.That(await db2.SqlStatement("select dbo.fnGetUsername(null)").ScalarAsync<string>(), Is.Not.Null.And.Not.EqualTo("bob@gmail.com"));
+            Assert.That(await db2.SqlStatement("select dbo.fnGetTenantId(null)").ScalarAsync<string>(), Is.Null);
+            Assert.That(await db2.SqlStatement("select dbo.fnGetUserId(null)").ScalarAsync<string>(), Is.Null);
         }
 
         [Test]

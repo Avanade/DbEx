@@ -31,6 +31,7 @@ namespace DbEx.Console
         private static readonly string[] memberNames = ["args"];
         private const string EntryAssemblyOnlyOptionName = "entry-assembly-only";
         private const string AcceptPromptsOptionName = "accept-prompts";
+        private const string DropSchemaObjectsName = "drop-schema-objects";
         private CommandArgument<MigrationCommand>? _commandArg;
         private CommandArgument? _additionalArgs;
         private CommandOption? _helpOption;
@@ -126,6 +127,7 @@ namespace DbEx.Console
             ConsoleOptions.Add(nameof(MigrationArgsBase.Assemblies), app.Option("-a|--assembly", "Assembly containing embedded resources (multiple can be specified in probing order).", CommandOptionType.MultipleValue));
             ConsoleOptions.Add(nameof(MigrationArgsBase.Parameters), app.Option("-p|--param", "Parameter expressed as a 'Name=Value' pair (multiple can be specified).", CommandOptionType.MultipleValue));
             ConsoleOptions.Add(EntryAssemblyOnlyOptionName, app.Option("-eo|--entry-assembly-only", "Use the entry assembly only (ignore all other assemblies).", CommandOptionType.NoValue));
+            ConsoleOptions.Add(DropSchemaObjectsName, app.Option("-dso|--drop-schema-objects", "Drop all known schema objects before applying; bypasses automatic skip where all scripts are replacements.", CommandOptionType.NoValue));
             ConsoleOptions.Add(AcceptPromptsOptionName, app.Option("--accept-prompts", "Accept prompts; command should _not_ stop and wait for user confirmation (DROP or RESET commands).", CommandOptionType.NoValue));
             _additionalArgs = app.Argument("args", "Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each a SQL statement to invoke).", multipleValues: true);
 
@@ -211,6 +213,11 @@ namespace DbEx.Console
                             return new ValidationResult("Data reset was not confirmed; no execution occurred.");
                     }
                 }
+
+                // Handle drop schema objects.
+                var dso = GetCommandOption(DropSchemaObjectsName);
+                if (dso is not null && dso.HasValue())
+                    Args.DropSchemaObjects = true;
 
                 return res;
             });

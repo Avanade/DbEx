@@ -31,6 +31,18 @@
     <None Remove="Resources\JournalCreate.sql" />
     <None Remove="Resources\JournalExists.sql" />
     <None Remove="Resources\JournalPrevious.sql" />
+    <None Remove="Resources\ExtendedSchema\Functions\fn_get_tenant_id.sql" />
+    <None Remove="Resources\ExtendedSchema\Functions\fn_get_timestamp.sql" />
+    <None Remove="Resources\ExtendedSchema\Functions\fn_get_username.sql" />
+    <None Remove="Resources\ExtendedSchema\Functions\fn_get_user_id.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_set_session_context.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_authorization_exception.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_business_exception.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_concurrency_exception.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_conflict_exception.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_duplicate_exception.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_not_found_exception.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_validation_exception.sql" />
     <None Remove="Resources\ScriptAlter_sql.hbs" />
     <None Remove="Resources\ScriptCreate_sql.hbs" />
     <None Remove="Resources\ScriptDefault_sql.hbs" />
@@ -42,7 +54,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database.Postgres" Version="3.25.6" />
+    <PackageReference Include="CoreEx.Database.Postgres" Version="3.27.0" />
     <PackageReference Include="dbup-postgresql" Version="5.0.40" />
   </ItemGroup>
 

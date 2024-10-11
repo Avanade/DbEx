@@ -20,8 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database" Version="3.25.6" />
-    <PackageReference Include="OnRamp" Version="2.2.2" />
+    <PackageReference Include="CoreEx.Database" Version="3.27.0" />
+    <PackageReference Include="OnRamp" Version="2.2.3" />
   </ItemGroup>
 
   <Import Project="..\..\Common.targets" />

@@ -467,6 +467,21 @@ namespace DbEx.Migration
         {
             Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.sql"))}");
 
+            // Function to add the script in a consistent manner.
+            void AddScript(List<DatabaseMigrationScript> scripts, Assembly assembly, string name)
+            {
+                // A name should be unique; always use the first version.
+                if (scripts.Any(x => x.Name == name))
+                    return;
+
+                // Determine run order and add script to list.
+                var order = name.EndsWith(".pre.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 1 :
+                            name.EndsWith(".post.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 3 : 2;
+
+                scripts.Add(new DatabaseMigrationScript(this, assembly, name) { GroupOrder = order, RunAlways = order != 2 });
+            };
+
+            // Get all the resources and their included scripts from the assemblies.
             var scripts = new List<DatabaseMigrationScript>();
             foreach (var ass in Args.ProbeAssemblies)
             {
@@ -476,12 +491,14 @@ namespace DbEx.Migration
                     if (name.EndsWith($".{OnDatabaseCreateName}.sql", StringComparison.InvariantCultureIgnoreCase))
                         continue;
 
-                    // Determine run order and add script to list.
-                    var order = name.EndsWith(".pre.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 1 :
-                                name.EndsWith(".post.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 3 : 2;
-
-                    scripts.Add(new DatabaseMigrationScript(this, ass.Assembly, name) { GroupOrder = order, RunAlways = order != 2 });
+                    AddScript(scripts, ass.Assembly, name);
                 }
+            }
+
+            // Include any explicitly named scripts.
+            foreach (var s in Args.Scripts.Where(x => x.Command == MigrationCommand.Migrate))
+            {
+                AddScript(scripts, s.Assembly, s.Name);
             }
 
             if (scripts.Count == 0)
@@ -552,6 +569,15 @@ namespace DbEx.Migration
                 }
             }
 
+            // Include any explicitly named scripts.
+            foreach (var ss in Args.Scripts.Where(x => x.Command == MigrationCommand.Schema))
+            {
+                if (scripts.Any(x => x.Name == ss.Name))
+                    continue;
+
+                scripts.Add(new DatabaseMigrationScript(this, ss.Assembly, ss.Name));
+            }
+
             // Make sure there is work to be done.
             if (scripts.Count == 0)
             {
@@ -613,7 +639,7 @@ namespace DbEx.Migration
             i = 0;
             ss.Clear();
             Logger.LogInformation("{Content}", string.Empty);
-            Logger.LogInformation("{Content}", "  Create known schema objects...");
+            Logger.LogInformation("{Content}", "  Create (or replace) known schema objects...");
             foreach (var sor in list.OrderBy(x => x.SchemaOrder).ThenBy(x => x.TypeOrder).ThenBy(x => x.Schema).ThenBy(x => x.Name))
             {
                 var migrationScript = sor.MigrationScript;

@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
+global using ExplicitMigrationScript = (DbEx.MigrationCommand Command, System.Reflection.Assembly Assembly, string Name);
+
 using CoreEx;
 using CoreEx.Entities;
 using CoreEx.RefData;
@@ -19,6 +21,7 @@ namespace DbEx.Migration
     public abstract class MigrationArgsBase : OnRamp.CodeGeneratorDbArgsBase
     {
         private readonly List<MigrationAssemblyArgs> _assemblies = [new MigrationAssemblyArgs(typeof(MigrationArgsBase).Assembly)];
+        private readonly HashSet<ExplicitMigrationScript> _scripts = [];
 
         /// <summary>
         /// Gets the <see cref="DatabaseMigrationBase.DatabaseName"/> <see cref="Parameters"/> name.
@@ -54,6 +57,11 @@ namespace DbEx.Migration
         /// Gets the <see cref="Assemblies"/> reversed in order for probe-based sequencing.
         /// </summary>
         public IEnumerable<MigrationAssemblyArgs> ProbeAssemblies => Assemblies.Reverse();
+
+        /// <summary>
+        /// Gets the list of explicitly named resource-based scripts to be included (executed) as per the specified <see cref="MigrationCommand"/> (phase).
+        /// </summary>
+        public IEnumerable<ExplicitMigrationScript> Scripts => _scripts;
 
         /// <summary>
         /// Gets the runtime parameters.
@@ -168,7 +176,7 @@ namespace DbEx.Migration
         public bool AcceptPrompts { get; set; }
 
         /// <summary>
-        /// Indicates whether to drop all the known schema objects before creating them.
+        /// Indicates whether to drop all the known schema objects before creating/replacing them.
         /// </summary>
         public bool DropSchemaObjects { get; set; }
 
@@ -283,6 +291,8 @@ namespace DbEx.Migration
             MigrationCommand = args.MigrationCommand;
             _assemblies.Clear();
             _assemblies.AddRange(args.Assemblies);
+            _scripts.Clear();
+            args.Scripts.ForEach(x => _scripts.Add(x));
             Parameters.Clear();
             args.Parameters.ForEach(x => Parameters.Add(x.Key, x.Value));
             Logger = args.Logger;
@@ -328,6 +338,23 @@ namespace DbEx.Migration
             }
 
             return dict;
+        }
+
+        /// <summary>
+        /// Adds a <see cref="ExplicitMigrationScript"/> being an explicitly named resource-based script to be included (executed) as per the specified <see cref="MigrationCommand"/> (phase).
+        /// </summary>
+        /// <param name="command">The <see cref="MigrationCommand"/> (phase) where the script should be executed.</param>
+        /// <param name="assembly">The <see cref="Assembly"/> where the script resource resides.</param>
+        /// <param name="name">The corresponding resource name within the <see cref="Assembly"/>.</param>
+        /// <remarks>The <paramref name="command"/> must be a single value; currently only <see cref="MigrationCommand.Migrate"/> and <see cref="MigrationCommand.Schema"/> are supported. This represents the phase in which the script will be 
+        /// included for execution.</remarks>
+        public void AddScript(MigrationCommand command, Assembly assembly, string name)
+        {
+            if (command != MigrationCommand.Migrate && command != MigrationCommand.Schema)
+                throw new ArgumentException($"The migration script command '{command}' is not supported; currently only '{MigrationCommand.Migrate}' and '{MigrationCommand.Schema}' are supported.", nameof(command));
+
+            _ = assembly.ThrowIfNull().GetManifestResourceInfo(name.ThrowIfNullOrEmpty()) ?? throw new ArgumentException($"The migration script resource '{name}' does not exist within the assembly '{assembly.FullName}'.", nameof(name));
+            _scripts.Add((command, assembly, name));
         }
     }
 }
