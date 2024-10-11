@@ -23,6 +23,18 @@
 
   <ItemGroup>
     <None Remove="Resources\DatabaseExists.sql" />
+    <None Remove="Resources\ExtendedSchema\Functions\fnGetTenantId.sql" />
+    <None Remove="Resources\ExtendedSchema\Functions\fnGetTimestamp.sql" />
+    <None Remove="Resources\ExtendedSchema\Functions\fnGetUserId.sql" />
+    <None Remove="Resources\ExtendedSchema\Functions\fnGetUsername.sql" />
+    <None Remove="Resources\ExtendedSchema\spSetSessionContext.sql" />
+    <None Remove="Resources\ExtendedSchema\spThrowAuthorizationException.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\spThrowBusinessException.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\spThrowConcurrencyException.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\spThrowConflictException.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\spThrowDuplicateException.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\spThrowNotFoundException.sql" />
+    <None Remove="Resources\ExtendedSchema\Stored Procedures\spThrowValidationException.sql" />
     <None Remove="Resources\SelectTableAlwaysGeneratedColumns.sql" />
     <None Remove="Resources\SelectTableAndColumns.sql" />
     <None Remove="Resources\SelectTableForeignKeys.sql" />
@@ -32,7 +44,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database.SqlServer" Version="3.25.6" />
+    <PackageReference Include="CoreEx.Database.SqlServer" Version="3.27.0" />
     <PackageReference Include="dbup-sqlserver" Version="5.0.41" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>

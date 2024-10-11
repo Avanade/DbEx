@@ -80,5 +80,29 @@ namespace DbEx.Migration
             SchemaOrder.AddRange(schemas);
             return (TSelf)this;
         }
+
+        /// <summary>
+        /// Adds a <see cref="ExplicitMigrationScript"/> being an explicitly named resource-based script to be included (executed) as per the specified <see cref="MigrationCommand"/> (phase).
+        /// </summary>
+        /// <param name="command">The <see cref="MigrationCommand"/> (phase) where the script should be executed.</param>
+        /// <param name="assembly">The <see cref="Assembly"/> where the script resource resides.</param>
+        /// <param name="name">The corresponding resource name within the <see cref="Assembly"/>.</param>
+        /// <remarks>The <paramref name="command"/> must be a single value; currently only <see cref="MigrationCommand.Migrate"/> and <see cref="MigrationCommand.Schema"/> are supported. This represents the phase in which the script will be 
+        /// included for execution.</remarks>
+        public new TSelf AddScript(MigrationCommand command, Assembly assembly, string name)
+        {
+            base.AddScript(command, assembly, name);
+            return (TSelf)this;
+        }
+
+        /// <summary>
+        /// Adds a <see cref="ExplicitMigrationScript"/> being an explicitly named resource-based script to be included (executed) as per the specified <see cref="MigrationCommand"/> (phase).
+        /// </summary>
+        /// <typeparam name="TAssembly">The <see cref="Type"/> to use to infer the underlying <see cref="Type.Assembly"/> where the script resource resides.</typeparam>
+        /// <param name="command">The <see cref="MigrationCommand"/> (phase) where the script should be executed.</param>
+        /// <param name="name">The corresponding resource name within the <see cref="Assembly"/>.</param>
+        /// <remarks>The <paramref name="command"/> must be a single value; currently only <see cref="MigrationCommand.Migrate"/> and <see cref="MigrationCommand.Schema"/> are supported. This represents the phase in which the script will be 
+        /// included for execution.</remarks>
+        public TSelf AddScript<TAssembly>(MigrationCommand command, string name) => AddScript(command, typeof(TAssembly).Assembly, name);
     }
 }

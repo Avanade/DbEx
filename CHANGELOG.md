@@ -2,8 +2,14 @@
 
 Represents the **NuGet** versions.
 
+## v2.7.0
+- *Enhancement:* Require a means to add an explicitly named resource-based script outside of the automatic convention-based discovery; see new `MigrationArgs.AddScript`.
+- *Enhancement:* Moving the [_Beef_](https://github.com/Avanade/beef)-based standardized SQL Server scripts (functions and stored procedures) to _DbEx_ to enable greater usage. New `MigrationArgs.IncludeExtendedSchemaScripts` extension method will add (leverages new `MigrationArgs.AddScript`).
+- *Enhancement:* Added PostgreSQL equivalent standardized SQL Server scripts (functions and stored procedures).
+- *Enhancement:* Added command-line option `-dso|--drop-schema-objects` to set `MigrationArgs.DropSchemaObjects` directly from the console.
+
 ## v2.6.1
-- *Fixed:* Added `MigrationCommand.CreateMigrateAndCodeGen`. This can be useful in development scenarios where the `CodeGen` phase results in a new migration script that needs to be applied before any corresponding `Schema` operations are performed; in this case, a secondary 
+- *Fixed:* Added `MigrationCommand.CreateMigrateAndCodeGen`. This can be useful in development scenarios where the `CodeGen` phase results in a new migration script that needs to be applied before any corresponding `Schema` operations are performed; in this case, a secondary migration will be required.
 
 ## v2.6.0
 - *Enhancement:* Added a `DbColumnSchema.SqlType2` that does _not_ include nullability.

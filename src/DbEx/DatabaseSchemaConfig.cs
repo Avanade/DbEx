@@ -122,6 +122,10 @@ namespace DbEx
             Migration.Args.IsDeletedColumnName ??= IsDeletedColumnName;
             Migration.Args.RefDataCodeColumnName ??= RefDataCodeColumnName;
             Migration.Args.RefDataTextColumnName ??= RefDataTextColumnName;
+
+            // Where the database has a default schema then this should be ordered first where not already set.
+            if (SupportsSchema && !string.IsNullOrEmpty(DefaultSchema) && !Migration.Args.SchemaOrder.Contains(DefaultSchema))
+                Migration.Args.SchemaOrder.Insert(0, DefaultSchema);
         }
 
         /// <summary>

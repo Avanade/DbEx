@@ -3,6 +3,7 @@ using DbEx.MySql.Migration;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
 using System.Threading.Tasks;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace DbEx.Test
 {
