@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v2.7.1
+- *Fixed:* Re-publish of packages.
+
 ## v2.7.0
 - *Enhancement:* Require a means to add an explicitly named resource-based script outside of the automatic convention-based discovery; see new `MigrationArgs.AddScript`.
 - *Enhancement:* Moving the [_Beef_](https://github.com/Avanade/beef)-based standardized SQL Server scripts (functions and stored procedures) to _DbEx_ to enable greater usage. New `MigrationArgs.IncludeExtendedSchemaScripts` extension method will add (leverages new `MigrationArgs.AddScript`).
