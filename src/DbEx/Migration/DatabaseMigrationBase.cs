@@ -212,7 +212,7 @@ namespace DbEx.Migration
             }
 
             // Database schema scripts.
-            if (!await CommandExecuteAsync(MigrationCommand.Schema, "DATABASE SCHEMA: Drops and creates the database objects...", DatabaseSchemaAsync, null, cancellationToken).ConfigureAwait(false))
+            if (!await CommandExecuteAsync(MigrationCommand.Schema, "DATABASE SCHEMA: Drops and creates/replaces the database objects...", DatabaseSchemaAsync, null, cancellationToken).ConfigureAwait(false))
                 return false;
 
             // Database reset.

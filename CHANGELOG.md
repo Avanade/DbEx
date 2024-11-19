@@ -2,6 +2,11 @@
 
 Represents the **NuGet** versions.
 
+## v2.8.0
+- *Enhancement:* Added `net9.0` support.
+- *Enhancement:* Deprecated `net7.0` support; no longer supported by [Microsoft](https://dotnet.microsoft.com/en-us/platform/support/policy).
+- *Enhancement:* Updated dependencies to latest; including transitive where applicable.
+
 ## v2.7.1
 - *Fixed:* Re-publish of packages.
 

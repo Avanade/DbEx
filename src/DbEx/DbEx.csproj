@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net7.0;net8.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net6.0;net8.0;net9.0;netstandard2.1</TargetFrameworks>
     <RootNamespace>DbEx</RootNamespace>
     <Product>DbEx</Product>
     <Title>DbEx Database Migration Tool.</Title>
@@ -20,8 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database" Version="3.27.0" />
-    <PackageReference Include="OnRamp" Version="2.2.3" />
+    <PackageReference Include="CoreEx.Database" Version="3.29.0" />
+    <PackageReference Include="OnRamp" Version="2.2.4" />
   </ItemGroup>
 
   <Import Project="..\..\Common.targets" />

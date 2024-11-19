@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net7.0;net8.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net6.0;net8.0;net9.0</TargetFrameworks>
     <RootNamespace>DbEx.Postgres</RootNamespace>
     <Product>DbEx</Product>
     <Title>DbEx PostgreSQL Migration Tool.</Title>
@@ -54,7 +54,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database.Postgres" Version="3.27.0" />
+    <PackageReference Include="CoreEx.Database.Postgres" Version="3.29.0" />
     <PackageReference Include="dbup-postgresql" Version="5.0.40" />
   </ItemGroup>
 
