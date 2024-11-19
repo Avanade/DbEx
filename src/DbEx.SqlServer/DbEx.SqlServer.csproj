@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net7.0;net8.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net6.0;net8.0;net9.0;netstandard2.1</TargetFrameworks>
     <RootNamespace>DbEx.SqlServer</RootNamespace>
     <Product>DbEx</Product>
     <Title>DbEx SQL Server Migration Tool.</Title>
@@ -44,8 +44,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database.SqlServer" Version="3.27.0" />
-    <PackageReference Include="dbup-sqlserver" Version="5.0.41" />
+    <PackageReference Include="CoreEx.Database.SqlServer" Version="3.29.0" />
+    <PackageReference Include="dbup-sqlserver" Version="6.0.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>
 
