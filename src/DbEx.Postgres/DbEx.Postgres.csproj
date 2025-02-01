@@ -54,7 +54,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database.Postgres" Version="3.29.0" />
+    <PackageReference Include="CoreEx.Database.Postgres" Version="3.31.0" />
     <PackageReference Include="dbup-postgresql" Version="5.0.40" />
   </ItemGroup>
 
