@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx;
 using DbEx.DbSchema;
 using HandlebarsDotNet;
 using System;

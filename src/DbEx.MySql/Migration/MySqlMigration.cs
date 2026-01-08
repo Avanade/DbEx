@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx.Database;
-using CoreEx.Database.MySql;
 using DbEx.DbSchema;
 using DbEx.Migration;
 using DbUp.Support;

@@ -14,9 +14,9 @@ CREATE TABLE [{{lookup Parameters 'Param1'}}].[{{lookup Parameters 'Param2'}}] (
   [SortOrder] INT NULL,
   [RowVersion] TIMESTAMP NOT NULL,
   [CreatedBy] NVARCHAR(250) NULL,
-  [CreatedDate] DATETIME2 NULL,
+  [CreatedOn] DATETIMEOFFSET NULL,
   [UpdatedBy] NVARCHAR(250) NULL,
-  [UpdatedDate] DATETIME2 NULL
+  [UpdatedOn] DATETIMEOFFSET NULL
 );
 
 COMMIT TRANSACTION

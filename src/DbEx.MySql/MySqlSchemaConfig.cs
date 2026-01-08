@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx;
-using CoreEx.Database;
 using DbEx.DbSchema;
 using DbEx.Migration;
 using DbEx.MySql.Migration;
@@ -34,16 +32,16 @@ namespace DbEx.MySql
         public override string JsonColumnNameSuffix => "_json";
 
         /// <inheritdoc/>
-        /// <remarks>Value is '<c>created_date</c>'.</remarks>
-        public override string CreatedDateColumnName => "created_date";
+        /// <remarks>Value is '<c>created_on</c>'.</remarks>
+        public override string CreatedOnColumnName => "created_on";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>created_by</c>'.</remarks>
         public override string CreatedByColumnName => "created_by";
 
         /// <inheritdoc/>
-        /// <remarks>Value is '<c>updated_date</c>'.</remarks>
-        public override string UpdatedDateColumnName => "updated_date";
+        /// <remarks>Value is '<c>updated_on</c>'.</remarks>
+        public override string UpdatedOnColumnName => "updated_on";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>updated_by</c>'.</remarks>
@@ -84,13 +82,13 @@ namespace DbEx.MySql
         /// <inheritdoc/>
         public override DbColumnSchema CreateColumnFromInformationSchema(DbTableSchema table, DatabaseRecord dr)
         {
-            var dt = dr.GetValue<string>("DATA_TYPE");
-            if (string.Compare(dt, "TINYINT", StringComparison.OrdinalIgnoreCase) == 0 && dr.GetValue<string>("COLUMN_TYPE").Equals("TINYINT(1)", StringComparison.OrdinalIgnoreCase))
+            var dt = dr.GetValue<string>("DATA_TYPE")!;
+            if (string.Compare(dt, "TINYINT", StringComparison.OrdinalIgnoreCase) == 0 && dr.GetValue<string>("COLUMN_TYPE")!.Equals("TINYINT(1)", StringComparison.OrdinalIgnoreCase))
                 dt = "BOOL";
 
-            var c = new DbColumnSchema(table, dr.GetValue<string>("COLUMN_NAME"), dt)
+            var c = new DbColumnSchema(table, dr.GetValue<string>("COLUMN_NAME")!, dt)
             {
-                IsNullable = dr.GetValue<string>("IS_NULLABLE").Equals("YES", StringComparison.OrdinalIgnoreCase),
+                IsNullable = dr.GetValue<string>("IS_NULLABLE")!.Equals("YES", StringComparison.OrdinalIgnoreCase),
                 Length = (ulong?)dr.GetValue<long?>("CHARACTER_MAXIMUM_LENGTH"),
                 Precision = dr.GetValue<ulong?>("NUMERIC_PRECISION") ?? dr.GetValue<uint?>("DATETIME_PRECISION"),
                 Scale = dr.GetValue<ulong?>("NUMERIC_SCALE"),
@@ -99,7 +97,7 @@ namespace DbEx.MySql
                 IsDotNetTimeOnly = RemovePrecisionFromDataType(dt).Equals("TIME", StringComparison.OrdinalIgnoreCase)
             };
 
-            c.IsJsonContent = c.Type.ToUpper() == "JSON" || (c.DotNetName == "string" && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal));
+            c.IsJsonContent = c.Type.Equals("JSON", StringComparison.OrdinalIgnoreCase) || (c.DotNetName == "string" && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal));
             if (c.IsJsonContent && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal))
                 c.DotNetCleanedName = DbTableSchema.CreateDotNetName(c.Name[..^JsonColumnNameSuffix.Length]);
 
@@ -179,10 +177,9 @@ namespace DbEx.MySql
             {
                 "CHAR" or "VARCHAR" or "TINYTEXT" or "TEXT" or "MEDIUMTEXT" or "LONGTEXT" or "SET" or "ENUM" or "NCHAR" or "NVARCHAR" or "JSON" => "string",
                 "DECIMAL" => "decimal",
-                "DATE" or "DATETIME" or "TIMESTAMP" => "DateTime",
-                "DATETIMEOFFSET" => "DateTimeOffset",
-                "Date" => "DateTime", // Date only
-                "TIME" => "TimeSpan", // Time only
+                "DATETIME" or "TIMESTAMP" => "DateTime",
+                "DATE" => "DateOnly",
+                "TIME" => "TimeOnly",
                 "BINARY" or "VARBINARY" or "TINYBLOB" or "BLOB" or "MEDIUMBLOB" or "LONGBLOB" => "byte[]",
                 "BIT" or "BOOL" or "BOOLEAN" => "bool",
                 "DOUBLE" => "double",
@@ -224,7 +221,7 @@ namespace DbEx.MySql
             bool b => b ? "true" : "false",
             Guid => $"'{value}'",
             DateTime dt => $"'{dt.ToString(Migration.Args.DataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
-            DateTimeOffset dto => $"'{dto.ToString(Migration.Args.DataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
+            DateTimeOffset dto => $"'{dto.ToString(Migration.Args.DataParserArgs.DateTimeOffsetFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
 #if NET7_0_OR_GREATER
             DateOnly d => $"'{d.ToString(Migration.Args.DataParserArgs.DateOnlyFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
             TimeOnly t => $"'{t.ToString(Migration.Args.DataParserArgs.TimeOnlyFormat, System.Globalization.CultureInfo.InvariantCulture)}'",

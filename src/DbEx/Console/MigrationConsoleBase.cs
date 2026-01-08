@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx;
 using DbEx.Migration;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
@@ -26,7 +25,8 @@ namespace DbEx.Console
     /// <see cref="OnBeforeExecute(CommandLineApplication)"/>, <see cref="OnValidation(ValidationContext)"/> and <see cref="OnMigrateAsync"/>. Changes to the console output can be achieved by overriding
     /// <see cref="OnWriteMasthead"/>, <see cref="OnWriteHeader"/>, <see cref="OnWriteArgs(DatabaseMigrationBase)"/> and <see cref="OnWriteFooter(double)"/>.
     /// <para>The underlying command line parsing is provided by <see href="https://natemcmaster.github.io/CommandLineUtils/"/>.</para></remarks>
-    public abstract class MigrationConsoleBase
+    /// <param name="args">The default <see cref="MigrationArgsBase"/> that will be overridden/updated by the command-line argument values.</param>
+    public abstract class MigrationConsoleBase(MigrationArgsBase args)
     {
         private static readonly string[] memberNames = ["args"];
         private const string EntryAssemblyOnlyOptionName = "entry-assembly-only";
@@ -37,15 +37,9 @@ namespace DbEx.Console
         private CommandOption? _helpOption;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MigrationConsoleBase"/> class.
-        /// </summary>
-        /// <param name="args">The default <see cref="MigrationArgsBase"/> that will be overridden/updated by the command-line argument values.</param>
-        protected MigrationConsoleBase(MigrationArgsBase args) => Args = args.ThrowIfNull(nameof(args));
-
-        /// <summary>
         /// Gets the <see cref="MigrationArgsBase"/>.
         /// </summary>
-        public MigrationArgsBase Args { get; }
+        public MigrationArgsBase Args { get; } = args.ThrowIfNull(nameof(args));
 
         /// <summary>
         /// Gets the application/command name.

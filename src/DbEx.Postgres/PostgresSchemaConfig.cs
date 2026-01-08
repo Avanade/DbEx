@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx;
-using CoreEx.Database;
 using DbEx.DbSchema;
 using DbEx.Migration;
 using DbEx.Postgres.Migration;
@@ -33,16 +31,16 @@ namespace DbEx.Postgres
         public override string JsonColumnNameSuffix => "_json";
 
         /// <inheritdoc/>
-        /// <remarks>Value is '<c>created_date</c>'.</remarks>
-        public override string CreatedDateColumnName => "created_date";
+        /// <remarks>Value is '<c>created_on</c>'.</remarks>
+        public override string CreatedOnColumnName => "created_on";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>created_by</c>'.</remarks>
         public override string CreatedByColumnName => "created_by";
 
         /// <inheritdoc/>
-        /// <remarks>Value is '<c>updated_date</c>'.</remarks>
-        public override string UpdatedDateColumnName => "updated_date";
+        /// <remarks>Value is '<c>updated_on</c>'.</remarks>
+        public override string UpdatedOnColumnName => "updated_on";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>updated_by</c>'.</remarks>
@@ -84,20 +82,20 @@ namespace DbEx.Postgres
         /// <inheritdoc/>
         public override DbColumnSchema CreateColumnFromInformationSchema(DbTableSchema table, DatabaseRecord dr)
         {
-            var c = new DbColumnSchema(table, dr.GetValue<string>("COLUMN_NAME"), dr.GetValue<string>("DATA_TYPE"))
+            var c = new DbColumnSchema(table, dr.GetValue<string>("COLUMN_NAME")!, dr.GetValue<string>("DATA_TYPE")!)
             {
-                IsNullable = dr.GetValue<string>("IS_NULLABLE").Equals("YES", StringComparison.OrdinalIgnoreCase),
+                IsNullable = dr.GetValue<string>("IS_NULLABLE")!.Equals("YES", StringComparison.OrdinalIgnoreCase),
                 Length = (ulong?)dr.GetValue<long?>("CHARACTER_MAXIMUM_LENGTH"),
                 Precision = (ulong?)(dr.GetValue<int?>("NUMERIC_PRECISION") ?? dr.GetValue<int?>("DATETIME_PRECISION")),
                 Scale = (ulong?)dr.GetValue<int?>("NUMERIC_SCALE"),
-                DefaultValue = dr.GetValue<string>("COLUMN_DEFAULT") is not null && dr.GetValue<string>("COLUMN_DEFAULT").StartsWith("nextval(", StringComparison.OrdinalIgnoreCase) ? null : dr.GetValue<string>("COLUMN_DEFAULT"),
+                DefaultValue = dr.GetValue<string>("COLUMN_DEFAULT") is not null && dr.GetValue<string>("COLUMN_DEFAULT")!.StartsWith("nextval(", StringComparison.OrdinalIgnoreCase) ? null : dr.GetValue<string>("COLUMN_DEFAULT"),
                 IsComputed = dr.GetValue<string?>("IS_GENERATED") != "NEVER",
                 IsIdentity = dr.GetValue<string>("COLUMN_DEFAULT")?.StartsWith("nextval(", StringComparison.OrdinalIgnoreCase) ?? false,
-                IsDotNetDateOnly = RemovePrecisionFromDataType(dr.GetValue<string>("DATA_TYPE")).Equals("DATE", StringComparison.OrdinalIgnoreCase),
-                IsDotNetTimeOnly = RemovePrecisionFromDataType(dr.GetValue<string>("DATA_TYPE")).Equals("TIME WITHOUT TIME ZONE", StringComparison.OrdinalIgnoreCase)
+                IsDotNetDateOnly = RemovePrecisionFromDataType(dr.GetValue<string>("DATA_TYPE")!).Equals("DATE", StringComparison.OrdinalIgnoreCase),
+                IsDotNetTimeOnly = RemovePrecisionFromDataType(dr.GetValue<string>("DATA_TYPE")!).Equals("TIME WITHOUT TIME ZONE", StringComparison.OrdinalIgnoreCase)
             };
 
-            c.IsJsonContent = c.Type.ToUpper() == "JSON" || (c.DotNetName == "string" && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal));
+            c.IsJsonContent = c.Type.Equals("JSON", StringComparison.OrdinalIgnoreCase) || (c.DotNetName == "string" && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal));
             if (c.IsJsonContent && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal))
                 c.DotNetCleanedName = DbTableSchema.CreateDotNetName(c.Name[..^JsonColumnNameSuffix.Length]);
 
@@ -127,7 +125,7 @@ namespace DbEx.Postgres
 
             // Configure all the single column foreign keys.
             using var sr3 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableForeignKeys.sql", [typeof(PostgresSchemaConfig).Assembly]);
-            var fks = await database.SqlStatement(await sr3.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr => new
+            var fks = await database.SqlStatement(await sr3.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr => new
             {
                 ConstraintName = dr.GetValue<string>("constraint_name"),
                 TableSchema = dr.GetValue<string>("table_schema"),
@@ -173,11 +171,11 @@ namespace DbEx.Postgres
             {
                 "TEXT" or "CHARACTER VARYING" or "CHARACTER" or "CITEXT" or "JSON" or "JSONB" or "XML" or "NAME" => "string",
                 "NUMERIC" or "MONEY" => "decimal",
-                "TIMESTAMP WITHOUT TIME ZONE" or "TIMESTAMP WITH TIME ZONE" => "DateTime",
-                "TIME WITH TIME ZONE" => "DateTimeOffset",
+                "TIMESTAMP WITHOUT TIME ZONE" => "DateTime",
+                "TIME WITH TIME ZONE" or "TIMESTAMP WITH TIME ZONE" => "DateTimeOffset",
                 "INTERVAL" => "TimeSpan",
-                "TIME WITHOUT TIME ZONE" => "TimeSpan", // TimeOnly
-                "DATE" => "DateTime", // DateOnly
+                "TIME WITHOUT TIME ZONE" => "TimeOnly",
+                "DATE" => "DateOnly",
                 "BYTEA" => "byte[]",
                 "BOOLEAN" or "BIT(1)" => "bool",
                 "DOUBLE PRECISION" => "double",
@@ -218,7 +216,7 @@ namespace DbEx.Postgres
             bool b => b ? "true" : "false",
             Guid => $"uuid('{value}')",
             DateTime dt => $"'{dt.ToString(Migration.Args.DataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
-            DateTimeOffset dto => $"'{dto.ToString(Migration.Args.DataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
+            DateTimeOffset dto => $"'{dto.ToString(Migration.Args.DataParserArgs.DateTimeOffsetFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
 #if NET7_0_OR_GREATER
             DateOnly d => $"'{d.ToString(Migration.Args.DataParserArgs.DateOnlyFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
             TimeOnly t => $"'{t.ToString(Migration.Args.DataParserArgs.TimeOnlyFormat, System.Globalization.CultureInfo.InvariantCulture)}'",

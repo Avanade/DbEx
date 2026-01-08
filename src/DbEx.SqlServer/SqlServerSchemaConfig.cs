@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx;
-using CoreEx.Database;
 using DbEx.DbSchema;
 using DbEx.Migration;
 using DbEx.SqlServer.Migration;
@@ -33,16 +31,16 @@ namespace DbEx.SqlServer
         public override string JsonColumnNameSuffix => "Json";
 
         /// <inheritdoc/>
-        /// <remarks>Value is '<c>CreatedDate</c>'.</remarks>
-        public override string CreatedDateColumnName => "CreatedDate";
+        /// <remarks>Value is '<c>CreatedOn</c>'.</remarks>
+        public override string CreatedOnColumnName => "CreatedOn";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>CreatedBy</c>'.</remarks>
         public override string CreatedByColumnName => "CreatedBy";
 
         /// <inheritdoc/>
-        /// <remarks>Value is '<c>UpdatedDate</c>'.</remarks>
-        public override string UpdatedDateColumnName => "UpdatedDate";
+        /// <remarks>Value is '<c>UpdatedOn</c>'.</remarks>
+        public override string UpdatedOnColumnName => "UpdatedOn";
 
         /// <inheritdoc/>
         /// <remarks>Value is '<c>UpdatedBy</c>'.</remarks>
@@ -83,15 +81,15 @@ namespace DbEx.SqlServer
         /// <inheritdoc/>
         public override DbColumnSchema CreateColumnFromInformationSchema(DbTableSchema table, DatabaseRecord dr)
         {
-            var c = new DbColumnSchema(table, dr.GetValue<string>("COLUMN_NAME"), dr.GetValue<string>("DATA_TYPE"))
+            var c = new DbColumnSchema(table, dr.GetValue<string>("COLUMN_NAME")!, dr.GetValue<string>("DATA_TYPE")!)
             {
-                IsNullable = dr.GetValue<string>("IS_NULLABLE").Equals("YES", StringComparison.OrdinalIgnoreCase),
+                IsNullable = dr.GetValue<string>("IS_NULLABLE")!.Equals("YES", StringComparison.OrdinalIgnoreCase),
                 Length = (ulong?)(dr.GetValue<int?>("CHARACTER_MAXIMUM_LENGTH") <= 0 ? null : dr.GetValue<int?>("CHARACTER_MAXIMUM_LENGTH")),
                 Precision = (ulong?)(dr.GetValue<byte?>("NUMERIC_PRECISION") ?? dr.GetValue<short?>("DATETIME_PRECISION")),
                 Scale = (ulong?)dr.GetValue<int?>("NUMERIC_SCALE"),
                 DefaultValue = dr.GetValue<string>("COLUMN_DEFAULT"),
-                IsDotNetDateOnly = RemovePrecisionFromDataType(dr.GetValue<string>("DATA_TYPE")).Equals("DATE", StringComparison.OrdinalIgnoreCase),
-                IsDotNetTimeOnly = RemovePrecisionFromDataType(dr.GetValue<string>("DATA_TYPE")).Equals("TIME", StringComparison.OrdinalIgnoreCase),
+                IsDotNetDateOnly = RemovePrecisionFromDataType(dr.GetValue<string>("DATA_TYPE")!).Equals("DATE", StringComparison.OrdinalIgnoreCase),
+                IsDotNetTimeOnly = RemovePrecisionFromDataType(dr.GetValue<string>("DATA_TYPE")!).Equals("TIME", StringComparison.OrdinalIgnoreCase),
             };
 
             if (c.IsJsonContent = c.DotNetName == "string" && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal))
@@ -214,8 +212,8 @@ namespace DbEx.SqlServer
                 "DECIMAL" or "MONEY" or "NUMERIC" or "SMALLMONEY" => "decimal",
                 "DATETIME" or "DATETIME2" or "SMALLDATETIME" => "DateTime",
                 "DATETIMEOFFSET" => "DateTimeOffset",
-                "DATE" => "DateTime", // Date only
-                "TIME" => "TimeSpan", // Time only
+                "DATE" => "DateOnly",
+                "TIME" => "TimeOnly",
                 "ROWVERSION" or "TIMESTAMP" or "BINARY" or "VARBINARY" or "IMAGE" => "byte[]",
                 "BIT" => "bool",
                 "FLOAT" => "double",
@@ -258,7 +256,7 @@ namespace DbEx.SqlServer
             bool b => b ? "1" : "0",
             Guid => $"CONVERT(UNIQUEIDENTIFIER, '{value}')",
             DateTime dt => $"'{dt.ToString(Migration.Args.DataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
-            DateTimeOffset dto => $"'{dto.ToString(Migration.Args.DataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
+            DateTimeOffset dto => $"'{dto.ToString(Migration.Args.DataParserArgs.DateTimeOffsetFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
 #if NET7_0_OR_GREATER
             DateOnly d => $"'{d.ToString(Migration.Args.DataParserArgs.DateOnlyFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
             TimeOnly t => $"'{t.ToString(Migration.Args.DataParserArgs.TimeOnlyFormat, System.Globalization.CultureInfo.InvariantCulture)}'",

@@ -2,9 +2,6 @@
 
 global using ExplicitMigrationScript = (DbEx.MigrationCommand Command, System.Reflection.Assembly Assembly, string Name);
 
-using CoreEx;
-using CoreEx.Entities;
-using CoreEx.RefData;
 using DbEx.Migration.Data;
 using Microsoft.Extensions.Logging;
 using System;
@@ -112,55 +109,55 @@ namespace DbEx.Migration
         public string? JsonColumnNameSuffix { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the <see cref="IChangeLogAudit.CreatedDate"/> column (where it exists).
+        /// Gets or sets the name of the <c>CreatedOn</c> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.CreatedDateColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
-        public string? CreatedDateColumnName { get; set; }
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.CreatedOnColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        public string? CreatedOnColumnName { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the <see cref="IChangeLogAudit.CreatedBy"/> column (where it exists).
+        /// Gets or sets the name of the <c>CreatedBy</c> column (where it exists).
         /// </summary>
         /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.CreatedByColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
         public string? CreatedByColumnName { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the <see cref="IChangeLogAudit.UpdatedDate"/> column (where it exists).
+        /// Gets or sets the name of the <c>UpdatedOn</c> column (where it exists).
         /// </summary>
-        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.UpdatedDateColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
-        public string? UpdatedDateColumnName { get; set; }
+        /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.UpdatedOnColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
+        public string? UpdatedOnColumnName { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the <see cref="IChangeLogAudit.UpdatedBy"/> column (where it exists).
+        /// Gets or sets the name of the <c>UpdatedBy</c> column (where it exists).
         /// </summary>
         /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.UpdatedByColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
         public string? UpdatedByColumnName { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the <see cref="ITenantId.TenantId"/> column (where it exists).
+        /// Gets or sets the name of the <c>TenantId</c> column (where it exists).
         /// </summary>
         /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.TenantIdColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
         public string? TenantIdColumnName { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the row-version (<see cref="IETag.ETag"/> equivalent) column (where it exists).
+        /// Gets or sets the name of the row-version (ETag equivalent) column (where it exists).
         /// </summary>
         /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.RowVersionColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
         public string? RowVersionColumnName { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the <see cref="ILogicallyDeleted.IsDeleted"/> column (where it exists).
+        /// Gets or sets the name of the logically <c>IsDeleted</c> column (where it exists).
         /// </summary>
         /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.IsDeletedColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
         public string? IsDeletedColumnName { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the <see cref="IReferenceData.Code"/> column.
+        /// Gets or sets the name of the reference-data code column.
         /// </summary>
         /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.RefDataCodeColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
         public string? RefDataCodeColumnName { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the <see cref="IReferenceData.Text"/> column.
+        /// Gets or sets the name of the reference-data text column.
         /// </summary>
         /// <remarks>Defaults to <see cref="DatabaseSchemaConfig.RefDataTextColumnName"/> where not specified (i.e. <c>null</c>).</remarks>
         public string? RefDataTextColumnName { get; set; }
@@ -302,9 +299,9 @@ namespace DbEx.Migration
             DataParserArgs.CopyFrom(args.DataParserArgs);
             IdColumnNameSuffix = args.IdColumnNameSuffix;
             CodeColumnNameSuffix = args.CodeColumnNameSuffix;
-            CreatedDateColumnName = args.CreatedDateColumnName;
+            CreatedOnColumnName = args.CreatedOnColumnName;
             CreatedByColumnName = args.CreatedByColumnName;
-            UpdatedDateColumnName = args.UpdatedDateColumnName;
+            UpdatedOnColumnName = args.UpdatedOnColumnName;
             UpdatedByColumnName = args.UpdatedByColumnName;
             RowVersionColumnName = args.RowVersionColumnName;
             TenantIdColumnName = args.TenantIdColumnName;

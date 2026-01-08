@@ -1,12 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net8.0;net9.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0;netstandard2.1</TargetFrameworks>
     <RootNamespace>DbEx.SqlServer</RootNamespace>
     <Product>DbEx</Product>
     <Title>DbEx SQL Server Migration Tool.</Title>
     <Description>DbEX Database Migration tool for SQL Server.</Description>
     <PackageTags>dbex database dbup db-up sqlserver sql</PackageTags>
+    <NoWarn>$(NoWarn);CA1873</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -22,30 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Resources\DatabaseExists.sql" />
-    <None Remove="Resources\ExtendedSchema\Functions\fnGetTenantId.sql" />
-    <None Remove="Resources\ExtendedSchema\Functions\fnGetTimestamp.sql" />
-    <None Remove="Resources\ExtendedSchema\Functions\fnGetUserId.sql" />
-    <None Remove="Resources\ExtendedSchema\Functions\fnGetUsername.sql" />
-    <None Remove="Resources\ExtendedSchema\spSetSessionContext.sql" />
-    <None Remove="Resources\ExtendedSchema\spThrowAuthorizationException.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\spThrowBusinessException.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\spThrowConcurrencyException.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\spThrowConflictException.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\spThrowDuplicateException.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\spThrowNotFoundException.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\spThrowValidationException.sql" />
-    <None Remove="Resources\SelectTableAlwaysGeneratedColumns.sql" />
-    <None Remove="Resources\SelectTableAndColumns.sql" />
-    <None Remove="Resources\SelectTableForeignKeys.sql" />
-    <None Remove="Resources\SelectTableGeneratedColumns.sql" />
-    <None Remove="Resources\SelectTableIdentityColumns.sql" />
-    <None Remove="Resources\SelectTablePrimaryKey.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="CoreEx.Database.SqlServer" Version="3.31.0" />
-    <PackageReference Include="dbup-sqlserver" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.3" />
+    <PackageReference Include="dbup-sqlserver" Version="6.0.16" />
   </ItemGroup>
 
   <ItemGroup>

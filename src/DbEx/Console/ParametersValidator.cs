@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx;
 using DbEx.Migration;
 using McMaster.Extensions.CommandLineUtils;
 using McMaster.Extensions.CommandLineUtils.Validation;
@@ -31,7 +30,7 @@ namespace DbEx.Console
 
             foreach (var p in option.Values.Where(x => !string.IsNullOrEmpty(x)))
             {
-                var pos = p!.IndexOf("=", StringComparison.Ordinal);
+                var pos = p!.IndexOf('=', StringComparison.Ordinal);
                 if (pos <= 0)
                     AddParameter(p, null);
                 else

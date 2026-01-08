@@ -2,6 +2,21 @@
 
 Represents the **NuGet** versions.
 
+## v3.0.0
+All internal dependecies to [`CoreEx`](https://github.com/avanade/coreex) have been removed. This is intended to further generalize the capabilities of `DbEx`; but more importantly, break the circular dependency reference between the two repositories. 
+- *Enhancement:* Added `net10.0` support and updated all related package dependencies to latest. Removed `net6.0` support.
+- *Enhancement:* List of key **breaking changes** as follows:
+  - `DatabaseSchemaConfig.CreatedDate` renamed to `DatabaseSchemaConfig.CreatedOn`.
+  - `DatabaseSchemaConfig.UpdatedDate` renamed to `DatabaseSchemaConfig.UpdatedOn`.
+  - `MigrationArgsBase.CreatedDateColumnName` renamed to `MigrationArgsBase.CreatedOnColumnName`.
+  - `MigrationArgsBase.UpdatedDateColumnName` renamed to `MigrationArgsBase.UpdatedOnColumnName`.
+  - `DateTimeOffset` is the preferred .NET type for date/time auditing/timestamping.
+- *Enhancement:* Absorbing the [`Beef`](https://github.com/avanade/beef) database code-generation capabilities into `DbEx` to enable greater usage and consistency. 
+  - The code-generation templates have been updated to reflect the latest patterns and practices (where applicable).
+  - The code-generation configuration file has been renamed to `dbex.yaml` to avoid conflicts; schema remains largely the same.
+
+The enhancements have been made in a manner to maximize backwards compatibility with previous versions of `DbEx` where possible; however, some breaking changes were unfortunately unavoidable (and made to improve overall).
+
 ## v2.8.1
 - *Fixed:* All related package dependencies updated to latest.
 

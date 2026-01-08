@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx;
-using CoreEx.Database;
 using DbEx.Migration.Data;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -342,7 +340,7 @@ namespace DbEx.Migration
             {
                 if (!script.RunAlways)
                 {
-                    previous ??= new(await Journal.GetExecutedScriptsAsync(default).ConfigureAwait(false));
+                    previous ??= [.. await Journal.GetExecutedScriptsAsync(default).ConfigureAwait(false)];
                     if (previous.Contains(script.Name))
                         continue;
                 }
@@ -386,7 +384,7 @@ namespace DbEx.Migration
         /// <remarks>The <c>@DatabaseName</c> literal within the resulting (embedded resource) command is replaced by the <see cref="DatabaseName"/> using a <see cref="string.Replace(string, string)"/> (i.e. not database parameterized as not all databases support).</remarks>
         protected virtual async Task<bool> DatabaseExistsAsync(CancellationToken cancellationToken = default)
         {
-            using var sr = GetRequiredResourcesStreamReader($"DatabaseExists.sql", ArtefactResourceAssemblies.ToArray());
+            using var sr = GetRequiredResourcesStreamReader($"DatabaseExists.sql", [.. ArtefactResourceAssemblies]);
             var name = await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).ScalarAsync<string?>(cancellationToken);
             return name != null;
         }
@@ -409,7 +407,7 @@ namespace DbEx.Migration
                 return true;
             }
 
-            using var sr = GetRequiredResourcesStreamReader($"DatabaseDrop.sql", ArtefactResourceAssemblies.ToArray());
+            using var sr = GetRequiredResourcesStreamReader($"DatabaseDrop.sql", [.. ArtefactResourceAssemblies]);
             await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).NonQueryAsync(cancellationToken);
 
             Logger.LogInformation("{Content}", $"    Database '{DatabaseName}' dropped.");
@@ -434,7 +432,7 @@ namespace DbEx.Migration
                 return true;
             }
 
-            using var sr = GetRequiredResourcesStreamReader($"DatabaseCreate.sql", ArtefactResourceAssemblies.ToArray());
+            using var sr = GetRequiredResourcesStreamReader($"DatabaseCreate.sql", [.. ArtefactResourceAssemblies]);
             await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).NonQueryAsync(cancellationToken);
 
             Logger.LogInformation("{Content}", $"    Database '{DatabaseName}' did not exist and was created.");
@@ -708,7 +706,7 @@ namespace DbEx.Migration
                 return true;
             }
 
-            using var sr = GetRequiredResourcesStreamReader($"DatabaseReset_sql", ArtefactResourceAssemblies.ToArray(), StreamLocator.HandlebarsExtensions);
+            using var sr = GetRequiredResourcesStreamReader($"DatabaseReset_sql", [.. ArtefactResourceAssemblies], StreamLocator.HandlebarsExtensions);
             var cg = new HandlebarsCodeGenerator(sr);
             var sql = cg.Generate(delete);
 
@@ -830,7 +828,7 @@ namespace DbEx.Migration
             // Cache the compiled code-gen template.
             if (_dataCodeGen == null)
             {
-                using var sr = GetRequiredResourcesStreamReader($"DatabaseData_sql", ArtefactResourceAssemblies.ToArray(), StreamLocator.HandlebarsExtensions);
+                using var sr = GetRequiredResourcesStreamReader($"DatabaseData_sql", [.. ArtefactResourceAssemblies], StreamLocator.HandlebarsExtensions);
 #if NET7_0_OR_GREATER
                 _dataCodeGen = new HandlebarsCodeGenerator(await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false));
 #else
@@ -909,7 +907,7 @@ namespace DbEx.Migration
             var rn = $"Script{name}_sql";
 
             // Find the resource.
-            using var sr = StreamLocator.GetResourcesStreamReader(rn, ArtefactResourceAssemblies.ToArray(), StreamLocator.HandlebarsExtensions).StreamReader;
+            using var sr = StreamLocator.GetResourcesStreamReader(rn, [.. ArtefactResourceAssemblies], StreamLocator.HandlebarsExtensions).StreamReader;
 
             if (sr == null)
             {
@@ -1013,7 +1011,7 @@ namespace DbEx.Migration
         /// <param name="sql">The SQL command.</param>
         /// <returns>The resulting SQL command with runtime replacements make.</returns>
         public string ReplaceSqlRuntimeParameters(string sql) => Args.Parameters.Count == 0 
-            ? sql : Regex.Replace(sql, "(" + string.Join("|", Args.Parameters.Select(x => $"{{{{{x.Key}}}}}").ToArray()) + ")",
+            ? sql : Regex.Replace(sql, "(" + string.Join("|", [.. Args.Parameters.Select(x => $"{{{{{x.Key}}}}}")]) + ")",
                 m => Args.Parameters.TryGetValue(m.Value[2..^2], out var pv) ? pv?.ToString()! : throw new InvalidOperationException($"Runtime Parameter '{m.Value}' found within SQL command; a corresponding Parameter value has not been configured."));
 
         /// <inheritdoc/>

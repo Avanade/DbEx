@@ -1,13 +1,11 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx;
-using CoreEx.Database;
-using CoreEx.Entities;
-using CoreEx.RefData;
 using DbEx.DbSchema;
 using DbEx.Migration;
+using DbEx.Migration.Data;
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -59,47 +57,47 @@ namespace DbEx
         public abstract string JsonColumnNameSuffix { get; }
 
         /// <summary>
-        /// Gets the name of the <see cref="IChangeLogAudit.CreatedDate"/> column (where it exists).
+        /// Gets the name of the <c>CreatedOn</c> audit column (where it exists).
         /// </summary>
-        public abstract string CreatedDateColumnName { get; }
+        public abstract string CreatedOnColumnName { get; }
 
         /// <summary>
-        /// Gets the name of the <see cref="IChangeLogAudit.CreatedBy"/> column (where it exists).
+        /// Gets the name of the <c>CreatedBy</c> audit column (where it exists).
         /// </summary>
         public abstract string CreatedByColumnName { get; }
 
         /// <summary>
-        /// Gets the name of the <see cref="IChangeLogAudit.UpdatedDate"/> column (where it exists).
+        /// Gets the name of the <c>UpdatedOn</c> audit column (where it exists).
         /// </summary>
-        public abstract string UpdatedDateColumnName { get; }
+        public abstract string UpdatedOnColumnName { get; }
 
         /// <summary>
-        /// Gets the name of the <see cref="IChangeLogAudit.UpdatedBy"/> column (where it exists).
+        /// Gets the name of the <c>UpdatedBy</c> audit column (where it exists).
         /// </summary>
         public abstract string UpdatedByColumnName { get; }
 
         /// <summary>
-        /// Gets the name of the <see cref="ITenantId.TenantId"/> column (where it exists).
+        /// Gets the name of the <c>TenantId</c> column (where it exists).
         /// </summary>
         public abstract string TenantIdColumnName { get; }
 
         /// <summary>
-        /// Gets the name of the row-version (<see cref="IETag.ETag"/> equivalent) column (where it exists).
+        /// Gets the name of the row-version (ETag) column (where it exists).
         /// </summary>
         public abstract string RowVersionColumnName { get; }
 
         /// <summary>
-        /// Gets the default <see cref="ILogicallyDeleted.IsDeleted"/> column.
+        /// Gets the name of the logically <c>IsDeleted</c> column (where it exists).
         /// </summary>
         public abstract string IsDeletedColumnName { get; }
 
         /// <summary>
-        /// Gets the default <see cref="IReferenceData.Code"/> column.
+        /// Gets the name of the reference-data code column (where it exists);
         /// </summary>
         public abstract string RefDataCodeColumnName { get; }
 
         /// <summary>
-        /// Gets the default <see cref="IReferenceData.Text"/> column.
+        /// Gets the name of the reference-data text column (where it exists);
         /// </summary>
         public abstract string RefDataTextColumnName { get; }
 
@@ -114,9 +112,9 @@ namespace DbEx
             Migration.Args.CodeColumnNameSuffix ??= CodeColumnNameSuffix;
             Migration.Args.JsonColumnNameSuffix ??= JsonColumnNameSuffix;
             Migration.Args.CreatedByColumnName ??= CreatedByColumnName;
-            Migration.Args.CreatedDateColumnName ??= CreatedDateColumnName;
+            Migration.Args.CreatedOnColumnName ??= CreatedOnColumnName;
             Migration.Args.UpdatedByColumnName ??= UpdatedByColumnName;
-            Migration.Args.UpdatedDateColumnName ??= UpdatedDateColumnName;
+            Migration.Args.UpdatedOnColumnName ??= UpdatedOnColumnName;
             Migration.Args.TenantIdColumnName ??= TenantIdColumnName;
             Migration.Args.RowVersionColumnName ??= RowVersionColumnName;
             Migration.Args.IsDeletedColumnName ??= IsDeletedColumnName;
@@ -165,14 +163,39 @@ namespace DbEx
         /// <param name="schema">The <see cref="DbColumnSchema"/>.</param>
         /// <param name="includeNullability">Indicates whether to include the nullability within the formatted value.</param>
         /// <returns>The long-form formatted SQL type.</returns>
+        /// <remarks>This resulting text is intended for usage within SQL statements.</remarks>
         public abstract string ToFormattedSqlType(DbColumnSchema schema, bool includeNullability = true);
 
         /// <summary>
-        /// Gets the formatted SQL statement representation of the <paramref name="value"/>.
+        /// Gets the formatted text representation of the <paramref name="value"/> used for parsing (see <see cref="Migration.Data.DataParser"/>).
         /// </summary>
-        /// <param name="dbColumnSchema">The <see cref="DbColumnSchema"/>.</param>
+        /// <param name="args">The <see cref="DataParserArgs"/>.</param>
         /// <param name="value">The value.</param>
         /// <returns>The formatted SQL statement representation.</returns>
-        public abstract string ToFormattedSqlStatementValue(DbColumnSchema dbColumnSchema, object? value);
+        /// <remarks>This resulting text is intended for usage within JSON/YAML data formatting/parsing.</remarks>
+        public virtual string ToFormattedDataParserValue(DataParserArgs args, object? value)
+        {
+            args.ThrowIfNull(nameof(args));
+
+            return value switch
+            {
+                DateTime dt => dt.ToString(args.DateTimeFormat),
+                DateTimeOffset dto => dto.ToString(args.DateTimeOffsetFormat),
+#if NET7_0_OR_GREATER
+                DateOnly d => d.ToString(args.DateOnlyFormat),
+                TimeOnly t => t.ToString(args.TimeOnlyFormat),
+#endif
+                _ => value?.ToString() ?? string.Empty,
+            };
+        }
+
+        /// <summary>
+        /// Gets the formatted SQL statement representation (where required) of the <paramref name="value"/>.
+        /// </summary>
+        /// <param name="schema">The <see cref="DbColumnSchema"/>.</param>
+        /// <param name="value">The value.</param>
+        /// <returns>The formatted SQL statement representation.</returns>
+        /// <remarks>This resulting text is intended for usage when generating/outputting SQL statements.</remarks>
+        public abstract string ToFormattedSqlStatementValue(DbColumnSchema schema, object? value);
     }
 }

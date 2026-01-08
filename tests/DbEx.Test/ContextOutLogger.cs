@@ -8,7 +8,7 @@ namespace DbEx.Test
     /// <summary>
     /// Represents the <see cref="TestContextLogger"/> provider.
     /// </summary>
-    [ProviderAlias("")]
+    [Microsoft.Extensions.Logging.ProviderAlias("")]
     [DebuggerStepThrough]
     public sealed class TestContextLoggerProvider : ILoggerProvider
     {
@@ -38,24 +38,15 @@ namespace DbEx.Test
     /// <summary>
     /// Represents a logger where all messages are written directly to <see cref="TestContext.Out"/>.
     /// </summary>
+    /// <param name="name">The name of the logger.</param>
+    /// <param name="includeLevel">Indicates whether to include the log level in the message.</param>
+    /// <param name="includeName">Indicates whether to include the logger name in the message.</param>
     [DebuggerStepThrough]
-    public sealed class TestContextLogger : ILogger
+    public sealed class TestContextLogger(string name, bool includeLevel, bool includeName) : ILogger
     {
-        private readonly string _name;
-        private readonly bool _includeName;
-        private readonly bool _includeLevel;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TestContextLogger"/> class.
-        /// </summary>
-        /// <param name="name">The name of the logger.</param>
-        /// <param name="includeName">Indicates whether to include the logger name in the message.</param>
-        public TestContextLogger(string name, bool includeLevel, bool includeName)
-        {
-            _name = name ?? throw new ArgumentNullException(nameof(name));
-            _includeLevel = includeLevel;
-            _includeName = includeName;
-        }
+        private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
+        private readonly bool _includeName = includeName;
+        private readonly bool _includeLevel = includeLevel;
 
         /// <inheritdoc />
         public IDisposable BeginScope<TState>(TState state) => NullScope.Default;
@@ -69,8 +60,7 @@ namespace DbEx.Test
             if (!IsEnabled(logLevel))
                 return;
 
-            if (formatter == null)
-                throw new ArgumentNullException(nameof(formatter));
+            ArgumentNullException.ThrowIfNull(formatter);
 
             var message = formatter(state, exception);
             if (_includeLevel)

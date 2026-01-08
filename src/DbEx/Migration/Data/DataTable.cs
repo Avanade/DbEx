@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx;
 using DbEx.DbSchema;
 using System;
 using System.Collections.Generic;
@@ -118,27 +117,27 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Gets the insert columns.
         /// </summary>
-        public List<DbColumnSchema> InsertColumns => Columns.Where(x => !x.IsUpdatedAudit).ToList();
+        public List<DbColumnSchema> InsertColumns => [.. Columns.Where(x => !x.IsUpdatedAudit)];
 
         /// <summary>
         /// Gets the merge match columns.
         /// </summary>
-        public List<DbColumnSchema> MergeMatchColumns => Columns.Where(x => !x.IsCreatedAudit && !x.IsUpdatedAudit && !(UseIdentifierGenerator && x.IsPrimaryKey)).ToList();
+        public List<DbColumnSchema> MergeMatchColumns => [.. Columns.Where(x => !x.IsCreatedAudit && !x.IsUpdatedAudit && !(UseIdentifierGenerator && x.IsPrimaryKey))];
 
         /// <summary>
         /// Gets the merge insert columns.
         /// </summary>
-        public List<DbColumnSchema> MergeInsertColumns => Columns.Where(x => !x.IsUpdatedAudit).ToList();
+        public List<DbColumnSchema> MergeInsertColumns => [.. Columns.Where(x => !x.IsUpdatedAudit)];
 
         /// <summary>
         /// Gets the merge update columns.
         /// </summary>
-        public List<DbColumnSchema> MergeUpdateColumns => Columns.Where(x => !x.IsCreatedAudit).ToList();
+        public List<DbColumnSchema> MergeUpdateColumns => [.. Columns.Where(x => !x.IsCreatedAudit)];
 
         /// <summary>
         /// Gets the primary key columns.
         /// </summary>
-        public List<DbColumnSchema> PrimaryKeyColumns => Columns.Where(x => x.IsPrimaryKey).ToList();
+        public List<DbColumnSchema> PrimaryKeyColumns => [.. Columns.Where(x => x.IsPrimaryKey)];
 
         /// <summary>
         /// Gets the rows.
@@ -206,9 +205,9 @@ namespace DbEx.Migration.Data
                 var row = Rows[i];
 
                 // Apply the configured auditing defaults.
-                await AddColumnWhereNotSpecifiedAsync(row, DbTable.Migration.Args.CreatedDateColumnName!, () => Task.FromResult<object?>(ParserArgs.DateTimeNow)).ConfigureAwait(false);
+                await AddColumnWhereNotSpecifiedAsync(row, DbTable.Migration.Args.CreatedOnColumnName!, () => Task.FromResult<object?>(ParserArgs.DateTimeNow)).ConfigureAwait(false);
                 await AddColumnWhereNotSpecifiedAsync(row, DbTable.Migration.Args.CreatedByColumnName!, () => Task.FromResult<object?>(ParserArgs.UserName)).ConfigureAwait(false);
-                await AddColumnWhereNotSpecifiedAsync(row, DbTable.Migration.Args.UpdatedDateColumnName!, () => Task.FromResult<object?>(ParserArgs.DateTimeNow)).ConfigureAwait(false);
+                await AddColumnWhereNotSpecifiedAsync(row, DbTable.Migration.Args.UpdatedOnColumnName!, () => Task.FromResult<object?>(ParserArgs.DateTimeNow)).ConfigureAwait(false);
                 await AddColumnWhereNotSpecifiedAsync(row, DbTable.Migration.Args.UpdatedByColumnName!, () => Task.FromResult<object?>(ParserArgs.UserName)).ConfigureAwait(false);
 
                 // Apply an reference data defaults.

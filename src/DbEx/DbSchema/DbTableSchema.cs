@@ -1,8 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx;
-using CoreEx.RefData;
-using CoreEx.Text;
 using DbEx.Migration;
 using OnRamp.Utility;
 using System;
@@ -36,7 +33,7 @@ namespace DbEx.DbSchema
         {
             name.ThrowIfNullOrEmpty(nameof(name));
             var s = StringConverter.ToSentenceCase(name)!;
-            return new string(s.Replace(" ", " ").Replace("_", " ").Replace("-", " ").Split(' ').Where(x => !string.IsNullOrEmpty(x)).Select(x => x[..1].ToLower(System.Globalization.CultureInfo.InvariantCulture).ToCharArray()[0]).ToArray());
+            return new string([.. s.Replace(" ", " ").Replace("_", " ").Replace("-", " ").Split(' ').Where(x => !string.IsNullOrEmpty(x)).Select(x => x[..1].ToLower(System.Globalization.CultureInfo.InvariantCulture).ToCharArray()[0])]);
         }
 
         /// <summary>
@@ -61,7 +58,7 @@ namespace DbEx.DbSchema
         public static string CreatePluralName(string name)
         {
             name.ThrowIfNullOrEmpty(nameof(name));
-            var words = SentenceCase.SplitIntoWords(name).Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var words = StringConverter.ToSentenceCase(name)!.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(x => !string.IsNullOrEmpty(x)).ToList();
             words[^1] = StringConverter.ToPlural(words[^1]);
             return string.Join(string.Empty, words);
         }
@@ -74,7 +71,7 @@ namespace DbEx.DbSchema
         public static string CreateSingularName(string name)
         {
             name.ThrowIfNullOrEmpty(nameof(name));
-            var words = SentenceCase.SplitIntoWords(name).Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var words = StringConverter.ToSentenceCase(name)!.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(x => !string.IsNullOrEmpty(x)).ToList();
             words[^1] = StringConverter.ToSingle(words[^1]);
             return string.Join(string.Empty, words);
         }
@@ -194,7 +191,7 @@ namespace DbEx.DbSchema
         public bool HasAuditColumns => Columns?.Any(x => x.IsCreatedAudit || x.IsUpdatedAudit) ?? false;
 
         /// <summary>
-        /// Gets or sets the <see cref="IReferenceData.Code"/> <see cref="DbColumnSchema"/>.
+        /// Gets or sets the reference-data code <see cref="DbColumnSchema"/>.
         /// </summary>
         public DbColumnSchema? RefDataCodeColumn { get; set; }
 

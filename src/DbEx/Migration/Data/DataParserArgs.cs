@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx;
 using DbEx.DbSchema;
 using System;
 using System.Collections.Generic;
@@ -33,10 +32,10 @@ namespace DbEx.Migration.Data
         public string UserName { get; set; } = Environment.UserDomainName == null ? Environment.UserName : $"{Environment.UserDomainName}\\{Environment.UserName}";
 
         /// <summary>
-        /// Gets or sets the current <see cref="DateTime"/>.
+        /// Gets or sets the current <see cref="DateTimeOffset"/>.
         /// </summary>
-        /// <remarks>Defaults to <see cref="DateTime.UtcNow"/>.</remarks>
-        public DateTime DateTimeNow { get; set; } = DateTime.UtcNow;
+        /// <remarks>Defaults to <see cref="DateTimeOffset.UtcNow"/>.</remarks>
+        public DateTimeOffset DateTimeNow { get; set; } = DateTimeOffset.UtcNow;
 
         /// <summary>
         /// Gets or sets the <see cref="IIdentifierGenerator"/>.
@@ -49,6 +48,12 @@ namespace DbEx.Migration.Data
         /// </summary>
         /// <remarks>Defaults to '<c>yyyy-MM-ddTHH:mm:ss.FFFFFFF</c>'.</remarks>
         public string DateTimeFormat { get; set; } = "yyyy-MM-ddTHH:mm:ss.FFFFFFF";
+
+        /// <summary>
+        /// Gets or sets the <see cref="DateTimeOffset"/> format.
+        /// </summary>
+        /// <remarks>Defaults to '<c>yyyy-MM-ddTHH:mm:ss.FFFFFFFZ</c>'.</remarks>
+        public string DateTimeOffsetFormat { get; set; } = "yyyy-MM-ddTHH:mm:ss.FFFFFFFZ";
 
         /// <summary>
         /// Gets or sets the <see cref="DateTime"/> format.
@@ -123,7 +128,7 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Gets or sets the <see cref="DbTableSchema"/> updater.
         /// </summary>
-        /// <remarks>This is invoked offering an opportunity to further update (manipulate) the <see cref="DbTableSchema"/> selected from the database using the <see cref="DatabaseExtensions.SelectSchemaAsync"/>.</remarks>
+        /// <remarks>This is invoked offering an opportunity to further update (manipulate) the <see cref="DbTableSchema"/> selected from the database using the <see cref="IDatabase.SelectSchemaAsync"/>.</remarks>
         public Func<IEnumerable<DbTableSchema>, CancellationToken, Task<IEnumerable<DbTableSchema>>>? DbSchemaUpdaterAsync { get; set; }
 
         /// <summary>
@@ -148,6 +153,9 @@ namespace DbEx.Migration.Data
             DateTimeNow = args.DateTimeNow;
             IdentifierGenerator = args.IdentifierGenerator;
             DateTimeFormat = args.DateTimeFormat;
+            DateTimeOffsetFormat = args.DateTimeOffsetFormat;
+            DateOnlyFormat = args.DateOnlyFormat;
+            TimeOnlyFormat = args.TimeOnlyFormat;
             DbSchemaUpdaterAsync = args.DbSchemaUpdaterAsync;
             RefDataColumnDefaults.Clear();
             args.RefDataColumnDefaults.ForEach(x => RefDataColumnDefaults.Add(x.Key, x.Value));

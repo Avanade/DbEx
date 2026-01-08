@@ -1,10 +1,10 @@
 -- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 CREATE OR ALTER PROCEDURE [dbo].[spSetSessionContext]
-  @Timestamp DATETIME2 = null,
-  @Username NVARCHAR(1024) = null,
-  @TenantId NVARCHAR(1024) = null,
-  @UserId NVARCHAR(1024) = null
+  @Timestamp DATETIMEOFFSET = NULL,
+  @Username NVARCHAR(1024) = NULL,
+  @TenantId NVARCHAR(1024) = NULL,
+  @UserId NVARCHAR(1024) = NULL
 AS
 BEGIN
   IF @Timestamp IS NOT NULL

@@ -3,7 +3,7 @@
       `code` VARCHAR (50) NOT NULL UNIQUE,
       `text` VARCHAR (256) NOT NULL,
       `created_by` VARCHAR (50) NULL,
-      `created_date` DATETIME NULL,
+      `created_on` DATETIME(6) NULL,
       `updated_by` VARCHAR (50) NULL,
-      `updated_date` DATETIME NULL
+      `updated_on` DATETIME(6) NULL
     )

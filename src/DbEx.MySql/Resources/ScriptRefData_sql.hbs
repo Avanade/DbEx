@@ -13,9 +13,9 @@ CREATE TABLE `{{lookup Parameters 'Param1'}}` (
   `sort_order` INT NULL,
   `row_version` TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   `created_by` VARCHAR(250) NULL,
-  `created_date` DATETIME(6) NULL,
+  `created_on` DATETIME(6) NULL,
   `updated_by` VARCHAR(250) NULL,
-  `updated_date` DATETIME(6) NULL
+  `updated_on` DATETIME(6) NULL
 );
 
 COMMIT WORK;

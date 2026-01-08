@@ -1,4 +1,4 @@
-﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/Beef
+﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 CREATE OR REPLACE FUNCTION fn_get_user_id(
   "Override" TEXT = NULL

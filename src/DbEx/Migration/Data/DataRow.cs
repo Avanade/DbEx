@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,17 +30,17 @@ namespace DbEx.Migration.Data
         /// <summary>
         /// Gets the insert columns.
         /// </summary>
-        public List<DataColumn> InsertColumns => Columns.Where(c => Table.InsertColumns.Any(x => x.Name == c.Name)).ToList();
+        public List<DataColumn> InsertColumns => [.. Columns.Where(c => Table.InsertColumns.Any(x => x.Name == c.Name))];
 
         /// <summary>
         /// Gets the columns that are used for the merge insert.
         /// </summary>
-        public List<DataColumn> MergeInsertColumns => Columns.Where(c => Table.MergeInsertColumns.Any(x => x.Name == c.Name)).ToList();
+        public List<DataColumn> MergeInsertColumns => [.. Columns.Where(c => Table.MergeInsertColumns.Any(x => x.Name == c.Name))];
 
         /// <summary>
         /// Gets the columns that are used for the merge update.
         /// </summary>
-        public List<DataColumn> MergeUpdateColumns => Columns.Where(c => Table.MergeUpdateColumns.Any(x => x.Name == c.Name)).ToList();
+        public List<DataColumn> MergeUpdateColumns => [.. Columns.Where(c => Table.MergeUpdateColumns.Any(x => x.Name == c.Name))];
 
         /// <summary>
         /// Adds a <see cref="DataColumn"/> to the row using the specified name and value.
@@ -83,7 +82,7 @@ namespace DbEx.Migration.Data
             string? str = null;
             try
             {
-                str = column.Value is DateTime time ? time.ToString(Table.Parser.ParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture) : column.Value.ToString()!;
+                str = column.Table.DbTable.Migration.SchemaConfig.ToFormattedDataParserValue(column.Table.ParserArgs, column.Value);
 
                 switch (col.DotNetType)
                 {

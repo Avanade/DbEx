@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
-using CoreEx;
 using DbEx.Migration;
 using System;
 using System.Collections.Generic;
@@ -13,14 +12,9 @@ namespace DbEx.Console
     /// Base console that facilitates the <see cref="DatabaseMigrationBase"/> by managing the standard console command-line arguments/options.
     /// </summary>
     /// <typeparam name="TSelf">The <see cref="Type"/> itself being implemented.</typeparam>
-    public abstract class MigrationConsoleBase<TSelf> : MigrationConsoleBase where TSelf : MigrationConsoleBase<TSelf>
+    /// <param name="args">The default <see cref="MigrationArgsBase"/> that will be overridden/updated by the command-line argument values.</param>
+    public abstract class MigrationConsoleBase<TSelf>(MigrationArgsBase args) : MigrationConsoleBase(args) where TSelf : MigrationConsoleBase<TSelf>
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MigrationConsoleBase"/> class.
-        /// </summary>
-        /// <param name="args">The default <see cref="MigrationArgsBase"/> that will be overridden/updated by the command-line argument values.</param>
-        protected MigrationConsoleBase(MigrationArgsBase args) : base(args) { }
-
         /// <summary>
         /// Enables fluent-style method-chaining configuration of <typeparamref name="TSelf"/>
         /// </summary>

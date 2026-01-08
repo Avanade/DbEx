@@ -1,7 +1,4 @@
-﻿using CoreEx.Database.MySql;
-using CoreEx.Database.Postgres;
-using CoreEx.Database.SqlServer;
-using DbEx.Migration;
+﻿using DbEx.Migration;
 using DbEx.MySql.Migration;
 using DbEx.Postgres.Migration;
 using DbEx.SqlServer.Migration;
@@ -138,7 +135,7 @@ namespace DbEx.Test
             Assert.IsNull(col.Length);
             Assert.IsNull(col.Scale);
             Assert.AreEqual(0, col.Precision);
-            Assert.AreEqual("DateTime", col.DotNetType);
+            Assert.AreEqual("DateOnly", col.DotNetType);
             Assert.IsTrue(col.IsNullable);
             Assert.IsFalse(col.IsPrimaryKey);
             Assert.IsFalse(col.IsIdentity);
@@ -481,7 +478,7 @@ namespace DbEx.Test
             Assert.IsNull(col.Length);
             Assert.IsNull(col.Scale);
             Assert.IsNull(col.Precision);
-            Assert.AreEqual("DateTime", col.DotNetType);
+            Assert.AreEqual("DateOnly", col.DotNetType);
             Assert.IsTrue(col.IsNullable);
             Assert.IsFalse(col.IsPrimaryKey);
             Assert.IsFalse(col.IsIdentity);
@@ -807,7 +804,7 @@ namespace DbEx.Test
             Assert.IsNull(col.Length);
             Assert.IsNull(col.Scale);
             Assert.AreEqual(0, col.Precision);
-            Assert.AreEqual("DateTime", col.DotNetType);
+            Assert.AreEqual("DateOnly", col.DotNetType);
             Assert.IsTrue(col.IsNullable);
             Assert.IsFalse(col.IsPrimaryKey);
             Assert.IsFalse(col.IsIdentity);
