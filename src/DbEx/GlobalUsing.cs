@@ -1,0 +1,36 @@
+﻿global using DbEx.DbSchema;
+global using DbEx.Migration;
+global using DbEx.Migration.Data;
+global using HandlebarsDotNet;
+global using McMaster.Extensions.CommandLineUtils;
+global using McMaster.Extensions.CommandLineUtils.Validation;
+global using Microsoft.Extensions.Logging;
+global using Microsoft.Extensions.Logging.Abstractions;
+global using OnRamp;
+global using OnRamp.Console;
+global using OnRamp.Utility;
+global using System;
+global using System.Collections;
+global using System.Collections.Generic;
+global using System.Collections.ObjectModel;
+global using System.ComponentModel.DataAnnotations;
+global using System.Data.Common;
+global using System.Diagnostics;
+global using System.Diagnostics.CodeAnalysis;
+global using System.IO;
+global using System.Linq;
+global using System.Reflection;
+global using System.Runtime.CompilerServices;
+global using System.Text;
+global using System.Text.Json;
+global using System.Text.Json.Serialization;
+global using System.Text.RegularExpressions;
+global using System.Threading;
+global using System.Threading.Tasks;
+global using YamlDotNet.Core.Events;
+global using YamlDotNet.Serialization;
+global using ExplicitMigrationScript = (DbEx.MigrationCommand Command, System.Reflection.Assembly Assembly, string Name);
+
+[assembly: InternalsVisibleTo("DbEx.SqlServer, PublicKey=00240000048000009400000006020000002400005253413100040000010001007dee530af6d801902d40685e9cd0a3d8991ddbf545be3ef6147c9f79bacd7464d92fbd94fee34e885c37e3dff4ea15a4f9978f1f614798e0f48e3a3d5bf15e8b2fba9c19b6966838f97444bc247bc101454946d70ac93207cf2c611956aed59c316f81f1bf8c8486f8f0b3f9adf93c2f07e06a86745f6dc4b819c2bc2f3fdad5")]
+[assembly: InternalsVisibleTo("DbEx.Postgres, PublicKey=00240000048000009400000006020000002400005253413100040000010001007dee530af6d801902d40685e9cd0a3d8991ddbf545be3ef6147c9f79bacd7464d92fbd94fee34e885c37e3dff4ea15a4f9978f1f614798e0f48e3a3d5bf15e8b2fba9c19b6966838f97444bc247bc101454946d70ac93207cf2c611956aed59c316f81f1bf8c8486f8f0b3f9adf93c2f07e06a86745f6dc4b819c2bc2f3fdad5")]
+[assembly: InternalsVisibleTo("DbEx.MySql, PublicKey=00240000048000009400000006020000002400005253413100040000010001007dee530af6d801902d40685e9cd0a3d8991ddbf545be3ef6147c9f79bacd7464d92fbd94fee34e885c37e3dff4ea15a4f9978f1f614798e0f48e3a3d5bf15e8b2fba9c19b6966838f97444bc247bc101454946d70ac93207cf2c611956aed59c316f81f1bf8c8486f8f0b3f9adf93c2f07e06a86745f6dc4b819c2bc2f3fdad5")]

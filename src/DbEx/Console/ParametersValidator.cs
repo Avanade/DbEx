@@ -1,52 +1,42 @@
-﻿// Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
+﻿namespace DbEx.Console;
 
-using DbEx.Migration;
-using McMaster.Extensions.CommandLineUtils;
-using McMaster.Extensions.CommandLineUtils.Validation;
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-
-namespace DbEx.Console
+/// <summary>
+/// Validate the Params to ensure format is correct and values are not duplicated.
+/// </summary>
+/// <param name="args">The <see cref="MigrationArgsBase"/> to update.</param>
+public class ParametersValidator(MigrationArgsBase args) : IOptionValidator
 {
+    private readonly MigrationArgsBase _args = args.ThrowIfNull(nameof(args));
+
     /// <summary>
-    /// Validate the Params to ensure format is correct and values are not duplicated.
+    /// Performs the validation.
     /// </summary>
-    /// <param name="args">The <see cref="MigrationArgsBase"/> to update.</param>
-    public class ParametersValidator(MigrationArgsBase args) : IOptionValidator
+    /// <param name="option">The <see cref="CommandOption"/>.</param>
+    /// <param name="context">The <see cref="ValidationContext"/>.</param>
+    /// <returns>The <see cref="ValidationResult"/>.</returns>
+    public ValidationResult GetValidationResult(CommandOption option, ValidationContext context)
     {
-        private readonly MigrationArgsBase _args = args.ThrowIfNull(nameof(args));
+        option.ThrowIfNull(nameof(option));
+        context.ThrowIfNull(nameof(context));
 
-        /// <summary>
-        /// Performs the validation.
-        /// </summary>
-        /// <param name="option">The <see cref="CommandOption"/>.</param>
-        /// <param name="context">The <see cref="ValidationContext"/>.</param>
-        /// <returns>The <see cref="ValidationResult"/>.</returns>
-        public ValidationResult GetValidationResult(CommandOption option, ValidationContext context)
+        foreach (var p in option.Values.Where(x => !string.IsNullOrEmpty(x)))
         {
-            option.ThrowIfNull(nameof(option));
-            context.ThrowIfNull(nameof(context));
-
-            foreach (var p in option.Values.Where(x => !string.IsNullOrEmpty(x)))
-            {
-                var pos = p!.IndexOf('=', StringComparison.Ordinal);
-                if (pos <= 0)
-                    AddParameter(p, null);
-                else
-                    AddParameter(p[..pos], string.IsNullOrEmpty(p[(pos + 1)..]) ? null : p[(pos + 1)..]);
-            }
-
-            return ValidationResult.Success!;
+            var pos = p!.IndexOf('=', StringComparison.Ordinal);
+            if (pos <= 0)
+                AddParameter(p, null);
+            else
+                AddParameter(p[..pos], string.IsNullOrEmpty(p[(pos + 1)..]) ? null : p[(pos + 1)..]);
         }
 
-        /// <summary>
-        /// Adds or overriddes the parameter.
-        /// </summary>
-        private void AddParameter(string key, string? value)
-        {
-            if (!_args.Parameters.TryAdd(key, value))
-                _args.Parameters[key] = value;
-        }
+        return ValidationResult.Success!;
+    }
+
+    /// <summary>
+    /// Adds or overriddes the parameter.
+    /// </summary>
+    private void AddParameter(string key, string? value)
+    {
+        if (!_args.Parameters.TryAdd(key, value))
+            _args.Parameters[key] = value;
     }
 }
