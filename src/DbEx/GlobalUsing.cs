@@ -7,6 +7,7 @@ global using McMaster.Extensions.CommandLineUtils.Validation;
 global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Logging.Abstractions;
 global using OnRamp;
+global using OnRamp.Config;
 global using OnRamp.Console;
 global using OnRamp.Utility;
 global using System;

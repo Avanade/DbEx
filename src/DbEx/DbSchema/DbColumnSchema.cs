@@ -127,12 +127,12 @@ public class DbColumnSchema(DbTableSchema dbTable, string name, string type, str
     public string? ForeignRefDataCodeColumn { get; set; }
 
     /// <summary>
-    /// Indicates whether the column is a created audit column; i.e. name is <c>CreatedDate</c> or <c>CreatedBy</c>.
+    /// Indicates whether the column is a created audit column; i.e. name is <c>CreatedOn</c> or <c>CreatedBy</c>.
     /// </summary>
     public bool IsCreatedAudit { get; set; }
 
     /// <summary>
-    /// Indicates whether the column is an updated audit column; i.e. name is <c>UpdatedDate</c> or <c>UpdatedBy</c>.
+    /// Indicates whether the column is an updated audit column; i.e. name is <c>UpdatedOn</c> or <c>UpdatedBy</c>.
     /// </summary>
     public bool IsUpdatedAudit { get; set; }
 

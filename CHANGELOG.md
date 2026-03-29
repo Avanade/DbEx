@@ -2,8 +2,8 @@
 
 Represents the **NuGet** versions.
 
-## v3.0.0
-All internal dependecies to [`CoreEx`](https://github.com/avanade/coreex) have been removed. This is intended to further generalize the capabilities of `DbEx`; but more importantly, break the circular dependency reference between the two repositories. 
+## v3.0.0 [preview-only; subject to change]
+All internal dependencies to [`CoreEx`](https://github.com/avanade/coreex) have been removed. This is intended to further generalize the capabilities of `DbEx`; but more importantly, break the circular dependency reference between the two repositories. 
 - *Enhancement:* Added `net10.0` support and updated all related package dependencies to latest. Removed `net6.0` support.
 - *Enhancement:* List of key **breaking changes** as follows:
   - `DatabaseSchemaConfig.CreatedDate` renamed to `DatabaseSchemaConfig.CreatedOn`.
@@ -11,9 +11,10 @@ All internal dependecies to [`CoreEx`](https://github.com/avanade/coreex) have b
   - `MigrationArgsBase.CreatedDateColumnName` renamed to `MigrationArgsBase.CreatedOnColumnName`.
   - `MigrationArgsBase.UpdatedDateColumnName` renamed to `MigrationArgsBase.UpdatedOnColumnName`.
   - `DateTimeOffset` is the preferred .NET type for date/time auditing/timestamping.
-- *Enhancement:* Absorbing the [`Beef`](https://github.com/avanade/beef) database code-generation capabilities into `DbEx` to enable greater usage and consistency. 
-  - The code-generation templates have been updated to reflect the latest patterns and practices (where applicable).
-  - The code-generation configuration file has been renamed to `dbex.yaml` to avoid conflicts; schema remains largely the same.
+- *Enhancement:* [**Pending**] Intent in next preview (2) is the introduction of key [`Beef`](https://github.com/avanade/beef) database code-generation capabilities into `DbEx` to enable greater usage. 
+  - Initial focus will be on the Entity Framework (EF) convention-based model generation; being the most commonly used, and having the broadest applicability (all supported databases included).
+  - The code-generation templates will be updated to reflect the latest patterns and practices (where applicable).
+  - The code-generation configuration file will be named to `dbex.yaml` to avoid conflicts.
 
 The enhancements have been made in a manner to maximize backwards compatibility with previous versions of `DbEx` where possible; however, some breaking changes were unfortunately unavoidable (and made to improve overall).
 
