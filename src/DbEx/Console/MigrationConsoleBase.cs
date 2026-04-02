@@ -14,6 +14,7 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
     private const string EntryAssemblyOnlyOptionName = "entry-assembly-only";
     private const string AcceptPromptsOptionName = "accept-prompts";
     private const string DropSchemaObjectsName = "drop-schema-objects";
+    private const string ExpectNoChangesName = "expect-no-changes";
     private CommandArgument<MigrationCommand>? _commandArg;
     private CommandArgument? _additionalArgs;
     private CommandOption? _helpOption;
@@ -105,6 +106,7 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
         ConsoleOptions.Add(EntryAssemblyOnlyOptionName, app.Option("-eo|--entry-assembly-only", "Use the entry assembly only (ignore all other assemblies).", CommandOptionType.NoValue));
         ConsoleOptions.Add(DropSchemaObjectsName, app.Option("-dso|--drop-schema-objects", "Drop all known schema objects before applying; bypasses automatic skip where all scripts are replacements.", CommandOptionType.NoValue));
         ConsoleOptions.Add(AcceptPromptsOptionName, app.Option("--accept-prompts", "Accept prompts; command should _not_ stop and wait for user confirmation (DROP or RESET commands).", CommandOptionType.NoValue));
+        ConsoleOptions.Add(ExpectNoChangesName, app.Option("--expect-no-changes", "Indicates to expect no changes during code-generation (i.e. result in error on change).", CommandOptionType.NoValue));
         _additionalArgs = app.Argument("args", "Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each a SQL statement to invoke).", multipleValues: true);
 
         OnBeforeExecute(app);
@@ -194,6 +196,11 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
             var dso = GetCommandOption(DropSchemaObjectsName);
             if (dso is not null && dso.HasValue())
                 Args.DropSchemaObjects = true;
+
+            // Handle expect no changes.
+            var enc = GetCommandOption(ExpectNoChangesName);
+            if (enc is not null && enc.HasValue())
+                Args.ExpectNoChanges = true;
 
             return res;
         });
@@ -391,6 +398,9 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
         migrator.Args.Logger.LogInformation("{Content}", $"Provider = {migrator.Provider}");
         migrator.Args.Logger.LogInformation("{Content}", $"SchemaOrder = {string.Join(", ", [.. migrator.Args.SchemaOrder])}");
         migrator.Args.Logger.LogInformation("{Content}", $"OutDir = {migrator.Args.OutputDirectory?.FullName}");
+
+        if (migrator.Args.ExpectNoChanges)
+            migrator.Args.Logger.LogInformation("{Content}", $"Expect-no-changes");
 
         additional?.Invoke(migrator.Args.Logger);
 

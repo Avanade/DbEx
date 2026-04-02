@@ -92,6 +92,11 @@ public class DbColumnSchema(DbTableSchema dbTable, string name, string type, str
     public bool IsPrimaryKey { get; set; }
 
     /// <summary>
+    /// Indicates whether the column is the primary key and is named using the table name followed by 'Id' convention.
+    /// </summary>
+    public bool IsPrimaryKeyIdentifier { get; set; }
+
+    /// <summary>
     /// Indicates whether the column has a unique constraint.
     /// </summary>
     public bool IsUnique { get; set; }
@@ -127,14 +132,34 @@ public class DbColumnSchema(DbTableSchema dbTable, string name, string type, str
     public string? ForeignRefDataCodeColumn { get; set; }
 
     /// <summary>
+    /// Indicates whether the column is a created-on audit column; i.e. name is <c>CreatedOn</c>.
+    /// </summary>
+    public bool IsCreatedOn { get; set; }
+
+    /// <summary>
+    /// Indicates whether the column is a created-by audit column; i.e. name is <c>CreatedBy</c>.
+    /// </summary>
+    public bool IsCreatedBy { get; set; }
+
+    /// <summary>
+    /// Indicates whether the column is an updated-on audit column; i.e. name is <c>UpdatedOn</c>.
+    /// </summary>
+    public bool IsUpdatedOn { get; set; }
+
+    /// <summary>
+    /// Indicates whether the column is an updated-by audit column; i.e. name is <c>UpdatedBy</c>.
+    /// </summary>
+    public bool IsUpdatedBy { get; set; }
+
+    /// <summary>
     /// Indicates whether the column is a created audit column; i.e. name is <c>CreatedOn</c> or <c>CreatedBy</c>.
     /// </summary>
-    public bool IsCreatedAudit { get; set; }
+    public bool IsCreatedAudit => IsCreatedOn || IsCreatedBy;
 
     /// <summary>
     /// Indicates whether the column is an updated audit column; i.e. name is <c>UpdatedOn</c> or <c>UpdatedBy</c>.
     /// </summary>
-    public bool IsUpdatedAudit { get; set; }
+    public bool IsUpdatedAudit => IsUpdatedOn || IsUpdatedBy;
 
     /// <summary>
     /// Indicates whether the column is a row-version column; i.e. name is <c>RowVersion</c>.
@@ -157,9 +182,15 @@ public class DbColumnSchema(DbTableSchema dbTable, string name, string type, str
     public bool IsJsonContent { get; set; }
 
     /// <summary>
-    /// Gets the corresponding .NET <see cref="System.Type"/> name.
+    /// Gets the corresponding .NET <see cref="System.Type"/> name (excludes nullability).
     /// </summary>
     public string DotNetType => _dotNetType ??= DbTable?.Migration.SchemaConfig.ToDotNetTypeName(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(DotNetType)} property can be accessed.");
+
+    /// <summary>
+    /// Gets the corresponding .NET <see cref="System.Type"/> name (including nullability).
+    /// </summary>
+    /// <remarks>A <see cref="string"/> type is always considered nullable; otherwise, the nullability is determined by the <see cref="IsNullable"/> property.</remarks>
+    public string DotNetTypeWithNullability => IsNullable || DotNetType == "string" ? $"{DotNetType}?" : DotNetType;
 
     /// <summary>
     /// Gets the corresponding .NET name.
@@ -233,6 +264,7 @@ public class DbColumnSchema(DbTableSchema dbTable, string name, string type, str
         IsComputed = column.IsComputed;
         DefaultValue = column.DefaultValue;
         IsPrimaryKey = column.IsPrimaryKey;
+        IsPrimaryKeyIdentifier = column.IsPrimaryKeyIdentifier;
         IsUnique = column.IsUnique;
         ForeignTable = column.ForeignTable;
         ForeignSchema = column.ForeignSchema;
@@ -240,8 +272,10 @@ public class DbColumnSchema(DbTableSchema dbTable, string name, string type, str
         IsForeignRefData = column.IsForeignRefData;
         IsRefData = column.IsRefData;
         ForeignRefDataCodeColumn = column.ForeignRefDataCodeColumn;
-        IsCreatedAudit = column.IsCreatedAudit;
-        IsUpdatedAudit = column.IsUpdatedAudit;
+        IsCreatedOn = column.IsCreatedOn;
+        IsCreatedBy = column.IsCreatedBy;
+        IsUpdatedOn = column.IsUpdatedOn;
+        IsUpdatedBy = column.IsUpdatedBy;
         IsRowVersion = column.IsRowVersion;
         IsTenantId = column.IsTenantId;
         IsIsDeleted = column.IsIsDeleted;

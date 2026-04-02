@@ -55,6 +55,7 @@ public sealed class SqlServerMigrationConsole : MigrationConsoleBase<SqlServerMi
         Logger?.LogInformation("{help}", "  script cdc <Schema> <Table>       Creates a SQL script to turn on CDC for the specified table.");
         Logger?.LogInformation("{help}", "  script cdcdb                      Creates a SQL script to turn on CDC for the database.");
         Logger?.LogInformation("{help}", "  script create <Schema> <Table>    Creates a SQL script to perform a CREATE TABLE.");
+        Logger?.LogInformation("{help}", "  script outbox <Schema> <Table>    Creates a SQL script to perform a CREATE TABLE(s) for an Outbox.");
         Logger?.LogInformation("{help}", "  script refdata <Schema> <Table>   Creates a SQL script to perform a CREATE TABLE as reference data.");
         Logger?.LogInformation("{help}", "  script schema <Schema>            Creates a SQL script to perform a CREATE SCHEMA.");
     }

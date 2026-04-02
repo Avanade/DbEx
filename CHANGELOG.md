@@ -4,17 +4,18 @@ Represents the **NuGet** versions.
 
 ## v3.0.0 [preview-only; subject to change]
 All internal dependencies to [`CoreEx`](https://github.com/avanade/coreex) have been removed. This is intended to further generalize the capabilities of `DbEx`; but more importantly, break the circular dependency reference between the two repositories. 
-- *Enhancement:* Added `net10.0` support and updated all related package dependencies to latest. Removed `net6.0` support.
+- *Enhancement:* Added `net10.0` support and updated all related package dependencies to latest. Supports only `net8.0`, `net9.0` and `net10.0`.
 - *Enhancement:* List of key **breaking changes** as follows:
   - `DatabaseSchemaConfig.CreatedDate` renamed to `DatabaseSchemaConfig.CreatedOn`.
   - `DatabaseSchemaConfig.UpdatedDate` renamed to `DatabaseSchemaConfig.UpdatedOn`.
   - `MigrationArgsBase.CreatedDateColumnName` renamed to `MigrationArgsBase.CreatedOnColumnName`.
   - `MigrationArgsBase.UpdatedDateColumnName` renamed to `MigrationArgsBase.UpdatedOnColumnName`.
   - `DateTimeOffset` is the preferred .NET type for date/time auditing/timestamping.
-- *Enhancement:* [**Pending**] Intent in next preview (2) is the introduction of key [`Beef`](https://github.com/avanade/beef) database code-generation capabilities into `DbEx` to enable greater usage. 
-  - Initial focus will be on the Entity Framework (EF) convention-based model generation; being the most commonly used, and having the broadest applicability (all supported databases included).
-  - The code-generation templates will be updated to reflect the latest patterns and practices (where applicable).
-  - The code-generation configuration file will be named to `dbex.yaml` to avoid conflicts.
+- *Enhancement:* Introduced basic code-generation (leverages [`OnRamp`](https://github.com/avanade/onramp)).
+  - Entity Framework (EF) convention-based model and model-builder code generation added (all supported databases included).
+  - Transactional `Outbox` and corresponding `OutboxLease` code-generation added (SQL Server only).
+  - The existence of the code-generation configuration file `dbex.yaml` is required to enable.
+  - Preview 3 will add `dbex.yaml` schema and documentation.
 
 The enhancements have been made in a manner to maximize backwards compatibility with previous versions of `DbEx` where possible; however, some breaking changes were unfortunately unavoidable (and made to improve overall).
 
@@ -51,7 +52,7 @@ The enhancements have been made in a manner to maximize backwards compatibility 
 - *Fixed:* SQL Server `data` merge statement fixed to include the `TenantIdColumn` where applicable to avoid possible duplicate key.
 
 ## v2.5.7
-- *Fixed:* Corrected issue introduced in version `2.5.5` where some strings were being incorrectly converted to a guid.
+- *Fixed:* Corrected issue introduced in version `2.5.5` where some strings were being incorrectly converted to a GUID.
 
 ## v2.5.6
 - *Fixed:* Release build and publish; version `2.5.5` was not published correctly.

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <RootNamespace>DbEx.SqlServer</RootNamespace>
     <Product>DbEx</Product>
     <Title>DbEx SQL Server Migration Tool.</Title>
@@ -19,6 +19,7 @@
     <EmbeddedResource Include="Resources\**\*" />
     <EmbeddedResource Include="Migrations\**\*" />
     <EmbeddedResource Include="Data\**\*" />
+    <EmbeddedResource Include="Scripts\**\*" />
     <EmbeddedResource Include="Templates\**\*" />
   </ItemGroup>
 

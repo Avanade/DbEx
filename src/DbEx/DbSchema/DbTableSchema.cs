@@ -7,7 +7,6 @@
 public partial class DbTableSchema
 {
     private static readonly char[] _separators = ['_', '-'];
-    private static readonly string[] _suffixes = ["Id", "Code", "Json"];
 
     private string? _dotNetName;
     private string? _pluralName;
@@ -155,12 +154,17 @@ public partial class DbTableSchema
     public List<DbColumnSchema> PrimaryKeyColumns => Columns?.Where(x => x.IsPrimaryKey).ToList() ?? [];
 
     /// <summary>
+    /// Indicates whether there is a single primary key column that is an identifier (i.e. named with suffix 'Id' (any case)).
+    /// </summary>
+    public bool HasPrimaryKeyIdentifier => PrimaryKeyColumns.Count == 1 && PrimaryKeyColumns.First().IsPrimaryKeyIdentifier;
+
+    /// <summary>
     /// Gets the standard <see cref="DbColumnSchema"/> list (i.e. not primary key, not created audit, not updated audit, not tenant-id, not row-version, not is-deleted).
     /// </summary>
     public List<DbColumnSchema> StandardColumns => Columns?.Where(x => !x.IsPrimaryKey && !x.IsCreatedAudit && !x.IsUpdatedAudit && !x.IsTenantId && !x.IsRowVersion && !x.IsIsDeleted).ToList() ?? [];
 
     /// <summary>
-    /// Gets the tenant idenfifier <see cref="DbColumnSchema"/> (if any).
+    /// Gets the tenant identifier <see cref="DbColumnSchema"/> (if any).
     /// </summary>
     public DbColumnSchema? TenantIdColumn => Columns?.FirstOrDefault(x => x.IsTenantId);
 

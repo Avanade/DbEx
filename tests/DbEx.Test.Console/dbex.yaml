@@ -1,0 +1,11 @@
+dotNetDataProjectPath: ../DbEx.Test.Empty
+schema: Test
+outbox: true
+tables:
+- name: Contact
+- name: Person
+  columns:
+  - name: AddressJson
+    property: Address
+    type: Persistence.Address?
+    valueConverter: new Persistence.JsonConverter<Persistence.Address?>()

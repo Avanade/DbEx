@@ -1,0 +1,11 @@
+configType: DbEx.CodeGen.Config.CodeGenConfig, DbEx
+generators:
+- { type: 'DbEx.CodeGen.Generators.EfModelGenerator, DbEx', template: 'EfModel_cs', file: '{{EfModelName}}.g.cs', directory: '{{Root.DotNetDataProjectDirectory.FullName}}/{{Root.DotNetDataEfModelsPath}}', text: Entity-framework (EF) model(s) generation }  
+- { type: 'DbEx.CodeGen.Generators.EfModelBuilderGenerator, DbEx', template: 'EfModelBuilder_cs', file: '{{Domain}}DbContext.g.cs', directory: '{{Root.DotNetDataProjectDirectory.FullName}}/{{Root.DotNetDataEfRepositoriesPath}}', text: Entity-framework (EF) DbContext model builder generation }
+
+- { type: 'DbEx.CodeGen.Generators.OutboxGenerator, DbEx', template: 'SpOutboxEnqueue_sql', file: 'sp{{OutboxName}}Enqueue.g.sql', directory: '{{Root.DatabaseDirectory.FullName}}/Schema/Stored Procedures', text: Outbox enqueue stored-procedure generation }
+- { type: 'DbEx.CodeGen.Generators.OutboxGenerator, DbEx', template: 'SpOutboxBatchClaim_sql', file: 'sp{{OutboxName}}BatchClaim.g.sql', directory: '{{Root.DatabaseDirectory.FullName}}/Schema/Stored Procedures', text: Outbox batch-claim stored-procedure generation }
+- { type: 'DbEx.CodeGen.Generators.OutboxGenerator, DbEx', template: 'SpOutboxBatchComplete_sql', file: 'sp{{OutboxName}}BatchComplete.g.sql', directory: '{{Root.DatabaseDirectory.FullName}}/Schema/Stored Procedures', text: Outbox batch-complete stored-procedure generation }
+- { type: 'DbEx.CodeGen.Generators.OutboxGenerator, DbEx', template: 'SpOutboxBatchCancel_sql', file: 'sp{{OutboxName}}BatchCancel.g.sql', directory: '{{Root.DatabaseDirectory.FullName}}/Schema/Stored Procedures', text: Outbox batch-cancel stored-procedure generation }
+- { type: 'DbEx.CodeGen.Generators.OutboxGenerator, DbEx', template: 'SpOutboxLeaseAcquire_sql', file: 'sp{{OutboxName}}LeaseAcquire.g.sql', directory: '{{Root.DatabaseDirectory.FullName}}/Schema/Stored Procedures', text: Outbox lease-acquire stored-procedure generation }
+- { type: 'DbEx.CodeGen.Generators.OutboxGenerator, DbEx', template: 'SpOutboxLeaseRelease_sql', file: 'sp{{OutboxName}}LeaseRelease.g.sql', directory: '{{Root.DatabaseDirectory.FullName}}/Schema/Stored Procedures', text: Outbox lease-release stored-procedure generation }

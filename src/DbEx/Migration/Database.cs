@@ -84,8 +84,10 @@ public class Database<TConnection>(Func<TConnection> create, DbProviderFactory p
                 tables.Add(table = dt);
 
             var dc = migration.SchemaConfig.CreateColumnFromInformationSchema(table, dr);
-            dc.IsCreatedAudit = dc.Name == migration.Args?.CreatedByColumnName || dc.Name == migration.Args?.CreatedOnColumnName;
-            dc.IsUpdatedAudit = dc.Name == migration.Args?.UpdatedByColumnName || dc.Name == migration.Args?.UpdatedOnColumnName;
+            dc.IsCreatedOn = dc.Name == migration.Args?.CreatedOnColumnName;
+            dc.IsCreatedBy = dc.Name == migration.Args?.CreatedByColumnName;
+            dc.IsUpdatedOn = dc.Name == migration.Args?.UpdatedOnColumnName;
+            dc.IsUpdatedBy = dc.Name == migration.Args?.UpdatedByColumnName;
             dc.IsTenantId = dc.Name == migration.Args?.TenantIdColumnName;
             dc.IsRowVersion = dc.Name == migration.Args?.RowVersionColumnName;
             dc.IsIsDeleted = dc.Name == migration.Args?.IsDeletedColumnName;
@@ -97,14 +99,6 @@ public class Database<TConnection>(Func<TConnection> create, DbProviderFactory p
         // Exit where no tables initially found.
         if (tables.Count == 0)
             return tables;
-
-        // Determine whether a table is considered reference data.
-        foreach (var t in tables)
-        {
-            t.IsRefData = refDataPredicate(t);
-            if (t.IsRefData)
-                t.RefDataCodeColumn = t.Columns.Where(x => x.Name == migration.Args.RefDataCodeColumnName).SingleOrDefault();
-        }
 
         // Configure all the single column primary and unique constraints.
         using var sr2 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTablePrimaryKey.sql", probeAssemblies);
@@ -140,12 +134,21 @@ public class Database<TConnection>(Func<TConnection> create, DbProviderFactory p
                 if (pk.IsPrimaryKey)
                 {
                     col.IsPrimaryKey = true;
+                    col.IsPrimaryKeyIdentifier = col.Name.EndsWith("Id", StringComparison.InvariantCultureIgnoreCase);
                     if (!col.IsIdentity)
                         col.IsIdentity = col.DefaultValue != null;
                 }
                 else
                     col.IsUnique = true;
             }
+        }
+
+        // Determine whether a table is considered reference data.
+        foreach (var t in tables)
+        {
+            t.IsRefData = t.HasPrimaryKeyIdentifier && refDataPredicate(t);
+            if (t.IsRefData)
+                t.RefDataCodeColumn = t.Columns.Where(x => x.Name == migration.Args.RefDataCodeColumnName).SingleOrDefault();
         }
 
         // Load any additional configuration specific to the database provider.

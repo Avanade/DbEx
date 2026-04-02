@@ -37,6 +37,7 @@ public abstract class DatabaseMigrationBase : IDisposable
         if (string.IsNullOrEmpty(Args.ConnectionString))
             throw new ArgumentException($"{nameof(MigrationArgsBase.ConnectionString)} property must have a value.", nameof(args));
 
+        Args.DatabaseMigrator = this;
         Args.Logger ??= NullLogger.Instance;
         Args.OutputDirectory ??= new DirectoryInfo(CodeGenConsole.GetBaseExeDirectory());
 
@@ -90,7 +91,7 @@ public abstract class DatabaseMigrationBase : IDisposable
     /// <summary>
     /// Gets the root namespaces for the <see cref="MigrationArgsBase.Assemblies"/> (ordered by <see cref="MigrationArgsBase.ProbeAssemblies"/>).
     /// </summary>
-    protected IEnumerable<string> Namespaces { get; } = new List<string>();
+    protected List<string> Namespaces { get; } = [];
 
     /// <summary>
     /// Gets or sets the <b>Migrations</b> scripts namespace part name.
@@ -118,13 +119,20 @@ public abstract class DatabaseMigrationBase : IDisposable
     /// Gets the assemblies used for probing the requisite artefact resources (used for providing the underlying requisite database statements for the specified <see cref="Provider"/>).
     /// </summary>
     /// <remarks>Uses the <see cref="MigrationArgsBase.Assemblies"/> as the base, then adds for <c>this</c> <see cref="Type"/>.</remarks>
-    public IEnumerable<Assembly> ArtefactResourceAssemblies { get; } = new List<Assembly>();
+    public List<Assembly> ArtefactResourceAssemblies { get; } = [];
 
     /// <summary>
     /// Indicates whether <see cref="MigrationCommand.CodeGen"/> functionality is enabled.
     /// </summary>
-    /// <remarks>Where supported the <see cref="DatabaseCodeGenAsync(CancellationToken)"/> will be invoked and must be overridden to implement.</remarks>
+    /// <remarks>The will be automatically set to <see langword="true"/> when the '<c>dbex.yaml</c>' code-generation configuration file (<see cref="CodeGenConfigFile"/>) is found.
+    /// Otherwise, to implement custom code-generation functionality, this property can be manually set and the <see cref="DatabaseCodeGenAsync(CancellationToken)"/> method overridden."/></remarks>
     public bool IsCodeGenEnabled { get; protected set; }
+
+    /// <summary>
+    /// Gets the <see cref="FileInfo"/> for the '<c>dbex.yaml</c>' code-generation configuration.
+    /// </summary>
+    /// <remarks>Where the file is determined to exist then the <see cref="IsCodeGenEnabled"/> will automatically be set to <see langword="true"/>.</remarks>
+    public FileInfo? CodeGenConfigFile { get; private set; }
 
     /// <summary>
     /// Orchestrates the migration steps as specified by the <see cref="MigrationCommand"/> and returns the corresponding log output.
@@ -234,6 +242,11 @@ public abstract class DatabaseMigrationBase : IDisposable
 
         var list2 = (List<Assembly>)ArtefactResourceAssemblies;
         list2.AddRange(alist);
+
+        // Determine whether code-gen is enabled by checking for the presence of the 'dbex.yaml' file.
+        CodeGenConfigFile = new FileInfo(Path.Combine(Args.OutputDirectory?.FullName ?? string.Empty, "dbex.yaml"));
+        if (CodeGenConfigFile.Exists)
+            IsCodeGenEnabled = true;
     }
 
     /// <summary>
@@ -497,9 +510,50 @@ public abstract class DatabaseMigrationBase : IDisposable
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns><c>true</c> indicates success; otherwise, <c>false</c>. Additionally, on success the code-generation statistics summary should be returned to append to the log.</returns>
-    /// <remarks>This will only be invoked where <see cref="IsCodeGenEnabled"/> is set to <c>true</c>. The method must be implemented otherwise a <see cref="NotImplementedException"/> will be thrown.</remarks>
-    protected virtual Task<(bool Success, string? Statistics)> DatabaseCodeGenAsync(CancellationToken cancellationToken = default)
-        => throw new NotImplementedException($"The {nameof(DatabaseCodeGenAsync)} method must be implemented by the inheriting class to enable the code-generation functionality.");
+    /// <remarks>This will only be invoked where <see cref="IsCodeGenEnabled"/> is set to <c>true</c>.</remarks>
+    protected async virtual Task<(bool Success, string? Statistics)> DatabaseCodeGenAsync(CancellationToken cancellationToken = default)
+    {
+        if (CodeGenConfigFile == null || !CodeGenConfigFile.Exists)
+            throw new InvalidOperationException("Internal error; expected code-gen configuration file to be set and to exist; or alternatively, this method can be overridden to provide the custom code-generation functionality.");
+
+        // Create the code-generator arguments.
+        var cga = new CodeGeneratorArgs
+        {
+            Logger = Args.Logger,
+            OutputDirectory = Args.OutputDirectory,
+            ScriptFileName = "Database.yaml",
+            ConfigFileName = CodeGenConfigFile.FullName,
+            ExpectNoChanges = Args.ExpectNoChanges
+        };
+
+        cga.Parameters.Add("__migrator", this);
+
+        // Add the assemblies in reverse order to ensure the assembly with the highest precedence is processed last (as the code-gen will use the first found resource where duplicates exist).
+        cga.Assemblies.AddRange(Args.Assemblies.Select(x => x.Assembly).Reverse());
+
+        // Create the code-generator and set the reference to this migrator for use during code-generation.
+        var codeGenerator = await CodeGenerator.CreateAsync<CodeGen.DbCodeGenerator>(cga).ConfigureAwait(false);
+        codeGenerator.Migrator = this;
+
+        // Execute the code-generation.
+        try
+        {
+            var stats = await codeGenerator.GenerateAsync(cga.ConfigFileName).ConfigureAwait(false);
+            return (true, $", Files: Unchanged = {stats.NotChangedCount}, Updated = {stats.UpdatedCount}, Created = {stats.CreatedCount}, TotalLines = {stats.LinesOfCodeCount}");
+        }
+        catch (CodeGenException cgex)
+        {
+            Logger.LogError("{Content}", cgex.Message);
+            Logger.LogInformation("{Content}", string.Empty);
+            return (false, null);
+        }
+        catch (CodeGenChangesFoundException cgcfex)
+        {
+            Logger.LogError("{Content}", cgcfex.Message);
+            Logger.LogInformation("{Content}", string.Empty);
+            return (false, null);
+        }
+    }
 
     /// <summary>
     /// Performs the <see cref="MigrationCommand.Schema"/> command.
@@ -860,7 +914,7 @@ public abstract class DatabaseMigrationBase : IDisposable
         suffix.ThrowIfNull(nameof(suffix));
 
         var list = new List<string>();
-        foreach (var ns in reverse ? Namespaces.Reverse() : Namespaces)
+        foreach (var ns in reverse ? Namespaces.AsEnumerable().Reverse() : Namespaces)
         {
             list.Add($"{ns}.{suffix}");
         }
@@ -953,7 +1007,7 @@ public abstract class DatabaseMigrationBase : IDisposable
     /// <param name="statements">The SQL statements.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
-    /// <remarks>A maximum of 999 SQL statements may be executed at one-time. Each script is run independently (i.e. not within an overall database tramsaction); therefore, any preceeding scripts before error will have executed successfully.</remarks>
+    /// <remarks>A maximum of 999 SQL statements may be executed at one-time. Each script is run independently (i.e. not within an overall database transaction); therefore, any preceding scripts before error will have executed successfully.</remarks>
     public async Task<bool> ExecuteSqlStatementsAsync(string[]? statements, CancellationToken cancellationToken = default)
     {
         PreExecutionInitialization();

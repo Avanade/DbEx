@@ -29,6 +29,11 @@ public abstract class MigrationArgsBase : OnRamp.CodeGeneratorDbArgsBase
     public MigrationArgsBase() => DataParserArgs = new DataParserArgs(Parameters);
 
     /// <summary>
+    /// Gets the <see cref="DatabaseMigrationBase"/> to be used to perform the migration; will be automatically set by the <see cref="DatabaseMigrationBase"/> on migration start.
+    /// </summary>
+    public DatabaseMigrationBase? DatabaseMigrator { get; internal set; }
+
+    /// <summary>
     /// Gets or sets the <see cref="DbEx.MigrationCommand"/>.
     /// </summary>
     public MigrationCommand MigrationCommand { get; set; } = MigrationCommand.None;
@@ -164,6 +169,13 @@ public abstract class MigrationArgsBase : OnRamp.CodeGeneratorDbArgsBase
     /// Indicates whether to drop all the known schema objects before creating/replacing them.
     /// </summary>
     public bool DropSchemaObjects { get; set; }
+
+    /// <summary>
+    /// Indicates to expect no changes during code-generation.
+    /// </summary>
+    /// <remarks>Will result in an error where changes are identified. This is useful in the likes of build pipelines to confirm that the underlying configuration and build output are in sync; and/or
+    /// changes have been made manually overriding the generated artefacts in error.</remarks>
+    public bool ExpectNoChanges { get; set; }
 
     /// <summary>
     /// Gets or sets the <see cref="MigrationCommand.Reset"/> table filtering predicate.
