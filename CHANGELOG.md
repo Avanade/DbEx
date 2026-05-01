@@ -15,7 +15,7 @@ All internal dependencies to [`CoreEx`](https://github.com/avanade/coreex) have 
   - Entity Framework (EF) convention-based model and model-builder code generation added (all supported databases included).
   - Transactional `Outbox` and corresponding `OutboxLease` code-generation added (SQL Server only).
   - The existence of the code-generation configuration file `dbex.yaml` is required to enable.
-  - Preview 3 will add `dbex.yaml` schema and documentation.
+  - Preview 4 will add `dbex.yaml` schema and documentation.
 
 The enhancements have been made in a manner to maximize backwards compatibility with previous versions of `DbEx` where possible; however, some breaking changes were unfortunately unavoidable (and made to improve overall).
 

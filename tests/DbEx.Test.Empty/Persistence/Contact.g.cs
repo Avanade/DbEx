@@ -9,7 +9,7 @@
 namespace DbEx.Test.Empty.Persistence;
 
 /// <summary>
-/// Model class representing the '<c>[Test].[Contact]</c>' database table.
+/// Persistence model representing the '<c>[Test].[Contact]</c>' database table.
 /// </summary>
 public partial class Contact
 {
@@ -22,7 +22,7 @@ public partial class Contact
     /// <summary>
     /// Gets or sets the value of the '<c>Name</c>' column (<c>NVARCHAR(200)</c>).
     /// </summary>
-    public string? Name { get; set; }
+    public string Name { get; set; } = default!;
 
     /// <summary>
     /// Gets or sets the value of the '<c>Phone</c>' column (<c>VARCHAR(15) NULL</c>).

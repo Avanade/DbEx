@@ -190,7 +190,7 @@ public class DbColumnSchema(DbTableSchema dbTable, string name, string type, str
     /// Gets the corresponding .NET <see cref="System.Type"/> name (including nullability).
     /// </summary>
     /// <remarks>A <see cref="string"/> type is always considered nullable; otherwise, the nullability is determined by the <see cref="IsNullable"/> property.</remarks>
-    public string DotNetTypeWithNullability => IsNullable || DotNetType == "string" ? $"{DotNetType}?" : DotNetType;
+    public string DotNetTypeWithNullability => IsNullable ? $"{DotNetType}?" : DotNetType;
 
     /// <summary>
     /// Gets the corresponding .NET name.
