@@ -6,7 +6,8 @@
 /// <param name="migration">The owning <see cref="DatabaseMigrationBase"/>.</param>
 /// <param name="supportsSchema">Indicates whether the database supports per-database schema-based separation.</param>
 /// <param name="defaultSchema">The default schema name used where not explicitly specified.</param>
-public abstract class DatabaseSchemaConfig(DatabaseMigrationBase migration, bool supportsSchema = false, string? defaultSchema = null)
+/// <param name="scriptSuffix">The suffix of the migration script files (e.g. "sql").</param>
+public abstract class DatabaseSchemaConfig(DatabaseMigrationBase migration, bool supportsSchema = false, string? defaultSchema = null, string? scriptSuffix = "sql")
 {
     private readonly string? _defaultSchema = defaultSchema;
 
@@ -27,6 +28,11 @@ public abstract class DatabaseSchemaConfig(DatabaseMigrationBase migration, bool
     public string DefaultSchema => SupportsSchema
         ? (_defaultSchema ?? throw new InvalidOperationException("The database supports per-database schema-based separation and a default is required."))
         : throw new NotSupportedException("The database does not support per-database schema-based separation.");
+
+    /// <summary>
+    /// Gets or sets the suffix of the migration script files (e.g. "sql").
+    /// </summary>
+    public string ScriptSuffix { get; } = scriptSuffix.ThrowIfNull(nameof(scriptSuffix));
 
     /// <summary>
     /// Gets the suffix of the identifier column.

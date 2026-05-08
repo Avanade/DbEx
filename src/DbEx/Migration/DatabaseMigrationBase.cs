@@ -380,7 +380,7 @@ public abstract class DatabaseMigrationBase : IDisposable
     /// <remarks>The <c>@DatabaseName</c> literal within the resulting (embedded resource) command is replaced by the <see cref="DatabaseName"/> using a <see cref="string.Replace(string, string)"/> (i.e. not database parameterized as not all databases support).</remarks>
     protected virtual async Task<bool> DatabaseExistsAsync(CancellationToken cancellationToken = default)
     {
-        using var sr = GetRequiredResourcesStreamReader($"DatabaseExists.sql", [.. ArtefactResourceAssemblies]);
+        using var sr = GetRequiredResourcesStreamReader($"DatabaseExists.{SchemaConfig.ScriptSuffix}", [.. ArtefactResourceAssemblies]);
         var name = await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).ScalarAsync<string?>(cancellationToken);
         return name != null;
     }
@@ -403,7 +403,7 @@ public abstract class DatabaseMigrationBase : IDisposable
             return true;
         }
 
-        using var sr = GetRequiredResourcesStreamReader($"DatabaseDrop.sql", [.. ArtefactResourceAssemblies]);
+        using var sr = GetRequiredResourcesStreamReader($"DatabaseDrop.{SchemaConfig.ScriptSuffix}", [.. ArtefactResourceAssemblies]);
         await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).NonQueryAsync(cancellationToken);
 
         Logger.LogInformation("{Content}", $"    Database '{DatabaseName}' dropped.");
@@ -428,17 +428,17 @@ public abstract class DatabaseMigrationBase : IDisposable
             return true;
         }
 
-        using var sr = GetRequiredResourcesStreamReader($"DatabaseCreate.sql", [.. ArtefactResourceAssemblies]);
+        using var sr = GetRequiredResourcesStreamReader($"DatabaseCreate.{SchemaConfig.ScriptSuffix}", [.. ArtefactResourceAssemblies]);
         await MasterDatabase.SqlStatement(ReplaceSqlRuntimeParameters(sr.ReadToEnd())).NonQueryAsync(cancellationToken);
 
         Logger.LogInformation("{Content}", $"    Database '{DatabaseName}' did not exist and was created.");
         Logger.LogInformation("{Content}", string.Empty);
-        Logger.LogInformation("{Content}", $"  Probing for '{OnDatabaseCreateName}' embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.sql"))}");
+        Logger.LogInformation("{Content}", $"  Probing for '{OnDatabaseCreateName}' embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.{SchemaConfig.ScriptSuffix}"))}");
 
         var scripts = new List<DatabaseMigrationScript>();
         foreach (var ass in Args.ProbeAssemblies)
         {
-            foreach (var name in ass.Assembly.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture) && rn.EndsWith($".{OnDatabaseCreateName}.sql", StringComparison.InvariantCultureIgnoreCase))).OrderBy(x => x))
+            foreach (var name in ass.Assembly.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture) && rn.EndsWith($".{OnDatabaseCreateName}.{SchemaConfig.ScriptSuffix}", StringComparison.InvariantCultureIgnoreCase))).OrderBy(x => x))
             {
                 scripts.Add(new DatabaseMigrationScript(this, ass.Assembly, name) { RunAlways = true });
             }
@@ -459,7 +459,7 @@ public abstract class DatabaseMigrationBase : IDisposable
     /// </summary>
     private async Task<bool> DatabaseMigrateAsync(CancellationToken cancellationToken)
     {
-        Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.sql"))}");
+        Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{MigrationsNamespace}.*.{SchemaConfig.ScriptSuffix}"))}");
 
         // Function to add the script in a consistent manner.
         void AddScript(List<DatabaseMigrationScript> scripts, Assembly assembly, string name)
@@ -469,8 +469,8 @@ public abstract class DatabaseMigrationBase : IDisposable
                 return;
 
             // Determine run order and add script to list.
-            var order = name.EndsWith(".pre.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 1 :
-                        name.EndsWith(".post.deploy.sql", StringComparison.InvariantCultureIgnoreCase) ? 3 : 2;
+            var order = name.EndsWith($".pre.deploy.{SchemaConfig.ScriptSuffix}", StringComparison.InvariantCultureIgnoreCase) ? 1 :
+                        name.EndsWith($".post.deploy.{SchemaConfig.ScriptSuffix}", StringComparison.InvariantCultureIgnoreCase) ? 3 : 2;
 
             scripts.Add(new DatabaseMigrationScript(this, assembly, name) { GroupOrder = order, RunAlways = order != 2 });
         };
@@ -482,7 +482,7 @@ public abstract class DatabaseMigrationBase : IDisposable
             foreach (var name in ass.Assembly.GetManifestResourceNames().Where(rn => Namespaces.Any(ns => rn.StartsWith($"{ns}.{MigrationsNamespace}.", StringComparison.InvariantCulture))).OrderBy(x => x))
             {
                 // Ignore any/all database create scripts.
-                if (name.EndsWith($".{OnDatabaseCreateName}.sql", StringComparison.InvariantCultureIgnoreCase))
+                if (name.EndsWith($".{OnDatabaseCreateName}.{SchemaConfig.ScriptSuffix}", StringComparison.InvariantCultureIgnoreCase))
                     continue;
 
                 AddScript(scripts, ass.Assembly, name);
@@ -574,11 +574,11 @@ public abstract class DatabaseMigrationBase : IDisposable
         if (dir != null && dir.Exists)
         {
             var di = new DirectoryInfo(Path.Combine(dir.FullName, SchemaNamespace));
-            Logger.LogInformation("{Content}", $"  Probing for files (recursively): {Path.Combine(di.FullName, "*", "*.sql")}");
+            Logger.LogInformation("{Content}", $"  Probing for files (recursively): {Path.Combine(di.FullName, "*", $"*.{SchemaConfig.ScriptSuffix}")}");
 
             if (di.Exists)
             {
-                foreach (var fi in di.GetFiles("*.sql", SearchOption.AllDirectories))
+                foreach (var fi in di.GetFiles($"*.{SchemaConfig.ScriptSuffix}", SearchOption.AllDirectories))
                 {
                     var rn = $"{fi.FullName[((dir.Parent?.FullName.Length + 1) ?? 0)..]}".Replace(' ', '_').Replace('-', '_').Replace('\\', '.').Replace('/', '.');
                     scripts.Add(new DatabaseMigrationScript(this, fi, rn));
@@ -587,13 +587,13 @@ public abstract class DatabaseMigrationBase : IDisposable
         }
 
         // Get all the resources from the assemblies.
-        Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{SchemaNamespace}.*.sql"))}");
+        Logger.LogInformation("{Content}", $"  Probing for embedded resources: {string.Join(", ", GetNamespacesWithSuffix($"{SchemaNamespace}.*.{SchemaConfig.ScriptSuffix}"))}");
         foreach (var ass in Args.ProbeAssemblies)
         {
             foreach (var rn in ass.Assembly.GetManifestResourceNames().OrderBy(x => x))
             {
-                // Filter on schema namespace prefix and suffix of '.sql'.
-                if (!(Namespaces.Any(x => rn.StartsWith($"{x}.{SchemaNamespace}.", StringComparison.InvariantCulture) && rn.EndsWith(".sql", StringComparison.InvariantCultureIgnoreCase))))
+                // Filter on schema namespace prefix and suffix of '.<SchemaConfig.ScriptSuffix>'.
+                if (!(Namespaces.Any(x => rn.StartsWith($"{x}.{SchemaNamespace}.", StringComparison.InvariantCulture) && rn.EndsWith($".{SchemaConfig.ScriptSuffix}", StringComparison.InvariantCultureIgnoreCase))))
                     continue;
 
                 // Filter out any picked up from file system probe above.
@@ -743,7 +743,7 @@ public abstract class DatabaseMigrationBase : IDisposable
             return true;
         }
 
-        using var sr = GetRequiredResourcesStreamReader($"DatabaseReset_sql", [.. ArtefactResourceAssemblies], StreamLocator.HandlebarsExtensions);
+        using var sr = GetRequiredResourcesStreamReader($"DatabaseReset_{SchemaConfig.ScriptSuffix}", [.. ArtefactResourceAssemblies], StreamLocator.HandlebarsExtensions);
         var cg = new HandlebarsCodeGenerator(sr);
         var sql = cg.Generate(delete);
 
@@ -789,7 +789,7 @@ public abstract class DatabaseMigrationBase : IDisposable
                 foreach (var dns in ass.DataNamespaces)
                 {
                     // Filter on schema namespace prefix and supported suffixes.
-                    if (!Namespaces.Any(x => rn.StartsWith($"{x}.{dns}.", StringComparison.InvariantCulture) && (rn.EndsWith(".sql", StringComparison.InvariantCultureIgnoreCase)
+                    if (!Namespaces.Any(x => rn.StartsWith($"{x}.{dns}.", StringComparison.InvariantCulture) && (rn.EndsWith($".{SchemaConfig.ScriptSuffix}", StringComparison.InvariantCultureIgnoreCase)
                         || rn.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".yml", StringComparison.InvariantCultureIgnoreCase)
                         || rn.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".jsn", StringComparison.InvariantCultureIgnoreCase))))
                         continue;
@@ -816,7 +816,7 @@ public abstract class DatabaseMigrationBase : IDisposable
         {
             using var sr = new StreamReader(item.Assembly.GetManifestResourceStream(item.ResourceName)!);
 
-            if (item.ResourceName.EndsWith(".sql", StringComparison.InvariantCultureIgnoreCase))
+            if (item.ResourceName.EndsWith($".{SchemaConfig.ScriptSuffix}", StringComparison.InvariantCultureIgnoreCase))
             {
                 // Execute the SQL script directly.
                 Logger.LogInformation("{Content}", string.Empty);
@@ -865,7 +865,7 @@ public abstract class DatabaseMigrationBase : IDisposable
         // Cache the compiled code-gen template.
         if (_dataCodeGen == null)
         {
-            using var sr = GetRequiredResourcesStreamReader($"DatabaseData_sql", [.. ArtefactResourceAssemblies], StreamLocator.HandlebarsExtensions);
+            using var sr = GetRequiredResourcesStreamReader($"DatabaseData_{SchemaConfig.ScriptSuffix}", [.. ArtefactResourceAssemblies], StreamLocator.HandlebarsExtensions);
 #if NET7_0_OR_GREATER
             _dataCodeGen = new HandlebarsCodeGenerator(await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false));
 #else
@@ -941,7 +941,7 @@ public abstract class DatabaseMigrationBase : IDisposable
     private async Task<bool> CreateScriptInternalAsync(string? name, IDictionary<string, string?>? parameters, CancellationToken cancellationToken)
     {
         name ??= "Default";
-        var rn = $"Script{name}_sql";
+        var rn = $"Script{name}_{SchemaConfig.ScriptSuffix}";
 
         // Find the resource.
         using var sr = StreamLocator.GetResourcesStreamReader(rn, [.. ArtefactResourceAssemblies], StreamLocator.HandlebarsExtensions).StreamReader;
@@ -987,7 +987,7 @@ public abstract class DatabaseMigrationBase : IDisposable
         if (Args.OutputDirectory == null)
             throw new InvalidOperationException("Args.OutputDirectory has not been correctly determined.");
 
-        fn = $"{DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture)}-{fn.Replace("[", "{{").Replace("]", "}}")}.sql";
+        fn = $"{DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture)}-{fn.Replace("[", "{{").Replace("]", "}}")}.{SchemaConfig.ScriptSuffix}";
         fn = Path.Combine(Args.OutputDirectory.FullName, MigrationsNamespace, new HandlebarsCodeGenerator(fn).Generate(data).Replace(" ", "-").ToLowerInvariant());
         var fi = new FileInfo(fn);
 
@@ -1036,7 +1036,7 @@ public abstract class DatabaseMigrationBase : IDisposable
             if (File.Exists(statements[i]))
                 scripts.Add(new DatabaseMigrationScript(this, new FileInfo(statements[i]), statements[i]));
             else
-                scripts.Add(new DatabaseMigrationScript(this, statements[i], $"{sn}{i + 1:000}.sql"));
+                scripts.Add(new DatabaseMigrationScript(this, statements[i], $"{sn}{i + 1:000}.{SchemaConfig.ScriptSuffix}"));
         }
 
         return await ExecuteScriptsAsync(scripts, false, cancellationToken).ConfigureAwait(false);

@@ -23,7 +23,7 @@ public static class MigrationArgsExtensions
     /// <returns>The <see cref="MigrationArgs"/> to support fluent-style method-chaining.</returns>
     public static void AddExtendedSchemaScripts<TArgs>(TArgs args) where TArgs : MigrationArgsBase<TArgs>
     {
-        foreach (var rn in typeof(MigrationArgsExtensions).Assembly.GetManifestResourceNames().Where(x => x.StartsWith("DbEx.Postgres.Resources.ExtendedSchema.") && x.EndsWith(".sql")))
+        foreach (var rn in typeof(MigrationArgsExtensions).Assembly.GetManifestResourceNames().Where(x => x.StartsWith("DbEx.Postgres.Resources.ExtendedSchema.") && x.EndsWith($".{args.DatabaseMigrator?.SchemaConfig.ScriptSuffix ?? "pgsql"}")))
         {
             args.AddScript(MigrationCommand.Schema, typeof(MigrationArgsExtensions).Assembly, rn);
         }

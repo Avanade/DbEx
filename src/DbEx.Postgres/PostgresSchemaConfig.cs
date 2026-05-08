@@ -4,7 +4,7 @@
 /// Provides PostgreSQL specific configuration and capabilities.
 /// </summary>
 /// <param name="migration">The owning <see cref="PostgresMigration"/>.</param>
-public class PostgresSchemaConfig(PostgresMigration migration) : DatabaseSchemaConfig(migration, true, "public")
+public class PostgresSchemaConfig(PostgresMigration migration) : DatabaseSchemaConfig(migration, true, "public", "pgsql")
 {
     /// <inheritdoc/>
     /// <remarks>Value is '<c>_id</c>'.</remarks>
@@ -112,7 +112,7 @@ public class PostgresSchemaConfig(PostgresMigration migration) : DatabaseSchemaC
         }
 
         // Configure all the single column foreign keys.
-        using var sr3 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableForeignKeys.sql", [typeof(PostgresSchemaConfig).Assembly]);
+        using var sr3 = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"SelectTableForeignKeys.{ScriptSuffix}", [typeof(PostgresSchemaConfig).Assembly]);
         var fks = await database.SqlStatement(await sr3.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr => new
         {
             ConstraintName = dr.GetValue<string>("constraint_name"),

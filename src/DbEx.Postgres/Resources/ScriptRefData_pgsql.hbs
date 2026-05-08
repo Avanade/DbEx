@@ -5,7 +5,7 @@
 -- Create Reference Data table: "{{lookup Parameters 'Param1'}}"."{{lookup Parameters 'Param2'}}"
 
 CREATE TABLE "{{lookup Parameters 'Param1'}}"."{{lookup Parameters 'Param2'}}" (
-  "{{lookup Parameters 'Param1'}}_id" SERIAL PRIMARY KEY,
+  "{{lookup Parameters 'Param2'}}_id" SERIAL PRIMARY KEY,
   "code" VARCHAR(50) NOT NULL UNIQUE,
   "text" VARCHAR(250) NULL,
   "is_active" BOOLEAN NULL,

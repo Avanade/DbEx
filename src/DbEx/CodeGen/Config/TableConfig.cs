@@ -29,14 +29,14 @@ public class TableConfig : ConfigBase<CodeGenConfig, CodeGenConfig>, IByConventi
     /// Gets or sets the list of database columns to include explicitly.
     /// </summary>
     [JsonPropertyName("includeColumns")]
-    [CodeGenProperty("Columns", Title = "The list of database columns to include specifically.", Description = "All columns are included by default; this provides a means to simply select those for inclusion.")]
+    [CodeGenPropertyCollection("Columns", Title = "The list of database columns to include specifically.", Description = "All columns are included by default; this provides a means to simply select those for inclusion.")]
     public List<string>? IncludeColumns { get; set; }
 
     /// <summary>
     /// Gets or sets the list of database column names to exclude explicitly.
     /// </summary>
     [JsonPropertyName("excludeColumns")]
-    [CodeGenProperty("Columns", Title = "The list of database columns to exclude specifically.", Description = "All columns are included by default; this provides a means to simply select those for exclusion. A single item of '*' indicates all columns are to be excluded.")]
+    [CodeGenPropertyCollection("Columns", Title = "The list of database columns to exclude specifically.", Description = "All columns are included by default; this provides a means to simply select those for exclusion. A single item of '*' indicates all columns are to be excluded.")]
     public List<string>? ExcludeColumns { get; set; }
 
     /// <summary>

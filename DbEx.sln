@@ -51,6 +51,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbEx.Postgres", "src\DbEx.P
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbEx.Test.PostgresConsole", "tests\DbEx.Test.PostgresConsole\DbEx.Test.PostgresConsole.csproj", "{9DBC4E5E-6321-4F56-82CC-7ECEE1020EE0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{D0DB9FBD-1CF8-421C-84A4-F2398289AA71}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbEx.Tooling.Console", "tools\DbEx.Tooling.Console\DbEx.Tooling.Console.csproj", "{D66FA528-5FEB-48C1-9612-B61F3134741E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Schema", "Schema", "{86DCB8F5-DA63-41B0-B6ED-9D7BFA62F391}"
+	ProjectSection(SolutionItems) = preProject
+		schema\dbex.json = schema\dbex.json
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +106,10 @@ Global
 		{9DBC4E5E-6321-4F56-82CC-7ECEE1020EE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9DBC4E5E-6321-4F56-82CC-7ECEE1020EE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9DBC4E5E-6321-4F56-82CC-7ECEE1020EE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D66FA528-5FEB-48C1-9612-B61F3134741E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D66FA528-5FEB-48C1-9612-B61F3134741E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D66FA528-5FEB-48C1-9612-B61F3134741E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D66FA528-5FEB-48C1-9612-B61F3134741E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -109,6 +122,7 @@ Global
 		{2069346C-9769-48DF-B71F-A58ED6A2192B} = {06385968-DFF7-4470-B87E-55D98CC4661C}
 		{80EF0604-F641-4D01-9922-0162D0C69E02} = {06385968-DFF7-4470-B87E-55D98CC4661C}
 		{9DBC4E5E-6321-4F56-82CC-7ECEE1020EE0} = {06385968-DFF7-4470-B87E-55D98CC4661C}
+		{D66FA528-5FEB-48C1-9612-B61F3134741E} = {D0DB9FBD-1CF8-421C-84A4-F2398289AA71}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1A02148E-CFB1-43D0-8DC0-123232A179A7}

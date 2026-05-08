@@ -69,7 +69,7 @@ public class Database<TConnection>(Func<TConnection> create, DbProviderFactory p
 
         // Get all the tables and their columns.
         var probeAssemblies = new[] { migration.SchemaConfig.GetType().Assembly, typeof(DatabaseExtensions).Assembly };
-        using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableAndColumns.sql", probeAssemblies);
+        using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"SelectTableAndColumns.{migration.SchemaConfig.ScriptSuffix}", probeAssemblies);
         await SqlStatement(await ReadSqlAsync(migration, sr, cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr =>
         {
             if (!migration.SchemaConfig.SupportsSchema && dr.GetValue<string>("TABLE_SCHEMA") != migration.DatabaseName)
@@ -101,7 +101,7 @@ public class Database<TConnection>(Func<TConnection> create, DbProviderFactory p
             return tables;
 
         // Configure all the single column primary and unique constraints.
-        using var sr2 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTablePrimaryKey.sql", probeAssemblies);
+        using var sr2 = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"SelectTablePrimaryKey.{migration.SchemaConfig.ScriptSuffix}", probeAssemblies);
         var pks = await SqlStatement(await ReadSqlAsync(migration, sr2, cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr => new
         {
             ConstraintName = dr.GetValue<string>("CONSTRAINT_NAME"),

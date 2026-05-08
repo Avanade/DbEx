@@ -1,0 +1,1 @@
+dotnet run --framework net10.0 --no-launch-profile -- --generate-json-schema

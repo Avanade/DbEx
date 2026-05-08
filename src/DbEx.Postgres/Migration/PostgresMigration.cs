@@ -23,7 +23,8 @@ public class PostgresMigration : DatabaseMigrationBase
             throw new ArgumentException($"The {nameof(OnRamp.CodeGeneratorDbArgsBase.ConnectionString)} property must contain a database name.", nameof(args));
 
         _databaseName = csb.Database;
-        _database = new PostgresDatabase(() => new NpgsqlConnection(Args.ConnectionString));
+        var ds1 = NpgsqlDataSource.Create(Args.ConnectionString!);
+        _database = new PostgresDatabase(() => NpgsqlDataSource.Create(Args.ConnectionString!).CreateConnection());
 
         csb.Database = null;
         _masterDatabase = new PostgresDatabase(() => new NpgsqlConnection(csb.ConnectionString));

@@ -11,11 +11,14 @@ All internal dependencies to [`CoreEx`](https://github.com/avanade/coreex) have 
   - `MigrationArgsBase.CreatedDateColumnName` renamed to `MigrationArgsBase.CreatedOnColumnName`.
   - `MigrationArgsBase.UpdatedDateColumnName` renamed to `MigrationArgsBase.UpdatedOnColumnName`.
   - `DateTimeOffset` is the preferred .NET type for date/time auditing/timestamping.
+- *Enhancement:* Added script suffix to discern the type of script; e.g. `*.sql`, `*.pgsql` and `*.mysql`, etc. This is a standard convention-based approach to enable support for multiple databases within the same project/assembly, specifically the likes of intellisense.
+  - As the name suffix has changed, the existing convention-based discovery of scripts will not find any scripts until they have been renamed to include the suffix; e.g. `MyScript.sql` for SQL Server, `MyScript.pgsql` for PostgreSQL and `MyScript.mysql` for MySQL.
+  - Additionally, existing journal entries will not be found as the script name is used as the journal identifier; i.e. the existing journal entries will need to be updated to include the updated suffix.
 - *Enhancement:* Introduced basic code-generation (leverages [`OnRamp`](https://github.com/avanade/onramp)).
   - Entity Framework (EF) convention-based model and model-builder code generation added (all supported databases included).
-  - Transactional `Outbox` and corresponding `OutboxLease` code-generation added (SQL Server only).
+  - Transactional `Outbox` and corresponding `OutboxLease` code-generation added (SQL Server and PostgreSQL only).
   - The existence of the code-generation configuration file `dbex.yaml` is required to enable.
-  - Preview 4 will add `dbex.yaml` schema and documentation.
+  - Added `dbex.yaml` support for `$schema` reference; see [`dbex.json`](./schema/dbex.json).
 
 The enhancements have been made in a manner to maximize backwards compatibility with previous versions of `DbEx` where possible; however, some breaking changes were unfortunately unavoidable (and made to improve overall).
 

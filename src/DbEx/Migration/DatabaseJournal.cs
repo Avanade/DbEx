@@ -28,7 +28,7 @@ public class DatabaseJournal(DatabaseMigrationBase migrator) : IDatabaseJournal
         if (_journalExists)
             return;
 
-        using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"JournalExists.sql", [.. Migrator.ArtefactResourceAssemblies])!;
+        using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"JournalExists.{Migrator.SchemaConfig.ScriptSuffix}", [.. Migrator.ArtefactResourceAssemblies])!;
         var exists = await Migrator.Database.SqlStatement(Migrator.ReplaceSqlRuntimeParameters(sr.ReadToEnd())).ScalarAsync<object?>(cancellationToken).ConfigureAwait(false);
         if (exists != null)
         {
@@ -36,7 +36,7 @@ public class DatabaseJournal(DatabaseMigrationBase migrator) : IDatabaseJournal
             return;
         }
 
-        using var sr2 = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"JournalCreate.sql", [.. Migrator.ArtefactResourceAssemblies])!;
+        using var sr2 = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"JournalCreate.{Migrator.SchemaConfig.ScriptSuffix}", [.. Migrator.ArtefactResourceAssemblies])!;
         await Migrator.Database.SqlStatement(Migrator.ReplaceSqlRuntimeParameters(sr2.ReadToEnd())).NonQueryAsync(cancellationToken).ConfigureAwait(false);
 
         Migrator.Logger.LogInformation("    *Journal table did not exist within the database and was automatically created.");
@@ -49,7 +49,7 @@ public class DatabaseJournal(DatabaseMigrationBase migrator) : IDatabaseJournal
     {
         await EnsureExistsAsync(cancellationToken).ConfigureAwait(false);
 
-        using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"JournalAudit.sql", [.. Migrator.ArtefactResourceAssemblies])!;
+        using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"JournalAudit.{Migrator.SchemaConfig.ScriptSuffix}", [.. Migrator.ArtefactResourceAssemblies])!;
         await Migrator.Database.SqlStatement(Migrator.ReplaceSqlRuntimeParameters(sr.ReadToEnd()))
             .Param("@scriptname", script.Name)
             .Param("@applied", DateTime.UtcNow)
@@ -61,7 +61,7 @@ public class DatabaseJournal(DatabaseMigrationBase migrator) : IDatabaseJournal
     {
         await EnsureExistsAsync(cancellationToken).ConfigureAwait(false);
 
-        using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"JournalPrevious.sql", [.. Migrator.ArtefactResourceAssemblies])!;
+        using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"JournalPrevious.{Migrator.SchemaConfig.ScriptSuffix}", [.. Migrator.ArtefactResourceAssemblies])!;
         return await Migrator.Database.SqlStatement(Migrator.ReplaceSqlRuntimeParameters(sr.ReadToEnd())).SelectQueryAsync(dr => dr.GetValue<string>("scriptname")!, cancellationToken).ConfigureAwait(false);
     }
 }

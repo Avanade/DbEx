@@ -1,0 +1,11 @@
+configType: DbEx.CodeGen.Config.CodeGenConfig, DbEx
+generators:
+- { type: 'DbEx.CodeGen.Generators.EfModelGenerator, DbEx', template: 'EfModel_cs', file: '{{EfModelName}}.g.cs', directory: '{{Root.DotNetDataProjectDirectory.FullName}}/{{Root.DotNetDataEfModelsPath}}', text: Entity-framework (EF) model(s) generation }  
+- { type: 'DbEx.CodeGen.Generators.EfModelBuilderGenerator, DbEx', template: 'EfModelBuilder_cs', file: '{{Domain}}DbContext.g.cs', directory: '{{Root.DotNetDataProjectDirectory.FullName}}/{{Root.DotNetDataEfRepositoriesPath}}', text: Entity-framework (EF) DbContext model builder generation }
+
+- { type: 'DbEx.CodeGen.Generators.OutboxGenerator, DbEx', template: 'FnOutboxEnqueue_pgsql', file: 'fn_{{snake OutboxName}}_enqueue.g.pgsql', directory: '{{Root.DatabaseDirectory.FullName}}/Schema/Functions', text: Outbox enqueue function generation }
+- { type: 'DbEx.CodeGen.Generators.OutboxGenerator, DbEx', template: 'FnOutboxBatchClaim_pgsql', file: 'fn_{{snake OutboxName}}_batch_claim.g.pgsql', directory: '{{Root.DatabaseDirectory.FullName}}/Schema/Functions', text: Outbox batch-claim function generation }
+- { type: 'DbEx.CodeGen.Generators.OutboxGenerator, DbEx', template: 'FnOutboxBatchComplete_pgsql', file: 'fn_{{snake OutboxName}}_batch_complete.g.pgsql', directory: '{{Root.DatabaseDirectory.FullName}}/Schema/Functions', text: Outbox batch-complete function generation }
+- { type: 'DbEx.CodeGen.Generators.OutboxGenerator, DbEx', template: 'FnOutboxBatchCancel_pgsql', file: 'fn_{{snake OutboxName}}_batch_cancel.g.pgsql', directory: '{{Root.DatabaseDirectory.FullName}}/Schema/Functions', text: Outbox batch-cancel function generation }
+- { type: 'DbEx.CodeGen.Generators.OutboxGenerator, DbEx', template: 'FnOutboxLeaseAcquire_pgsql', file: 'fn_{{snake OutboxName}}_lease_acquire.g.pgsql', directory: '{{Root.DatabaseDirectory.FullName}}/Schema/Functions', text: Outbox lease-acquire function generation }
+- { type: 'DbEx.CodeGen.Generators.OutboxGenerator, DbEx', template: 'FnOutboxLeaseRelease_pgsql', file: 'fn_{{snake OutboxName}}_lease_release.g.pgsql', directory: '{{Root.DatabaseDirectory.FullName}}/Schema/Functions', text: Outbox lease-release function generation }

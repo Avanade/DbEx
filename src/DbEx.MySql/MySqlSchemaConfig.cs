@@ -4,7 +4,7 @@
 /// Provides MySQL specific configuration and capabilities.
 /// </summary>
 /// <param name="migration">The owning <see cref="MySqlMigration"/>.</param>
-public class MySqlSchemaConfig(MySqlMigration migration) : DatabaseSchemaConfig(migration)
+public class MySqlSchemaConfig(MySqlMigration migration) : DatabaseSchemaConfig(migration, scriptSuffix: "mysql")
 {
     /// <inheritdoc/>
     /// <remarks>Value is '<c>_id</c>'.</remarks>
@@ -115,7 +115,7 @@ public class MySqlSchemaConfig(MySqlMigration migration) : DatabaseSchemaConfig(
     public override async Task LoadAdditionalInformationSchema(IDatabase database, List<DbTableSchema> tables, CancellationToken cancellationToken)
     {
         // Configure all the single column foreign keys.
-        using var sr3 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableForeignKeys.sql", [typeof(MySqlSchemaConfig).Assembly]);
+        using var sr3 = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"SelectTableForeignKeys.{ScriptSuffix}", [typeof(MySqlSchemaConfig).Assembly]);
 #if NET7_0_OR_GREATER
         var fks = await database.SqlStatement(await sr3.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr => new
 #else
