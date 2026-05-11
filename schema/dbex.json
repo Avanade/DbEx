@@ -215,6 +215,11 @@
           "type": "string",
           "title": "The .NET value converter source code for the column.",
           "description": "Defaults to null. This must be valid C# source code as it is applied as-is."
+        },
+        "default": {
+          "type": "string",
+          "title": "The .NET default value for the column\u0027s property.",
+          "description": "Defaults to null. This must be valid C# source code as it is applied as-is."
         }
       },
       "required": [

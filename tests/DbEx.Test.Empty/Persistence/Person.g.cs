@@ -17,7 +17,7 @@ public partial class Person
     /// Gets or sets the value of the '<c>PersonId</c>' column (<c>UNIQUEIDENTIFIER</c>).
     /// </summary>
     /// <remarks>This is the primary key.</remarks>
-    public Guid PersonId { get; set; }
+    public Guid PersonId { get; set; } = Guid.NewGuid();
 
     /// <summary>
     /// Gets or sets the value of the '<c>Name</c>' column (<c>NVARCHAR(200)</c>).

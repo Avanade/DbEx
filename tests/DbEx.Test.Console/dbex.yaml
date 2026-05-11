@@ -9,3 +9,5 @@ tables:
     property: Address
     type: Persistence.Address?
     valueConverter: new Persistence.JsonConverter<Persistence.Address?>()
+  - name: PersonId
+    default: Guid.NewGuid()

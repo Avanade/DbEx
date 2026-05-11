@@ -37,6 +37,13 @@ public class ColumnConfig : ConfigBase<CodeGenConfig, TableConfig>
     public string? ValueConverter { get; set; }
 
     /// <summary>
+    /// Gets or sets the .NET default value for the column's property.
+    /// </summary>
+    [JsonPropertyName("default")]
+    [CodeGenProperty("Entity Framework", Title = "The .NET default value for the column's property.", Description = "Defaults to null. This must be valid C# source code as it is applied as-is.")]
+    public string? Default { get; set; }
+
+    /// <summary>
     /// Gets or sets the actual <see cref="DbColumnSchema"/>.
     /// </summary>
     public DbColumnSchema? DbColumn { get; set; }

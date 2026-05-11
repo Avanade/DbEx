@@ -2,23 +2,23 @@
 
 Represents the **NuGet** versions.
 
-## v3.0.0 [preview-only; subject to change]
-All internal dependencies to [`CoreEx`](https://github.com/avanade/coreex) have been removed. This is intended to further generalize the capabilities of `DbEx`; but more importantly, break the circular dependency reference between the two repositories. 
-- *Enhancement:* Added `net10.0` support and updated all related package dependencies to latest. Supports only `net8.0`, `net9.0` and `net10.0`.
+## v3.0.0
+All internal dependencies to [`CoreEx`](https://github.com/avanade/coreex) have been removed. This is intended to further generalize the capabilities of `DbEx`; but more importantly, break the pseudo circular dependency reference between the two repositories. 
+- *Enhancement:* Added `net10.0` support and updated all related package dependencies to latest; now supports only `net8.0`, `net9.0` and `net10.0`.
 - *Enhancement:* List of key **breaking changes** as follows:
   - `DatabaseSchemaConfig.CreatedDate` renamed to `DatabaseSchemaConfig.CreatedOn`.
   - `DatabaseSchemaConfig.UpdatedDate` renamed to `DatabaseSchemaConfig.UpdatedOn`.
   - `MigrationArgsBase.CreatedDateColumnName` renamed to `MigrationArgsBase.CreatedOnColumnName`.
   - `MigrationArgsBase.UpdatedDateColumnName` renamed to `MigrationArgsBase.UpdatedOnColumnName`.
   - `DateTimeOffset` is the preferred .NET type for date/time auditing/timestamping.
-- *Enhancement:* Added script suffix to discern the type of script; e.g. `*.sql`, `*.pgsql` and `*.mysql`, etc. This is a standard convention-based approach to enable support for multiple databases within the same project/assembly, specifically the likes of intellisense.
-  - As the name suffix has changed, the existing convention-based discovery of scripts will not find any scripts until they have been renamed to include the suffix; e.g. `MyScript.sql` for SQL Server, `MyScript.pgsql` for PostgreSQL and `MyScript.mysql` for MySQL.
+- *Enhancement:* Added script suffix to discern the database-type; e.g. `*.sql` (SQL Server), `*.pgsql` (PostgreSQL) and `*.mysql` (MySQL), etc. This is a standard convention-based approach to enable support for multiple databases within the same project/assembly, specifically the likes of intellisense. Breaking change implications:
+  - As the name suffix has changed, the existing convention-based discovery of scripts will not find any scripts until they have been renamed to include the correct suffix; e.g. `MyScript.sql`, `MyScript.pgsql` and `MyScript.mysql`.
   - Additionally, existing journal entries will not be found as the script name is used as the journal identifier; i.e. the existing journal entries will need to be updated to include the updated suffix.
 - *Enhancement:* Introduced basic code-generation (leverages [`OnRamp`](https://github.com/avanade/onramp)).
   - Entity Framework (EF) convention-based model and model-builder code generation added (all supported databases included).
   - Transactional `Outbox` and corresponding `OutboxLease` code-generation added (SQL Server and PostgreSQL only).
   - The existence of the code-generation configuration file `dbex.yaml` is required to enable.
-  - Added `dbex.yaml` support for `$schema` reference; see [`dbex.json`](./schema/dbex.json).
+  - Added `dbex.yaml` support for `$schema` reference; see [`dbex.json`](./schema/dbex.json) (JSON-schema).
 
 The enhancements have been made in a manner to maximize backwards compatibility with previous versions of `DbEx` where possible; however, some breaking changes were unfortunately unavoidable (and made to improve overall).
 
