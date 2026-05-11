@@ -59,4 +59,4 @@ jobs:
         echo "DbEx_ConnectionStrings__PostgresDb=Server=localhost; Port=5432; Database=dbex_test; Username=postgres; Pwd=yourStrong#!Password; Pooling=false" >> $GITHUB_ENV
         
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal -p:TestTfmsInParallel=false
