@@ -1,4 +1,4 @@
-﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/Beef
+﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 CREATE OR ALTER PROCEDURE [dbo].[spThrowConcurrencyException]
   @Message NVARCHAR(2048) = NULL

@@ -1,0 +1,24 @@
+name: DbEx
+
+services:
+  db-sql-server:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      SA_PASSWORD: "yourStrong(!)Password"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    
+  db-mysql:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "yourStrong#!Password"
+    ports:
+      - "3306:3306"
+
+  db-postgres:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: "yourStrong#!Password"
+    ports:
+      - "5432:5432"

@@ -1,0 +1,235 @@
+{
+  "title": "JSON Schema for DbEx code-generation (https://github.com/avanade/dbex).",
+  "$schema": "https://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "CodeGeneration": {
+      "type": "object",
+      "title": "Database-driven by-convention code-generation.",
+      "properties": {
+        "schema": {
+          "type": "string",
+          "title": "The default database schema name."
+        },
+        "domain": {
+          "type": "string",
+          "title": "The domain name.",
+          "description": "This is the .NET domain name. Attempts to default from the underlying data project file path; uses the second to last segment of the child-most sub-directory by convention. For example, \u0027/xxx/yyy/My.App.Sales.Database\u0027, the domain would be \u0027Sales\u0027."
+        },
+        "efModel": {
+          "type": "string",
+          "title": "The default entity-framework code-generation choice.",
+          "description": "Defaults to \u0027Yes\u0027 (indicates combination of \u0027ModelOnly\u0027 and \u0027ModelBuilderOnly\u0027).",
+          "enum": [
+            "Yes",
+            "No",
+            "ModelOnly",
+            "ModelBuilderOnly"
+          ]
+        },
+        "dotNetDataProjectPath": {
+          "type": "string",
+          "title": "The relative path for the .NET data-related project.",
+          "description": "Defaults to automatic inference using expected name of \u0027Infrastructure\u0027."
+        },
+        "dotNetDataEfRepositoriesPath": {
+          "type": "string",
+          "title": "The path to append to the \u0027{DotNetDataProjectPath}\u0027 for the .NET generated entity-framework repository code.",
+          "description": "Defaults to \u0027Repositories\u0027."
+        },
+        "dotNetDataEfModelsPath": {
+          "type": "string",
+          "title": "The path to append to the \u0027{DotNetDataProjectPath}\u0027 for the .NET generated entity-framework models code.",
+          "description": "Defaults to \u0027Persistence\u0027."
+        },
+        "columnNameIsDeleted": {
+          "type": "string",
+          "title": "The default \u0027IsDeleted\u0027 column name.",
+          "description": "Defaults to \u0027IsDeleted\u0027."
+        },
+        "columnNameTenantId": {
+          "type": "string",
+          "title": "The default \u0027TenantId\u0027 column name.",
+          "description": "Defaults to \u0027TenantId\u0027."
+        },
+        "columnNameRowVersion": {
+          "type": "string",
+          "title": "The default \u0027RowVersion\u0027 column name.",
+          "description": "Defaults to \u0027RowVersion\u0027."
+        },
+        "columnNameCreatedBy": {
+          "type": "string",
+          "title": "The default \u0027CreatedBy\u0027 column name.",
+          "description": "Defaults to \u0027CreatedBy\u0027."
+        },
+        "columnNameCreatedOn": {
+          "type": "string",
+          "title": "The default \u0027CreatedOn\u0027 column name.",
+          "description": "Defaults to \u0027CreatedOn\u0027."
+        },
+        "columnNameUpdatedBy": {
+          "type": "string",
+          "title": "The default \u0027UpdatedBy\u0027 column name.",
+          "description": "Defaults to \u0027UpdatedBy\u0027."
+        },
+        "columnNameUpdatedOn": {
+          "type": "string",
+          "title": "The default \u0027UpdatedOn\u0027 column name.",
+          "description": "Defaults to \u0027UpdatedOn\u0027."
+        },
+        "outbox": {
+          "type": "boolean",
+          "title": "Indicates whether to generate the transactional-outbox database capabilities.",
+          "description": "Defaults to \u0027false\u0027."
+        },
+        "outboxSchema": {
+          "type": "string",
+          "title": "The database schema name for the outbox tables and stored procedures.",
+          "description": "Defaults to \u0027{schema}\u0027."
+        },
+        "outboxName": {
+          "type": "string",
+          "title": "The name of the outbox table.",
+          "description": "Defaults to \u0027Outbox\u0027."
+        },
+        "tables": {
+          "type": "array",
+          "title": "The database table collection configuration.",
+          "items": {
+            "$ref": "#/definitions/Table"
+          }
+        }
+      }
+    },
+    "Table": {
+      "type": "object",
+      "title": "Database table configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "The database table name."
+        },
+        "schema": {
+          "type": "string",
+          "title": "The database schema name (where applicable).",
+          "description": "Defaults to the root \u0027{Schema}\u0027 configuration."
+        },
+        "includeColumns": {
+          "type": "array",
+          "title": "The list of database columns to include specifically.",
+          "description": "All columns are included by default; this provides a means to simply select those for inclusion.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "excludeColumns": {
+          "type": "array",
+          "title": "The list of database columns to exclude specifically.",
+          "description": "All columns are included by default; this provides a means to simply select those for exclusion. A single item of \u0027*\u0027 indicates all columns are to be excluded.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "efModel": {
+          "type": "string",
+          "title": "The entity-framework code-generation choice.",
+          "description": "Defaults to parent \u0027{EfModel}\u0027. A \u0027Yes\u0027 indicates combination of \u0027ModelOnly\u0027 and \u0027ModelBuilderOnly\u0027.",
+          "enum": [
+            "Yes",
+            "No",
+            "ModelOnly",
+            "ModelBuilderOnly"
+          ]
+        },
+        "efModelName": {
+          "type": "string",
+          "title": "The name of the entity-framework model associated with this instance.",
+          "description": "Defaults to the database table\u0027s .NET formatted name."
+        },
+        "columnNameIsDeleted": {
+          "type": "string",
+          "title": "The default \u0027IsDeleted\u0027 column name.",
+          "description": "Defaults to \u0027IsDeleted\u0027."
+        },
+        "columnNameTenantId": {
+          "type": "string",
+          "title": "The default \u0027TenantId\u0027 column name.",
+          "description": "Defaults to \u0027TenantId\u0027."
+        },
+        "columnNameRowVersion": {
+          "type": "string",
+          "title": "The default \u0027RowVersion\u0027 column name.",
+          "description": "Defaults to \u0027RowVersion\u0027."
+        },
+        "columnNameCreatedBy": {
+          "type": "string",
+          "title": "The default \u0027CreatedBy\u0027 column name.",
+          "description": "Defaults to \u0027CreatedBy\u0027."
+        },
+        "columnNameCreatedOn": {
+          "type": "string",
+          "title": "The default \u0027CreatedOn\u0027 column name.",
+          "description": "Defaults to \u0027CreatedOn\u0027."
+        },
+        "columnNameUpdatedBy": {
+          "type": "string",
+          "title": "The default \u0027UpdatedBy\u0027 column name.",
+          "description": "Defaults to \u0027UpdatedBy\u0027."
+        },
+        "columnNameUpdatedOn": {
+          "type": "string",
+          "title": "The default \u0027UpdatedOn\u0027 column name.",
+          "description": "Defaults to \u0027UpdatedOn\u0027."
+        },
+        "columns": {
+          "type": "array",
+          "title": "The database column collection configuration.",
+          "description": "This collection is optional. It is used to specifically declare and/or override the column configurations. This bypasses the {IncludeColumns} and {ExcludesColumns} lists.",
+          "items": {
+            "$ref": "#/definitions/Column"
+          }
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "Column": {
+      "type": "object",
+      "title": "Database column configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "The database column name."
+        },
+        "property": {
+          "type": "string",
+          "title": "The .NET property name equivalent for the column.",
+          "description": "Defaults to the database column\u0027s .NET formatted name."
+        },
+        "type": {
+          "type": "string",
+          "title": "The corresponding .NET type equivalent for the column (including nullability).",
+          "description": "Defaults to the database column\u0027s .NET type."
+        },
+        "valueConverter": {
+          "type": "string",
+          "title": "The .NET value converter source code for the column.",
+          "description": "Defaults to null. This must be valid C# source code as it is applied as-is."
+        },
+        "default": {
+          "type": "string",
+          "title": "The .NET default value for the column\u0027s property.",
+          "description": "Defaults to null. This must be valid C# source code as it is applied as-is."
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/definitions/CodeGeneration"
+    }
+  ]
+}

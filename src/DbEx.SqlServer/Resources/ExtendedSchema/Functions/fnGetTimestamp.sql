@@ -1,19 +1,19 @@
-﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/Beef
+﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 CREATE OR ALTER FUNCTION [dbo].[fnGetTimestamp]
 (
-  @Override as datetime = null	
+  @Override AS DATETIMEOFFSET = NULL	
 )
-RETURNS datetime
+RETURNS DATETIMEOFFSET
 AS
 BEGIN
-  DECLARE @Timestamp datetime
+  DECLARE @Timestamp DATETIMEOFFSET
   IF @Override IS NULL
   BEGIN
-    SET @Timestamp = CONVERT(datetime, SESSION_CONTEXT(N'Timestamp'));
+    SET @Timestamp = CONVERT(DATETIMEOFFSET, SESSION_CONTEXT(N'Timestamp'));
     IF @Timestamp IS NULL
     BEGIN
-      SET @Timestamp = SYSUTCDATETIME()
+      SET @Timestamp = SYSDATETIMEOFFSET()
     END
   END
   ELSE

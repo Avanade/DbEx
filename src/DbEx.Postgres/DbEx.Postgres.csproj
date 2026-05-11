@@ -1,12 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <RootNamespace>DbEx.Postgres</RootNamespace>
     <Product>DbEx</Product>
     <Title>DbEx PostgreSQL Migration Tool.</Title>
     <Description>DbEX Database Migration tool for PostgreSQL.</Description>
     <PackageTags>dbex database dbup db-up postgres postgresql sql</PackageTags>
+    <NoWarn>$(NoWarn);CA1873</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -22,40 +23,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="resources\DatabaseCreate.sql" />
-    <None Remove="Resources\DatabaseData_sql.hbs" />
-    <None Remove="Resources\DatabaseDrop.sql" />
-    <None Remove="resources\DatabaseExists.sql" />
-    <None Remove="Resources\DatabaseReset_sql.hbs" />
-    <None Remove="Resources\JournalAudit.sql" />
-    <None Remove="Resources\JournalCreate.sql" />
-    <None Remove="Resources\JournalExists.sql" />
-    <None Remove="Resources\JournalPrevious.sql" />
-    <None Remove="Resources\ExtendedSchema\Functions\fn_get_tenant_id.sql" />
-    <None Remove="Resources\ExtendedSchema\Functions\fn_get_timestamp.sql" />
-    <None Remove="Resources\ExtendedSchema\Functions\fn_get_username.sql" />
-    <None Remove="Resources\ExtendedSchema\Functions\fn_get_user_id.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_set_session_context.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_authorization_exception.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_business_exception.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_concurrency_exception.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_conflict_exception.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_duplicate_exception.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_not_found_exception.sql" />
-    <None Remove="Resources\ExtendedSchema\Stored Procedures\sp_throw_validation_exception.sql" />
-    <None Remove="Resources\ScriptAlter_sql.hbs" />
-    <None Remove="Resources\ScriptCreate_sql.hbs" />
-    <None Remove="Resources\ScriptDefault_sql.hbs" />
-    <None Remove="Resources\ScriptRefData_sql.hbs" />
-    <None Remove="Resources\ScriptSchema_sql.hbs" />
-    <None Remove="Resources\SelectTableAndColumns.sql" />
-    <None Remove="resources\SelectTableForeignKeys.sql" />
-    <None Remove="resources\SelectTablePrimaryKey.sql" />
+    <EmbeddedResource Include="Scripts\Database.yaml" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreEx.Database.Postgres" Version="3.31.0" />
-    <PackageReference Include="dbup-postgresql" Version="5.0.40" />
+    <PackageReference Include="Npgsql" Version="10.0.1" />
+    <PackageReference Include="dbup-postgresql" Version="6.1.5" />
   </ItemGroup>
 
   <ItemGroup>

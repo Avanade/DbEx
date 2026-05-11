@@ -1,8 +1,8 @@
-﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/Beef
+﻿-- Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx
 
 CREATE OR ALTER FUNCTION [dbo].[fnGetUserId]
 (
-  @Override as NVARCHAR(1024) = null
+  @Override as NVARCHAR(1024) = NULL
 )
 RETURNS NVARCHAR(1024)
 AS

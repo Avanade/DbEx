@@ -1,8 +1,4 @@
-﻿using CoreEx;
-using CoreEx.Database;
-using CoreEx.Database.Postgres;
-using CoreEx.Database.SqlServer;
-using DbEx.Migration;
+﻿using DbEx.Migration;
 using DbEx.Migration.Data;
 using DbEx.SqlServer.Console;
 using DbEx.SqlServer.Migration;
@@ -86,7 +82,7 @@ namespace DbEx.Test
                 ContactId = dr.GetValue<int>("ContactId"),
                 Name = dr.GetValue<string>("Name"),
                 Phone = dr.GetValue<string>("Phone"),
-                DateOfBirth = dr.GetValue<DateTime?>("DateOfBirth"),
+                DateOfBirth = dr.GetValue<DateOnly?>("DateOfBirth"),
                 ContactTypeId = dr.GetValue<int>("ContactTypeId"),
                 GenderId = dr.GetValue<int?>("GenderId"),
                 TenantId = dr.GetValue<string>("TenantId")
@@ -98,7 +94,7 @@ namespace DbEx.Test
             Assert.AreEqual(1, row.ContactId);
             Assert.AreEqual("Bob", row.Name);
             Assert.AreEqual(null, row.Phone);
-            Assert.AreEqual(new DateTime(2001, 10, 22), row.DateOfBirth);
+            Assert.AreEqual(new DateOnly(2001, 10, 22), row.DateOfBirth);
             Assert.AreEqual(1, row.ContactTypeId);
             Assert.AreEqual(2, row.GenderId);
             Assert.AreEqual("test-tenant", row.TenantId);
@@ -116,7 +112,7 @@ namespace DbEx.Test
             Assert.AreEqual(3, row.ContactId);
             Assert.AreEqual("Barry", row.Name);
             Assert.AreEqual(null, row.Phone);
-            Assert.AreEqual(new DateTime(2001, 10, 22), row.DateOfBirth);
+            Assert.AreEqual(new DateOnly(2001, 10, 22), row.DateOfBirth);
             Assert.AreEqual(1, row.ContactTypeId);
             Assert.AreEqual(2, row.GenderId);
             Assert.IsNull(row.TenantId); // Must be set within SQL script itself; the column default does not extend to SQL scripts themselves.
@@ -127,7 +123,7 @@ namespace DbEx.Test
                 PersonId = dr.GetValue<Guid>("PersonId"),
                 Name = dr.GetValue<string>("Name"),
                 CreatedBy = dr.GetValue<string>("CreatedBy"),
-                CreatedDate = dr.GetValue<DateTime>("CreatedDate"),
+                CreatedOn = dr.GetValue<DateTimeOffset>("CreatedOn"),
                 AddressJson = dr.GetValue<string>("AddressJson"),
                 NicknamesJson = dr.GetValue<string>("NicknamesJson")
             }).ConfigureAwait(false)).ToList();
@@ -137,27 +133,27 @@ namespace DbEx.Test
             Assert.AreEqual(DataValueConverter.IntToGuid(88), row2.PersonId);
             Assert.AreEqual("RUNTIME", row2.Name);
             Assert.AreEqual(m.Args.DataParserArgs.UserName, row2.CreatedBy);
-            Assert.AreEqual(m.Args.DataParserArgs.DateTimeNow, row2.CreatedDate);
+            Assert.AreEqual(m.Args.DataParserArgs.DateTimeNow, row2.CreatedOn);
 
             row2 = res2[1];
             Assert.AreNotEqual(Guid.Empty, row2.PersonId);
             Assert.AreEqual("Bazza", row2.Name);
             Assert.AreEqual(m.Args.DataParserArgs.UserName, row2.CreatedBy);
-            Assert.AreEqual(m.Args.DataParserArgs.DateTimeNow, row2.CreatedDate);
+            Assert.AreEqual(m.Args.DataParserArgs.DateTimeNow, row2.CreatedOn);
             Assert.AreEqual("{\"Street\": \"Main St\", \"City\": \"Maine\"}", row2.AddressJson);
             Assert.AreEqual("[\"Gaz\", \"Baz\"]", row2.NicknamesJson);
 
             // Check that the stored procedure script was migrated and works!
-            res = (await db.StoredProcedure("[Test].[spGetContact]").Param("@ContactId", 2).SelectQueryAsync(dr => new
+            res = [.. (await db.StoredProcedure("[Test].[spGetContact]").Param("@ContactId", 2).SelectQueryAsync(dr => new
             {
                 ContactId = dr.GetValue<int>("ContactId"),
                 Name = dr.GetValue<string>("Name"),
                 Phone = dr.GetValue<string>("Phone"),
-                DateOfBirth = dr.GetValue<DateTime?>("DateOfBirth"),
+                DateOfBirth = dr.GetValue<DateOnly?>("DateOfBirth"),
                 ContactTypeId = dr.GetValue<int>("ContactTypeId"),
                 GenderId = dr.GetValue<int?>("GenderId"),
                 TenantId = dr.GetValue<string>("TenantId")
-            }).ConfigureAwait(false)).ToList();
+            }).ConfigureAwait(false))];
 
             Assert.AreEqual(1, res.Count);
             row = res[0];
@@ -195,14 +191,15 @@ namespace DbEx.Test
             var (cs, l, m) = await CreateConsoleDb().ConfigureAwait(false);
             using var db = new SqlServerDatabase(() => new SqlConnection(cs));
 
-            Assert.ThrowsAsync<AuthorizationException>(() => db.StoredProcedure("spThrowAuthorizationException").Param("message", null).NonQueryAsync());
-            Assert.ThrowsAsync<BusinessException>(() => db.StoredProcedure("spThrowBusinessException").Param("message", null).NonQueryAsync());
-            Assert.ThrowsAsync<ConcurrencyException>(() => db.StoredProcedure("spThrowConcurrencyException").Param("message", null).NonQueryAsync());
-            Assert.ThrowsAsync<ConflictException>(() => db.StoredProcedure("spThrowConflictException").Param("message", null).NonQueryAsync());
-            Assert.ThrowsAsync<DuplicateException>(() => db.StoredProcedure("spThrowDuplicateException").Param("message", null).NonQueryAsync());
-            Assert.ThrowsAsync<NotFoundException>(() => db.StoredProcedure("spThrowNotFoundException").Param("message", null).NonQueryAsync());
-            Assert.ThrowsAsync<ValidationException>(() => db.StoredProcedure("spThrowValidationException").Param("message", null).NonQueryAsync());
-            var vex = Assert.ThrowsAsync<ValidationException>(() => db.StoredProcedure("spThrowValidationException").Param("message", "On no!").NonQueryAsync());
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowAuthorizationException").Param("message", (string)null).NonQueryAsync()).Number, 56003);
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowBusinessException").Param("message", (string)null).NonQueryAsync()).Number, 56002);
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowConcurrencyException").Param("message", (string)null).NonQueryAsync()).Number, 56004);
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowConflictException").Param("message", (string)null).NonQueryAsync()).Number, 56006);
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowDuplicateException").Param("message", (string)null).NonQueryAsync()).Number, 56007);
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowNotFoundException").Param("message", (string)null).NonQueryAsync()).Number, 56005);
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowValidationException").Param("message", (string)null).NonQueryAsync()).Number, 56001);
+
+            var vex = Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowValidationException").Param("message", "On no!").NonQueryAsync());
             Assert.AreEqual("On no!", vex.Message);
         }
 
@@ -212,19 +209,25 @@ namespace DbEx.Test
             var (cs, l, m) = await CreateConsoleDb().ConfigureAwait(false);
             using var db = new SqlServerDatabase(() => new SqlConnection(cs));
 
-            var now = DateTime.UtcNow;
-            var ts = new DateTime(2024, 09, 30, 23, 45, 08, 123, DateTimeKind.Utc);
+            var now = DateTimeOffset.UtcNow;
+            var ts = new DateTimeOffset(2024, 09, 30, 23, 45, 08, 123, TimeSpan.FromHours(8));
+            var tsUtc = ts.ToUniversalTime();
 
-            await db.SetSqlSessionContextAsync("bob@gmail.com", ts, "banana", "bob2");
+            await db.StoredProcedure("[dbo].[spSetSessionContext]")
+                .Param("@Username", "bob@gmail.com")
+                .Param("@Timestamp", ts)
+                .Param("@TenantId", "banana")
+                .Param("@UserId", "bob2")
+                .NonQueryAsync().ConfigureAwait(false);
 
-            Assert.That(await db.SqlStatement("select dbo.fnGetTimestamp(null)").ScalarAsync<DateTime>(), Is.EqualTo(ts));
+            Assert.That(await db.SqlStatement("select dbo.fnGetTimestamp(null)").ScalarAsync<DateTimeOffset>(), Is.EqualTo(tsUtc));
             Assert.That(await db.SqlStatement("select dbo.fnGetUsername(null)").ScalarAsync<string>(), Is.EqualTo("bob@gmail.com"));
             Assert.That(await db.SqlStatement("select dbo.fnGetTenantId(null)").ScalarAsync<string>(), Is.EqualTo("banana"));
             Assert.That(await db.SqlStatement("select dbo.fnGetUserId(null)").ScalarAsync<string>(), Is.EqualTo("bob2"));
 
             // Make sure the session context doesn't leak between connections.
             using var db2 = new SqlServerDatabase(() => new SqlConnection(cs));
-            Assert.That(await db2.SqlStatement("select dbo.fnGetTimestamp(null)").ScalarAsync<DateTime>(), Is.GreaterThanOrEqualTo(now));
+            Assert.That(await db2.SqlStatement("select dbo.fnGetTimestamp(null)").ScalarAsync<DateTimeOffset>(), Is.GreaterThanOrEqualTo(now));
             Assert.That(await db2.SqlStatement("select dbo.fnGetUsername(null)").ScalarAsync<string>(), Is.Not.Null.And.Not.EqualTo("bob@gmail.com"));
             Assert.That(await db2.SqlStatement("select dbo.fnGetTenantId(null)").ScalarAsync<string>(), Is.Null);
             Assert.That(await db2.SqlStatement("select dbo.fnGetUserId(null)").ScalarAsync<string>(), Is.Null);
@@ -276,7 +279,7 @@ namespace DbEx.Test
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
             using var m = new SqlServerMigration(a);
 
-            var r = await m.ExecuteSqlStatementsAsync(new string[] { "SELECT * FROM Test.Contact" }).ConfigureAwait(false);
+            var r = await m.ExecuteSqlStatementsAsync(["SELECT * FROM Test.Contact"]).ConfigureAwait(false);
             Assert.IsTrue(r);
         }
 
@@ -287,7 +290,7 @@ namespace DbEx.Test
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
             using var m = new SqlServerMigration(a);
 
-            var r = await m.ExecuteSqlStatementsAsync(new string[] { "SELECT * FROM Test.Contact", "SELECT BANANAS" }).ConfigureAwait(false);
+            var r = await m.ExecuteSqlStatementsAsync(["SELECT * FROM Test.Contact", "SELECT BANANAS"]).ConfigureAwait(false);
             Assert.IsFalse(r);
         }
 
@@ -298,7 +301,7 @@ namespace DbEx.Test
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
             using var m = new SqlServerMigration(a);
 
-            var r = await m.ExecuteSqlStatementsAsync(new string[] { @"SELECT * FROM Test.ContactBad; /* end */ GO; SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
+            var r = await m.ExecuteSqlStatementsAsync([@"SELECT * FROM Test.ContactBad; /* end */ GO; SELECT * FROM Test.Contact -- comment"]).ConfigureAwait(false);
             Assert.IsFalse(r);
         }
 
@@ -309,10 +312,10 @@ namespace DbEx.Test
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
             using var m = new SqlServerMigration(a);
 
-            var r = await m.ExecuteSqlStatementsAsync(new string[] { @"SELECT * FROM Test.Contact;
+            var r = await m.ExecuteSqlStatementsAsync([ @"SELECT * FROM Test.Contact;
 /* end */ 
 GO 
-SELECT * FROM Test.Contact -- comment" }).ConfigureAwait(false);
+SELECT * FROM Test.Contact -- comment" ]).ConfigureAwait(false);
             Assert.IsTrue(r);
         }
 

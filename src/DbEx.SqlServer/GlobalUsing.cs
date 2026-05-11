@@ -1,0 +1,14 @@
+﻿global using DbEx.Console;
+global using DbEx.DbSchema;
+global using DbEx.Migration;
+global using DbEx.SqlServer.Migration;
+global using DbUp.Support;
+global using Microsoft.Data.SqlClient;
+global using Microsoft.Extensions.Logging;
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.Reflection;
+global using System.Text;
+global using System.Threading;
+global using System.Threading.Tasks;

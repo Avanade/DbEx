@@ -18,9 +18,9 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: |
-            6.0.x
             8.0.x
             9.0.x
+            10.0.x
         
     - name: Restore dependencies
       run: dotnet restore
@@ -59,4 +59,4 @@ jobs:
         echo "DbEx_ConnectionStrings__PostgresDb=Server=localhost; Port=5432; Database=dbex_test; Username=postgres; Pwd=yourStrong#!Password; Pooling=false" >> $GITHUB_ENV
         
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal -p:TestTfmsInParallel=false
