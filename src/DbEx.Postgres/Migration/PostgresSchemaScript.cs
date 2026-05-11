@@ -27,7 +27,7 @@ public class PostgresSchemaScript : DatabaseSchemaScriptBase
             {
                 if (string.Compare(tokens[i + 1], "or", StringComparison.OrdinalIgnoreCase) == 0 && string.Compare(tokens[i + 2], "replace", StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    i =+ 2;
+                    i += 2;
                     script.SupportsReplace = true;
                 }
 
