@@ -1,7 +1,7 @@
 ﻿namespace DbEx.Postgres.Migration;
 
 /// <summary>
-/// Provides the <see href="">PostgreSQL</see> migration orchestration.
+/// Provides the <see href="https://www.npgsql.org/">Npgsql (PostgreSQL)</see> migration orchestration.
 /// </summary>
 public class PostgresMigration : DatabaseMigrationBase
 {
@@ -23,7 +23,6 @@ public class PostgresMigration : DatabaseMigrationBase
             throw new ArgumentException($"The {nameof(OnRamp.CodeGeneratorDbArgsBase.ConnectionString)} property must contain a database name.", nameof(args));
 
         _databaseName = csb.Database;
-        var ds1 = NpgsqlDataSource.Create(Args.ConnectionString!);
         _database = new PostgresDatabase(() => NpgsqlDataSource.Create(Args.ConnectionString!).CreateConnection());
 
         csb.Database = null;
