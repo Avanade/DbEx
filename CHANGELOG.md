@@ -4,7 +4,7 @@ Represents the **NuGet** versions.
 
 ## v3.0.1
 - *Fixed:* The PostgreSQL `*_partition_order` index now correctly excludes the `event` column.
-- *Fixed:* The PostegrSQL `NOW()` function has removed incorrexct `AT TIME ZONE 'UTC'` as this is not required when the database timezone is set to UTC (which is the recommended configuration).
+- *Fixed:* The PostgreSQL `NOW()` function has removed incorrect `AT TIME ZONE 'UTC'` as this is not required when the database timezone is set to UTC (which is the recommended configuration).
 - *Fixed:* The JSON/YAML data correctly supports `^xxx` and the legacy `(^xxx)` replacement formats.
 
 ## v3.0.0
