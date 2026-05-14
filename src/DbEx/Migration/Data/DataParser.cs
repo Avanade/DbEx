@@ -303,10 +303,31 @@ public class DataParser
 
             throw new DataParserException(msg);
         }
-        else if (ParserArgs.ReplaceShorthandGuids && value.StartsWith('^') && int.TryParse(value[1..], out var i))
+
+        // Add alternate runtime format.
+        if (value.Length > 1 && value.StartsWith('^'))
+        {
+            var key = value[1..];
+
+            // Check against known values and runtime parameters.
+            switch (key)
+            {
+                case "user_name": return ParserArgs.UserName;
+                case "now": return ParserArgs.DateTimeNow;
+                case "guid": return Guid.NewGuid();
+                default:
+                    if (ParserArgs.Parameters.TryGetValue(key, out object? dval))
+                        return dval;
+
+                    break;
+            }
+        }
+
+        // Add support for shorthand Guids in the format of ^{int} where the int is used as the first segment of the Guid and the rest are zeros.
+        if (ParserArgs.ReplaceShorthandGuids && value.StartsWith('^') && int.TryParse(value[1..], out var i))
             return new Guid(i, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        else
-            return value;
+
+        return value;
     }
 
     /// <summary>

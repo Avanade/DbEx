@@ -173,6 +173,7 @@ namespace DbEx.Test
             using var m = new SqlServerMigration(a);
 
             m.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
+            m.Args.DataParserArgs.Parameters.Add("jane_name", "Jane");
             m.Args.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
             m.Args.DataParserArgs.ColumnDefaults.Add(new DataParserColumnDefault("*", "*", "TenantId", _ => "test-tenant"));
             m.Args.DataParserArgs.TableNameMappings.Add("XTest", "XContactType", "Test", "ContactType", new() { { "XNumber", "Number" } })

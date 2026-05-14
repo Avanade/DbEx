@@ -83,12 +83,12 @@
         },
         "outboxSchema": {
           "type": "string",
-          "title": "The database schema name for the outbox tables and stored procedures.",
+          "title": "The database schema name for the outbox tables and related objects.",
           "description": "Defaults to \u0027{schema}\u0027."
         },
         "outboxName": {
           "type": "string",
-          "title": "The name of the outbox table.",
+          "title": "The database table base name for the outbox tables and related objects.",
           "description": "Defaults to \u0027Outbox\u0027."
         },
         "tables": {
