@@ -8,7 +8,7 @@ BEGIN;
 
 CREATE TABLE "{{lookup Parameters 'Param1'}}"."{{lookup Parameters 'Param2'}}" (
   "{{lookup Parameters 'Param2'}}_id" BIGSERIAL NOT NULL PRIMARY KEY,
-  "tenant_id" VARCHAR(255) NOT NULL,      -- Optional, null indicates no tenancy.
+  "tenant_id" VARCHAR(255) NOT NULL,      -- '(none)' indicates no tenancy.
   "partition_id" INTEGER NOT NULL,        -- Partition number; computed in application from partition-key.
   "status" SMALLINT NOT NULL DEFAULT 0,   -- 0=Pending, 1=Processing, 2=Done.
   "enqueued_utc" TIMESTAMPTZ NOT NULL,    -- When the event was enqueued within application.
@@ -25,14 +25,14 @@ CREATE TABLE "{{lookup Parameters 'Param1'}}"."{{lookup Parameters 'Param2'}}" (
   "lease_until_utc" TIMESTAMPTZ NULL      -- Leased until UTC; after which assume released due to possible application crash.
 );
 
-CREATE INDEX "ix_{{lookup Parameters 'Param1'}}_{{lookup Parameters 'Param2'}}_partition_order" ON "{{lookup Parameters 'Param1'}}"."{{lookup Parameters 'Param2'}}" ("tenant_id", "partition_id", "{{lookup Parameters 'Param2'}}_id", "status", "available_utc", "lease_until_utc", "destination", "event", "attempts");
+CREATE INDEX "ix_{{lookup Parameters 'Param1'}}_{{lookup Parameters 'Param2'}}_partition_order" ON "{{lookup Parameters 'Param1'}}"."{{lookup Parameters 'Param2'}}" ("tenant_id", "partition_id", "{{lookup Parameters 'Param2'}}_id", "status", "available_utc", "lease_until_utc", "destination", "attempts");
 CREATE INDEX "ix_{{lookup Parameters 'Param1'}}_{{lookup Parameters 'Param2'}}_worker_pull" ON "{{lookup Parameters 'Param1'}}"."{{lookup Parameters 'Param2'}}" ("tenant_id", "partition_id", "status", "{{lookup Parameters 'Param2'}}_id", "available_utc");
 CREATE INDEX "ix_{{lookup Parameters 'Param1'}}_{{lookup Parameters 'Param2'}}_clean_up" ON "{{lookup Parameters 'Param1'}}"."{{lookup Parameters 'Param2'}}" ("{{lookup Parameters 'Param2'}}_id", "dequeued_utc") WHERE "status" = 2;
 
 CREATE TABLE "{{lookup Parameters 'Param1'}}"."{{lookup Parameters 'Param2'}}_lease" (
-  "tenant_id" VARCHAR(255) NOT NULL,      -- Optional, null indicates no tenancy.
+  "tenant_id" VARCHAR(255) NOT NULL,      -- '(none)' indicates no tenancy.
   "partition_id" INTEGER NOT NULL,        -- Partition number; computed in application from partition-key.
-  "lease_id" UUID NULL,                   -- Unique identifier of the leasee.
+  "lease_id" UUID NULL,                   -- Unique identifier of the lessee.
   "lease_until_utc" TIMESTAMPTZ NULL,     -- Leased until UTC; after which assume released due to possible application crash.
 
   CONSTRAINT "pk_{{lookup Parameters 'Param1'}}_{{lookup Parameters 'Param2'}}_lease" PRIMARY KEY ("tenant_id", "partition_id")

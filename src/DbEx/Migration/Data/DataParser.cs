@@ -305,8 +305,27 @@ public class DataParser
         }
         else if (ParserArgs.ReplaceShorthandGuids && value.StartsWith('^') && int.TryParse(value[1..], out var i))
             return new Guid(i, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        else
-            return value;
+
+        // Add alternate runtime format.
+        if (value.Length > 1 && value.StartsWith('^'))
+        {
+            var key = value[1..];
+
+            // Check against known values and runtime parameters.
+            switch (key)
+            {
+                case "user_name": return ParserArgs.UserName;
+                case "now": return ParserArgs.DateTimeNow;
+                case "guid": return Guid.NewGuid();
+                default:
+                    if (ParserArgs.Parameters.TryGetValue(key, out object? dval))
+                        return dval;
+
+                    break;
+            }
+        }
+
+        return value;
     }
 
     /// <summary>

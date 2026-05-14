@@ -13,6 +13,7 @@ namespace DbEx.Test.Console
                 c.Args.AddSchemaOrder("Test", "Outbox");
                 c.Args.IncludeExtendedSchemaScripts();
                 c.Args.DataParserArgs.Parameter("DefaultName", "Bazza")
+                                     .Parameter("jane_name", "Jane")
                                      .RefDataColumnDefault("SortOrder", i => i)
                                      .ColumnDefault("*", "*", "TenantId", _ => "test-tenant")
                                      .TableNameMappings.Add("XTest", "XContactType", "Test", "ContactType", new() { { "XNumber", "Number" } })

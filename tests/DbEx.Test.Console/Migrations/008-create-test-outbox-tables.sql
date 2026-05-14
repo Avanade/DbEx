@@ -28,7 +28,7 @@ CREATE TABLE [Test].[Outbox] (
 CREATE TABLE [Test].[OutboxLease] (
   [TenantId] NVARCHAR(255) NOT NULL,      -- Optional, null indicates no tenancy.
   [PartitionId] INT NOT NULL,             -- Partition number; computed in application from partition-key.
-  [LeaseId] UNIQUEIDENTIFIER NULL,        -- Unique identifier of the leasee.
+  [LeaseId] UNIQUEIDENTIFIER NULL,        -- Unique identifier of the lessee.
   [LeaseUntilUtc] DATETIME2 NULL          -- Leased until UTC; after which assume released due to possible application crash.
 
   CONSTRAINT PK_Test_OutboxLease PRIMARY KEY (TenantId, PartitionId)
