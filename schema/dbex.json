@@ -88,7 +88,7 @@
         },
         "outboxName": {
           "type": "string",
-          "title": "The database table name for the outbox tables and related objects.",
+          "title": "The database table base name for the outbox tables and related objects.",
           "description": "Defaults to \u0027Outbox\u0027."
         },
         "tables": {

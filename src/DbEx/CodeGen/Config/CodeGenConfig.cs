@@ -128,10 +128,10 @@ public class CodeGenConfig : ConfigRootBase<CodeGenConfig>, IByConventionColumnN
     public string? OutboxSchema { get; set; }
 
     /// <summary>
-    /// Gets or sets the database table name for the outbox tables and related objects.
+    /// Gets or sets the database table base name for the outbox tables and related objects.
     /// </summary>
     [JsonPropertyName("outboxName")]
-    [CodeGenProperty("Outbox", Title = "The database table name for the outbox tables and related objects.", Description = "Defaults to 'Outbox'.")]
+    [CodeGenProperty("Outbox", Title = "The database table base name for the outbox tables and related objects.", Description = "Defaults to 'Outbox'.")]
     public string? OutboxName { get; set; }
 
     #endregion
