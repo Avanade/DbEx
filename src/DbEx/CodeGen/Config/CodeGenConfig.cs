@@ -14,6 +14,12 @@ public class CodeGenConfig : ConfigRootBase<CodeGenConfig>, IByConventionColumnN
 {
     private DatabaseMigrationBase? _migrator;
     private List<DbTableSchema>? _dbTables;
+    private readonly string _codeGenName = Assembly.GetEntryAssembly()?.GetName().Name ?? "??";
+
+    /// <summary>
+    /// Gets the entry assembly name for the initiating code-generation.
+    /// </summary>
+    public string CodeGenName => _codeGenName;
 
     /// <summary>
     /// Gets the owning <see cref="DatabaseMigrationBase"/>.
@@ -31,35 +37,37 @@ public class CodeGenConfig : ConfigRootBase<CodeGenConfig>, IByConventionColumnN
     /// Gets or sets the .NET domain name.
     /// </summary>
     [JsonPropertyName("domain")]
-    [CodeGenProperty("Primary", Title = "The domain name.", IsImportant = true, Description = "This is the .NET domain name. Attempts to default from the underlying data project file path; uses the second to last segment of the child-most sub-directory by convention. For example, '/xxx/yyy/My.App.Sales.Database', the domain would be 'Sales'.")]
+    [CodeGenProperty("Primary", Title = "The domain name.", IsImportant = true, Description = "Attempts to default from the underlying data project file path; uses the second to last segment of the child-most sub-directory by convention. For example, `/xxx/yyy/My.App.Sales.Database`, the domain would be `Sales`.")]
     public string? Domain { get; set; }
 
     /// <summary>
     /// Indicates the default entity-framework code-generation choice.
     /// </summary>
     [JsonPropertyName("efModel")]
-    [CodeGenProperty("Entity Framework", Title = "The default entity-framework code-generation choice.", Description = "Defaults to 'Yes' (indicates combination of 'ModelOnly' and 'ModelBuilderOnly').", Options = ["Yes", "No", "ModelOnly", "ModelBuilderOnly"])]
+    [CodeGenProperty("Entity Framework", Title = "The default entity-framework code-generation choice.", Description = "Defaults to `Yes` (indicates combination of `ModelOnly` and `ModelBuilderOnly`).", Options = ["Yes", "No", "ModelOnly", "ModelBuilderOnly"])]
     public string? EfModel { get; set; }
+
+    #region Paths
 
     /// <summary>
     /// Gets or sets the relative path to the data-related .NET project.
     /// </summary>
     [JsonPropertyName("dotNetDataProjectPath")]
-    [CodeGenProperty("Paths", Title = "The relative path for the .NET data-related project.", Description = "Defaults to automatic inference using expected name of 'Infrastructure'.")]
+    [CodeGenProperty("Paths", Title = "The relative path for the .NET data-related project.", Description = "Attempts to default by convention to a sibling `.Infrastructure` project based on the database directory name prefix; for example, `../My.App.Infrastructure`.")]
     public string? DotNetDataProjectPath { get; set; }
 
     /// <summary>
     /// Gets or sets the path to append to the <see cref="DotNetDataProjectPath"/> for the .NET generated entity-framework repository code.
     /// </summary>
     [JsonPropertyName("dotNetDataEfRepositoriesPath")]
-    [CodeGenProperty("Paths", Title = "The path to append to the '{DotNetDataProjectPath}' for the .NET generated entity-framework repository code.", Description = "Defaults to 'Repositories'.")]
+    [CodeGenProperty("Paths", Title = "The path to append to the '{DotNetDataProjectPath}' for the .NET generated entity-framework repository code.", Description = "Defaults to `Repositories`.")]
     public string? DotNetDataEfRepositoriesPath { get; set; }
 
     /// <summary>
     /// Gets or sets the path to append to the <see cref="DotNetDataProjectPath"/> for the .NET generated entity-framework models code.
     /// </summary>
     [JsonPropertyName("dotNetDataEfModelsPath")]
-    [CodeGenProperty("Paths", Title = "The path to append to the '{DotNetDataProjectPath}' for the .NET generated entity-framework models code.", Description = "Defaults to 'Persistence'.")]
+    [CodeGenProperty("Paths", Title = "The path to append to the '{DotNetDataProjectPath}' for the .NET generated entity-framework models code.", Description = "Defaults to `Persistence`.")]
     public string? DotNetDataEfModelsPath { get; set; }
 
     /// <summary>
@@ -72,41 +80,53 @@ public class CodeGenConfig : ConfigRootBase<CodeGenConfig>, IByConventionColumnN
     /// </summary>
     public string? DotNetDataEfModelsNamespace { get; set; }
 
+    /// <summary>
+    /// Gets the <see cref="DirectoryInfo"/> for the initiating database project itself.
+    /// </summary>
+    public DirectoryInfo? DatabaseDirectory { get; private set; }
+
+    /// <summary>
+    /// Gets the <see cref="DirectoryInfo"/> for the <see cref="DotNetDataProjectPath"/>.
+    /// </summary>
+    public DirectoryInfo? DotNetDataProjectDirectory { get; private set; }
+
+    #endregion
+
     #region By-Convention
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameIsDeleted")]
-    [CodeGenProperty("By-Convention", Title = "The default 'IsDeleted' column name.", Description = "Defaults to 'IsDeleted'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `IsDeleted` column name.", Description = "Defaults to `IsDeleted`.")]
     public string? ColumnNameIsDeleted { get; set; }
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameTenantId")]
-    [CodeGenProperty("By-Convention", Title = "The default 'TenantId' column name.", Description = "Defaults to 'TenantId'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `TenantId` column name.", Description = "Defaults to `TenantId`.")]
     public string? ColumnNameTenantId { get; set; }
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameRowVersion")]
-    [CodeGenProperty("By-Convention", Title = "The default 'RowVersion' column name.", Description = "Defaults to 'RowVersion'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `RowVersion` column name.", Description = "Defaults to `RowVersion`.")]
     public string? ColumnNameRowVersion { get; set; }
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameCreatedBy")]
-    [CodeGenProperty("By-Convention", Title = "The default 'CreatedBy' column name.", Description = "Defaults to 'CreatedBy'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `CreatedBy` column name.", Description = "Defaults to `CreatedBy`.")]
     public string? ColumnNameCreatedBy { get; set; }
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameCreatedOn")]
-    [CodeGenProperty("By-Convention", Title = "The default 'CreatedOn' column name.", Description = "Defaults to 'CreatedOn'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `CreatedOn` column name.", Description = "Defaults to `CreatedOn`.")]
     public string? ColumnNameCreatedOn { get; set; }
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameUpdatedBy")]
-    [CodeGenProperty("By-Convention", Title = "The default 'UpdatedBy' column name.", Description = "Defaults to 'UpdatedBy'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `UpdatedBy` column name.", Description = "Defaults to `UpdatedBy`.")]
     public string? ColumnNameUpdatedBy { get; set; }
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameUpdatedOn")]
-    [CodeGenProperty("By-Convention", Title = "The default 'UpdatedOn' column name.", Description = "Defaults to 'UpdatedOn'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `UpdatedOn` column name.", Description = "Defaults to `UpdatedOn`.")]
     public string? ColumnNameUpdatedOn { get; set; }
 
     #endregion
@@ -117,24 +137,26 @@ public class CodeGenConfig : ConfigRootBase<CodeGenConfig>, IByConventionColumnN
     /// Indicates whether to generate the transactional-outbox database capabilities.
     /// </summary>
     [JsonPropertyName("outbox")]
-    [CodeGenProperty("Outbox", Title = "Indicates whether to generate the transactional-outbox database capabilities.", Description = "Defaults to 'false'.")]
+    [CodeGenProperty("Outbox", Title = "Indicates whether to generate the transactional-outbox database capabilities.", Description = "Defaults to `false`.")]
     public bool? Outbox { get; set; }
 
     /// <summary>
     /// Gets or sets the database schema name used for outbox tables and related objects.
     /// </summary>
     [JsonPropertyName("outboxSchema")]
-    [CodeGenProperty("Outbox", Title = "The database schema name for the outbox tables and related objects.", Description = "Defaults to '{schema}'.")]
+    [CodeGenProperty("Outbox", Title = "The database schema name for the outbox tables and related objects.", Description = "Defaults to `{schema}`.")]
     public string? OutboxSchema { get; set; }
 
     /// <summary>
     /// Gets or sets the database table base name for the outbox tables and related objects.
     /// </summary>
     [JsonPropertyName("outboxName")]
-    [CodeGenProperty("Outbox", Title = "The database table base name for the outbox tables and related objects.", Description = "Defaults to 'Outbox'.")]
+    [CodeGenProperty("Outbox", Title = "The database table base name for the outbox tables and related objects.", Description = "Defaults to `Outbox`.")]
     public string? OutboxName { get; set; }
 
     #endregion
+
+    #region Collections
 
     /// <summary>
     /// Gets the database table collection configuration.
@@ -153,15 +175,7 @@ public class CodeGenConfig : ConfigRootBase<CodeGenConfig>, IByConventionColumnN
     /// </summary>
     public List<TableConfig> EfModelBuilders => Tables?.Where(x => x.EfModel == "Yes" || x.EfModel == "ModelBuilderOnly").ToList() ?? [];
 
-    /// <summary>
-    /// Gets the <see cref="DirectoryInfo"/> for the initiating database project itself.
-    /// </summary>
-    public DirectoryInfo? DatabaseDirectory { get; private set; }
-
-    /// <summary>
-    /// Gets the <see cref="DirectoryInfo"/> for the <see cref="DotNetDataProjectPath"/>.
-    /// </summary>
-    public DirectoryInfo? DotNetDataProjectDirectory { get; private set; }
+    #endregion
 
     /// <summary>
     /// Gets or sets the list of tables that exist within the database.

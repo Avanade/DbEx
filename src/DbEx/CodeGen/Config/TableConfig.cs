@@ -22,8 +22,10 @@ public class TableConfig : ConfigBase<CodeGenConfig, CodeGenConfig>, IByConventi
     /// Gets or sets the database schema name (where applicable).
     /// </summary>
     [JsonPropertyName("schema")]
-    [CodeGenProperty("Primary", Title = "The database schema name (where applicable).", Description = "Defaults to the root '{Schema}' configuration.")]
+    [CodeGenProperty("Primary", Title = "The database schema name (where applicable).", Description = "Defaults to the root `{Schema}`.")]
     public string? Schema { get; set; }
+
+    #region Columns
 
     /// <summary>
     /// Gets or sets the list of database columns to include explicitly.
@@ -39,11 +41,15 @@ public class TableConfig : ConfigBase<CodeGenConfig, CodeGenConfig>, IByConventi
     [CodeGenPropertyCollection("Columns", Title = "The list of database columns to exclude specifically.", Description = "All columns are included by default; this provides a means to simply select those for exclusion. A single item of '*' indicates all columns are to be excluded.")]
     public List<string>? ExcludeColumns { get; set; }
 
+    #endregion
+
+    #region Entity-Framework
+
     /// <summary>
     /// Indicates the default entity-framework code-generation choice.
     /// </summary>
     [JsonPropertyName("efModel")]
-    [CodeGenProperty("Entity Framework", Title = "The entity-framework code-generation choice.", Description = "Defaults to parent '{EfModel}'. A 'Yes' indicates combination of 'ModelOnly' and 'ModelBuilderOnly'.", Options = ["Yes", "No", "ModelOnly", "ModelBuilderOnly"])]
+    [CodeGenProperty("Entity Framework", Title = "The entity-framework code-generation choice.", Description = "Defaults to root `{EfModel}`. A `Yes` indicates combination of `ModelOnly` and `ModelBuilderOnly`.", Options = ["Yes", "No", "ModelOnly", "ModelBuilderOnly"])]
     public string? EfModel { get; set; }
 
     /// <summary>
@@ -53,41 +59,43 @@ public class TableConfig : ConfigBase<CodeGenConfig, CodeGenConfig>, IByConventi
     [CodeGenProperty("Entity Framework", Title = "The name of the entity-framework model associated with this instance.", Description = "Defaults to the database table's .NET formatted name.")]
     public string? EfModelName { get; set; }
 
+    #endregion
+
     #region By-Convention
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameIsDeleted")]
-    [CodeGenProperty("By-Convention", Title = "The default 'IsDeleted' column name.", Description = "Defaults to 'IsDeleted'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `IsDeleted` column name.", Description = "Defaults to `IsDeleted`.")]
     public string? ColumnNameIsDeleted { get; set; }
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameTenantId")]
-    [CodeGenProperty("By-Convention", Title = "The default 'TenantId' column name.", Description = "Defaults to 'TenantId'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `TenantId` column name.", Description = "Defaults to `TenantId`.")]
     public string? ColumnNameTenantId { get; set; }
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameRowVersion")]
-    [CodeGenProperty("By-Convention", Title = "The default 'RowVersion' column name.", Description = "Defaults to 'RowVersion'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `RowVersion` column name.", Description = "Defaults to `RowVersion`.")]
     public string? ColumnNameRowVersion { get; set; }
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameCreatedBy")]
-    [CodeGenProperty("By-Convention", Title = "The default 'CreatedBy' column name.", Description = "Defaults to 'CreatedBy'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `CreatedBy` column name.", Description = "Defaults to `CreatedBy`.")]
     public string? ColumnNameCreatedBy { get; set; }
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameCreatedOn")]
-    [CodeGenProperty("By-Convention", Title = "The default 'CreatedOn' column name.", Description = "Defaults to 'CreatedOn'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `CreatedOn` column name.", Description = "Defaults to `CreatedOn`.")]
     public string? ColumnNameCreatedOn { get; set; }
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameUpdatedBy")]
-    [CodeGenProperty("By-Convention", Title = "The default 'UpdatedBy' column name.", Description = "Defaults to 'UpdatedBy'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `UpdatedBy` column name.", Description = "Defaults to `UpdatedBy`.")]
     public string? ColumnNameUpdatedBy { get; set; }
 
     /// <inheritdoc/>
     [JsonPropertyName("columnNameUpdatedOn")]
-    [CodeGenProperty("By-Convention", Title = "The default 'UpdatedOn' column name.", Description = "Defaults to 'UpdatedOn'.")]
+    [CodeGenProperty("By-Convention", Title = "The default `UpdatedOn` column name.", Description = "Defaults to `UpdatedOn`.")]
     public string? ColumnNameUpdatedOn { get; set; }
 
     /// <inheritdoc/>
@@ -156,6 +164,8 @@ public class TableConfig : ConfigBase<CodeGenConfig, CodeGenConfig>, IByConventi
 
     #endregion
 
+    #region Collections
+
     /// <summary>
     /// Gets the list of configured columns.
     /// </summary>
@@ -165,14 +175,16 @@ public class TableConfig : ConfigBase<CodeGenConfig, CodeGenConfig>, IByConventi
     public List<ColumnConfig>? Columns { get; set; }
 
     /// <summary>
-    /// Gets the corresponding (actual) database table configuration.
-    /// </summary>
-    public DbTableSchema? DbTable { get; private set; }
-
-    /// <summary>
     /// Gets the list of configured columns that represent the primary key.
     /// </summary>
     public List<ColumnConfig> PrimaryKeyColumns => [.. Columns!.Where(x => x.DbColumn!.IsPrimaryKey)];
+
+    #endregion
+
+    /// <summary>
+    /// Gets the corresponding (actual) database table configuration.
+    /// </summary>
+    public DbTableSchema? DbTable { get; private set; }
 
     /// <summary>
     /// Indicates whether there is a single primary key column that is an identifier (i.e. named with suffix 'Id' (any case)).

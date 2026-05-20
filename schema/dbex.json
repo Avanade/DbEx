@@ -13,12 +13,12 @@
         "domain": {
           "type": "string",
           "title": "The domain name.",
-          "description": "This is the .NET domain name. Attempts to default from the underlying data project file path; uses the second to last segment of the child-most sub-directory by convention. For example, \u0027/xxx/yyy/My.App.Sales.Database\u0027, the domain would be \u0027Sales\u0027."
+          "description": "Attempts to default from the underlying data project file path; uses the second to last segment of the child-most sub-directory by convention. For example, \u0060/xxx/yyy/My.App.Sales.Database\u0060, the domain would be \u0060Sales\u0060."
         },
         "efModel": {
           "type": "string",
           "title": "The default entity-framework code-generation choice.",
-          "description": "Defaults to \u0027Yes\u0027 (indicates combination of \u0027ModelOnly\u0027 and \u0027ModelBuilderOnly\u0027).",
+          "description": "Defaults to \u0060Yes\u0060 (indicates combination of \u0060ModelOnly\u0060 and \u0060ModelBuilderOnly\u0060).",
           "enum": [
             "Yes",
             "No",
@@ -29,67 +29,67 @@
         "dotNetDataProjectPath": {
           "type": "string",
           "title": "The relative path for the .NET data-related project.",
-          "description": "Defaults to automatic inference using expected name of \u0027Infrastructure\u0027."
+          "description": "Attempts to default by convention to a sibling \u0060.Infrastructure\u0060 project based on the database directory name prefix; for example, \u0060../My.App.Infrastructure\u0060."
         },
         "dotNetDataEfRepositoriesPath": {
           "type": "string",
           "title": "The path to append to the \u0027{DotNetDataProjectPath}\u0027 for the .NET generated entity-framework repository code.",
-          "description": "Defaults to \u0027Repositories\u0027."
+          "description": "Defaults to \u0060Repositories\u0060."
         },
         "dotNetDataEfModelsPath": {
           "type": "string",
           "title": "The path to append to the \u0027{DotNetDataProjectPath}\u0027 for the .NET generated entity-framework models code.",
-          "description": "Defaults to \u0027Persistence\u0027."
+          "description": "Defaults to \u0060Persistence\u0060."
         },
         "columnNameIsDeleted": {
           "type": "string",
-          "title": "The default \u0027IsDeleted\u0027 column name.",
-          "description": "Defaults to \u0027IsDeleted\u0027."
+          "title": "The default \u0060IsDeleted\u0060 column name.",
+          "description": "Defaults to \u0060IsDeleted\u0060."
         },
         "columnNameTenantId": {
           "type": "string",
-          "title": "The default \u0027TenantId\u0027 column name.",
-          "description": "Defaults to \u0027TenantId\u0027."
+          "title": "The default \u0060TenantId\u0060 column name.",
+          "description": "Defaults to \u0060TenantId\u0060."
         },
         "columnNameRowVersion": {
           "type": "string",
-          "title": "The default \u0027RowVersion\u0027 column name.",
-          "description": "Defaults to \u0027RowVersion\u0027."
+          "title": "The default \u0060RowVersion\u0060 column name.",
+          "description": "Defaults to \u0060RowVersion\u0060."
         },
         "columnNameCreatedBy": {
           "type": "string",
-          "title": "The default \u0027CreatedBy\u0027 column name.",
-          "description": "Defaults to \u0027CreatedBy\u0027."
+          "title": "The default \u0060CreatedBy\u0060 column name.",
+          "description": "Defaults to \u0060CreatedBy\u0060."
         },
         "columnNameCreatedOn": {
           "type": "string",
-          "title": "The default \u0027CreatedOn\u0027 column name.",
-          "description": "Defaults to \u0027CreatedOn\u0027."
+          "title": "The default \u0060CreatedOn\u0060 column name.",
+          "description": "Defaults to \u0060CreatedOn\u0060."
         },
         "columnNameUpdatedBy": {
           "type": "string",
-          "title": "The default \u0027UpdatedBy\u0027 column name.",
-          "description": "Defaults to \u0027UpdatedBy\u0027."
+          "title": "The default \u0060UpdatedBy\u0060 column name.",
+          "description": "Defaults to \u0060UpdatedBy\u0060."
         },
         "columnNameUpdatedOn": {
           "type": "string",
-          "title": "The default \u0027UpdatedOn\u0027 column name.",
-          "description": "Defaults to \u0027UpdatedOn\u0027."
+          "title": "The default \u0060UpdatedOn\u0060 column name.",
+          "description": "Defaults to \u0060UpdatedOn\u0060."
         },
         "outbox": {
           "type": "boolean",
           "title": "Indicates whether to generate the transactional-outbox database capabilities.",
-          "description": "Defaults to \u0027false\u0027."
+          "description": "Defaults to \u0060false\u0060."
         },
         "outboxSchema": {
           "type": "string",
           "title": "The database schema name for the outbox tables and related objects.",
-          "description": "Defaults to \u0027{schema}\u0027."
+          "description": "Defaults to \u0060{schema}\u0060."
         },
         "outboxName": {
           "type": "string",
           "title": "The database table base name for the outbox tables and related objects.",
-          "description": "Defaults to \u0027Outbox\u0027."
+          "description": "Defaults to \u0060Outbox\u0060."
         },
         "tables": {
           "type": "array",
@@ -111,7 +111,7 @@
         "schema": {
           "type": "string",
           "title": "The database schema name (where applicable).",
-          "description": "Defaults to the root \u0027{Schema}\u0027 configuration."
+          "description": "Defaults to the root \u0060{Schema}\u0060."
         },
         "includeColumns": {
           "type": "array",
@@ -132,7 +132,7 @@
         "efModel": {
           "type": "string",
           "title": "The entity-framework code-generation choice.",
-          "description": "Defaults to parent \u0027{EfModel}\u0027. A \u0027Yes\u0027 indicates combination of \u0027ModelOnly\u0027 and \u0027ModelBuilderOnly\u0027.",
+          "description": "Defaults to root \u0060{EfModel}\u0060. A \u0060Yes\u0060 indicates combination of \u0060ModelOnly\u0060 and \u0060ModelBuilderOnly\u0060.",
           "enum": [
             "Yes",
             "No",
@@ -147,38 +147,38 @@
         },
         "columnNameIsDeleted": {
           "type": "string",
-          "title": "The default \u0027IsDeleted\u0027 column name.",
-          "description": "Defaults to \u0027IsDeleted\u0027."
+          "title": "The default \u0060IsDeleted\u0060 column name.",
+          "description": "Defaults to \u0060IsDeleted\u0060."
         },
         "columnNameTenantId": {
           "type": "string",
-          "title": "The default \u0027TenantId\u0027 column name.",
-          "description": "Defaults to \u0027TenantId\u0027."
+          "title": "The default \u0060TenantId\u0060 column name.",
+          "description": "Defaults to \u0060TenantId\u0060."
         },
         "columnNameRowVersion": {
           "type": "string",
-          "title": "The default \u0027RowVersion\u0027 column name.",
-          "description": "Defaults to \u0027RowVersion\u0027."
+          "title": "The default \u0060RowVersion\u0060 column name.",
+          "description": "Defaults to \u0060RowVersion\u0060."
         },
         "columnNameCreatedBy": {
           "type": "string",
-          "title": "The default \u0027CreatedBy\u0027 column name.",
-          "description": "Defaults to \u0027CreatedBy\u0027."
+          "title": "The default \u0060CreatedBy\u0060 column name.",
+          "description": "Defaults to \u0060CreatedBy\u0060."
         },
         "columnNameCreatedOn": {
           "type": "string",
-          "title": "The default \u0027CreatedOn\u0027 column name.",
-          "description": "Defaults to \u0027CreatedOn\u0027."
+          "title": "The default \u0060CreatedOn\u0060 column name.",
+          "description": "Defaults to \u0060CreatedOn\u0060."
         },
         "columnNameUpdatedBy": {
           "type": "string",
-          "title": "The default \u0027UpdatedBy\u0027 column name.",
-          "description": "Defaults to \u0027UpdatedBy\u0027."
+          "title": "The default \u0060UpdatedBy\u0060 column name.",
+          "description": "Defaults to \u0060UpdatedBy\u0060."
         },
         "columnNameUpdatedOn": {
           "type": "string",
-          "title": "The default \u0027UpdatedOn\u0027 column name.",
-          "description": "Defaults to \u0027UpdatedOn\u0027."
+          "title": "The default \u0060UpdatedOn\u0060 column name.",
+          "description": "Defaults to \u0060UpdatedOn\u0060."
         },
         "columns": {
           "type": "array",
@@ -214,12 +214,12 @@
         "valueConverter": {
           "type": "string",
           "title": "The .NET value converter source code for the column.",
-          "description": "Defaults to null. This must be valid C# source code as it is applied as-is."
+          "description": "Defaults to \u0060null\u0060. This must be valid C# source code as it is applied as-is."
         },
         "default": {
           "type": "string",
           "title": "The .NET default value for the column\u0027s property.",
-          "description": "Defaults to null. This must be valid C# source code as it is applied as-is."
+          "description": "Defaults to \u0060null\u0060. This must be valid C# source code as it is applied as-is."
         }
       },
       "required": [

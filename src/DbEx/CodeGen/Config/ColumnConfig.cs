@@ -22,6 +22,8 @@ public class ColumnConfig : ConfigBase<CodeGenConfig, TableConfig>
     [CodeGenProperty("Entity Framework", Title = "The .NET property name equivalent for the column.", IsImportant = true, Description = "Defaults to the database column's .NET formatted name.")]
     public string? Property { get; set; }
 
+    #region Entity-Framework
+
     /// <summary>
     /// Gets or sets the corresponding .NET type for the column.
     /// </summary>
@@ -33,15 +35,17 @@ public class ColumnConfig : ConfigBase<CodeGenConfig, TableConfig>
     /// Gets or sets the .NET value converter source code for the column (where applicable).
     /// </summary>
     [JsonPropertyName("valueConverter")]
-    [CodeGenProperty("Entity Framework", Title = "The .NET value converter source code for the column.", Description = "Defaults to null. This must be valid C# source code as it is applied as-is.")]
+    [CodeGenProperty("Entity Framework", Title = "The .NET value converter source code for the column.", Description = "Defaults to `null`. This must be valid C# source code as it is applied as-is.")]
     public string? ValueConverter { get; set; }
 
     /// <summary>
     /// Gets or sets the .NET default value for the column's property.
     /// </summary>
     [JsonPropertyName("default")]
-    [CodeGenProperty("Entity Framework", Title = "The .NET default value for the column's property.", Description = "Defaults to null. This must be valid C# source code as it is applied as-is.")]
+    [CodeGenProperty("Entity Framework", Title = "The .NET default value for the column's property.", Description = "Defaults to `null`. This must be valid C# source code as it is applied as-is.")]
     public string? Default { get; set; }
+
+    #endregion
 
     /// <summary>
     /// Gets or sets the actual <see cref="DbColumnSchema"/>.
