@@ -29,7 +29,7 @@
         "dotNetDataProjectPath": {
           "type": "string",
           "title": "The relative path for the .NET data-related project.",
-          "description": "Defaults to \u0060Infrastructure\u0060."
+          "description": "Attempts to default by convention to a sibling \u0060.Infrastructure\u0060 project based on the database directory name prefix; for example, \u0060../My.App.Infrastructure\u0060."
         },
         "dotNetDataEfRepositoriesPath": {
           "type": "string",

@@ -14,12 +14,12 @@ public class CodeGenConfig : ConfigRootBase<CodeGenConfig>, IByConventionColumnN
 {
     private DatabaseMigrationBase? _migrator;
     private List<DbTableSchema>? _dbTables;
-    private readonly string? codeGenName = Assembly.GetEntryAssembly()?.GetName().Name ?? "??";
+    private readonly string _codeGenName = Assembly.GetEntryAssembly()?.GetName().Name ?? "??";
 
     /// <summary>
     /// Gets the entry assembly name for the initiating code-generation.
     /// </summary>
-    public string? CodeGenName => codeGenName;
+    public string CodeGenName => _codeGenName;
 
     /// <summary>
     /// Gets the owning <see cref="DatabaseMigrationBase"/>.
@@ -53,7 +53,7 @@ public class CodeGenConfig : ConfigRootBase<CodeGenConfig>, IByConventionColumnN
     /// Gets or sets the relative path to the data-related .NET project.
     /// </summary>
     [JsonPropertyName("dotNetDataProjectPath")]
-    [CodeGenProperty("Paths", Title = "The relative path for the .NET data-related project.", Description = "Defaults to `Infrastructure`.")]
+    [CodeGenProperty("Paths", Title = "The relative path for the .NET data-related project.", Description = "Attempts to default by convention to a sibling `.Infrastructure` project based on the database directory name prefix; for example, `../My.App.Infrastructure`.")]
     public string? DotNetDataProjectPath { get; set; }
 
     /// <summary>
