@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v3.0.2
+- *Fixed:* The SQL Server outbox stored procedures, where applicable, have had redundant, dead code, removed.
+- *Fixed:* Add name of entry assembly to the generated code file header comments to provide better visibility of generation source process.
+
 ## v3.0.1
 - *Fixed:* The PostgreSQL `*_partition_order` index now correctly excludes the `event` column.
 - *Fixed:* The PostgreSQL `NOW()` function has removed incorrect `AT TIME ZONE 'UTC'` as this is not required when the database timezone is set to UTC (which is the recommended configuration).
