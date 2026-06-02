@@ -1057,7 +1057,7 @@ public abstract class DatabaseMigrationBase : IDisposable
         Logger.LogInformation("{Content}", string.Empty);
         Logger.LogInformation("{Content}", "This command is intended to be used as a quick-and-easy way to inspect the inferred database schema based on the current database state. It is not intended to be a full-blown documentation generator; therefore, the output is limited to basic markdown tables that show the column names, data types, nullability, and primary key status for the specified tables. The markdown output can be copied and pasted into any markdown viewer or editor for further formatting or documentation purposes.");
         Logger.LogInformation("{Content}", string.Empty);
-        Logger.LogInformation("{Content}", "**Note**: This following is based on querying the database system tables/views; it may not be 100% accurate. Always refer to the actual database for the source of truth.");
+        Logger.LogInformation("{Content}", "**Note**: The following is based on querying the database system tables/views; it may not be 100% accurate. Always refer to the actual database for the source of truth.");
         Logger.LogInformation("{Content}", string.Empty);
 
         if (parameters is null || parameters.Count == 0)
@@ -1075,7 +1075,7 @@ public abstract class DatabaseMigrationBase : IDisposable
                 return true;
         }
         else
-            names = [.. parameters.Where(x => x.Key.StartsWith("Param") && x.Key != "Param0" && !string.IsNullOrEmpty(x.Value)).Select(x => x.Value!)];
+            names = [.. parameters.Where(x => x.Key.StartsWith("Param") && !string.IsNullOrEmpty(x.Value)).Select(x => x.Value!)];
 
         if (names.Length == 0) return true;
 

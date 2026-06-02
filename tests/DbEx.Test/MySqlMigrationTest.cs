@@ -48,10 +48,9 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("MySqlDb");
             var l = UnitTest.GetLogger<MySqlMigrationTest>();
             var a = new MigrationArgs(MigrationCommand.Inspect, cs) { Logger = l };
-            a.Parameters.Add("Param0", "public");
-            a.Parameters.Add("Param1", "unknown");
-            a.Parameters.Add("Param2", "gender");
-            a.Parameters.Add("Param3", "CONTACT");
+            a.Parameters.Add("Param0", "unknown");
+            a.Parameters.Add("Param1", "gender");
+            a.Parameters.Add("Param2", "CONTACT");
 
             using var m = new MySqlMigration(a);
             var (Success, Output) = await m.MigrateAndLogAsync().ConfigureAwait(false);

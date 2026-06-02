@@ -1,4 +1,4 @@
-﻿        namespace DbEx.DbSchema;
+﻿namespace DbEx.DbSchema;
 
 /// <summary>
 /// Represents the Database <b>Column</b> schema definition.

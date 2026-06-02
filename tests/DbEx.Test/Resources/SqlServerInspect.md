@@ -2,7 +2,7 @@
 
 This command is intended to be used as a quick-and-easy way to inspect the inferred database schema based on the current database state. It is not intended to be a full-blown documentation generator; therefore, the output is limited to basic markdown tables that show the column names, data types, nullability, and primary key status for the specified tables. The markdown output can be copied and pasted into any markdown viewer or editor for further formatting or documentation purposes.
 
-**Note**: This following is based on querying the database system tables/views; it may not be 100% accurate. Always refer to the actual database for the source of truth.
+**Noet**: The following is based on querying the database system tables/views; it may not be 100% accurate. Always refer to the actual database for the source of truth.
 
 ## TEST.UNKNOWN - Exists: No
 
