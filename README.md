@@ -80,7 +80,7 @@ Command | Description
 `ResetAndDatabase` | Performs `Reset` and `Database` (designed primarily for testing).
 `Execute` | Executes the SQL statement(s) passed as additional arguments.
 `Script` | Creates a new [`migration`](#Migrate) script file using the defined naming convention.
-[`Inspect`](#Inspect) | Inspects one or more existing database tables and outputs the inferred schema (columns, types, nullability, defaults, primary key, identity and computed flags) as markdown to the console.
+[`Inspect`](#Inspect) | Inspects one or more existing database tables and outputs the inferred schema (columns, types, nullability, defaults, primary key, identity, computed and unique flags) as markdown to the console.
 
 <br/>
 
