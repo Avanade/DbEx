@@ -80,7 +80,7 @@ Command | Description
 `ResetAndDatabase` | Performs `Reset` and `Database` (designed primarily for testing).
 `Execute` | Executes the SQL statement(s) passed as additional arguments.
 `Script` | Creates a new [`migration`](#Migrate) script file using the defined naming convention.
-[`Inspect`](#Inspect) | Inspects one or more existing database tables and outputs the inferred schema (columns, types, nullability, defaults, primary key, identity and computed flags) as markdown to the console.
+[`Inspect`](#Inspect) | Inspects one or more existing database tables and outputs the inferred schema (columns, types, nullability, defaults, primary key, identity, computed and unique flags) as markdown to the console.
 
 <br/>
 
@@ -298,7 +298,7 @@ dotnet run execute ./schema/createscehma.sql
 
 #### Inspect command
 
-The `Inspect` command provides a quick-and-easy way to inspect the inferred schema of one or more existing database tables. The output is a basic markdown document - written to the console - that includes whether each table exists, whether it is a view, whether it is treated as reference data, and a per-column table listing the column name, data type, nullability, default value, primary key, identity and computed flags. The markdown can be copied directly into any markdown viewer or editor for further use.
+The `Inspect` command provides a quick-and-easy way to inspect the inferred schema of one or more existing database tables. The output is a basic markdown document - written to the console - that includes whether each table exists, whether it is a view, whether it is treated as reference data, and a per-column table listing the column name, data type, nullability, default value, primary key, identity, computed and unique flags. The markdown can be copied directly into any markdown viewer or editor for further use.
 
 The arguments are the schema name (where supported by the database provider) followed by one or more table names. For database providers that do not use schemas (for example MySQL) only the table names are required.
 
