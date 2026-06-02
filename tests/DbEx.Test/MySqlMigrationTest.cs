@@ -1,5 +1,6 @@
 ﻿using DbEx.Migration;
 using DbEx.MySql.Migration;
+using DbEx.Postgres.Migration;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
 using System.Threading.Tasks;
@@ -39,6 +40,26 @@ namespace DbEx.Test
 
             r = await m2.MigrateAsync().ConfigureAwait(false);
             Assert.IsTrue(r);
+        }
+
+        [Test]
+        public async Task MySqlInspect()
+        {
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("MySqlDb");
+            var l = UnitTest.GetLogger<MySqlMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.Inspect, cs) { Logger = l };
+            a.Parameters.Add("Param0", "unknown");
+            a.Parameters.Add("Param1", "gender");
+            a.Parameters.Add("Param2", "CONTACT");
+
+            using var m = new MySqlMigration(a);
+            var (Success, Output) = await m.MigrateAndLogAsync().ConfigureAwait(false);
+
+            Assert.IsTrue(Success);
+            Assert.IsTrue(Output.Length > 0);
+
+            using var sr = MySqlMigration.GetRequiredResourcesStreamReader("MySqlInspect.md", [typeof(MySqlMigrationTest).Assembly]);
+            Assert.AreEqual(sr.ReadToEnd(), Output);
         }
     }
 }

@@ -166,6 +166,9 @@ public abstract class DatabaseMigrationBase : IDisposable
         if (Args.MigrationCommand.HasFlag(MigrationCommand.Execute))
             return await ExecuteSqlStatementsAsync(Args.ExecuteStatements?.ToArray() ?? [], cancellationToken).ConfigureAwait(false);
 
+        if (Args.MigrationCommand.HasFlag(MigrationCommand.Inspect))
+            return await InspectAsync(Args.CreateStringParameters(), cancellationToken).ConfigureAwait(false);
+
         /* The remaining commands are executed in sequence as defined (where selected) to enable multiple in the correct run order. */
 
         // Database drop.
@@ -1040,6 +1043,102 @@ public abstract class DatabaseMigrationBase : IDisposable
         }
 
         return await ExecuteScriptsAsync(scripts, false, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Inspects the database table and outputs schema-based markdown to the console.
+    /// </summary>
+    /// <param name="parameters">The optional parameters.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <returns><c>true</c> indicates success; otherwise, <c>false</c>.</returns>
+    public async Task<bool> InspectAsync(IDictionary<string, string?>? parameters = null, CancellationToken cancellationToken = default)
+    {
+        Logger.LogInformation("{Content}", $"# DATABASE INSPECT (provider: {Provider})");
+        Logger.LogInformation("{Content}", string.Empty);
+        Logger.LogInformation("{Content}", "This command is intended to be used as a quick-and-easy way to inspect the inferred database schema based on the current database state. It is not intended to be a full-blown documentation generator; therefore, the output is limited to basic markdown tables that show the column names, data types, nullability, and primary key status for the specified tables. The markdown output can be copied and pasted into any markdown viewer or editor for further formatting or documentation purposes.");
+        Logger.LogInformation("{Content}", string.Empty);
+        Logger.LogInformation("{Content}", "**Note**: The following is based on querying the database system tables/views; it may not be 100% accurate. Always refer to the actual database for the source of truth.");
+        Logger.LogInformation("{Content}", string.Empty);
+
+        if (parameters is null || parameters.Count == 0)
+            return true;
+
+        // Extract the schema and table names from the parameters.
+        string? schema = null;
+        string[] names = [];
+        if (SchemaConfig.SupportsSchema)
+        {
+            if (parameters?.TryGetValue("Param0", out schema) ?? false)
+                names = [.. parameters.Where(x => x.Key.StartsWith("Param") && x.Key != "Param0" && !string.IsNullOrEmpty(x.Value)).Select(x => x.Value!)];
+
+            if (string.IsNullOrEmpty(schema))
+                return true;
+        }
+        else
+            names = [.. parameters.Where(x => x.Key.StartsWith("Param") && !string.IsNullOrEmpty(x.Value)).Select(x => x.Value!)];
+
+        if (names.Length == 0) return true;
+
+        // Query the database schema and find the matching tables to output the markdown for.
+        var dbTables = await Database.SelectSchemaAsync(this, cancellationToken).ConfigureAwait(false);
+        foreach (string name in names)
+        {
+            var table = dbTables.Where(x => (schema == null || string.Compare(x.Schema, schema, StringComparison.OrdinalIgnoreCase) == 0) && string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+            InspectTableMarkdown(schema, name, table);
+        }
+
+        return true;
+    }
+
+    private void InspectTableMarkdown(string? schema, string name, DbSchema.DbTableSchema? table)
+    {
+        Logger.LogInformation("{Content}", $"## {(string.IsNullOrEmpty(schema) ? "" : $"{schema.ToUpperInvariant()}.")}{name.ToUpperInvariant()} - Exists: {(table != null ? "Yes" : "No")}");
+        Logger.LogInformation("{Content}", string.Empty);
+
+        if (table is null) return;
+
+        Logger.LogInformation("{Content}", $"- Schema: {table.Schema ?? "n/a"}");
+        Logger.LogInformation("{Content}", $"- Name: {table.Name}");
+        Logger.LogInformation("{Content}", $"- Qualified Name: {SchemaConfig.ToFullyQualifiedTableName(table.Schema, table.Name)}");
+        Logger.LogInformation("{Content}", $"- Table or View: {(table.IsAView ? "View" : "Table")}");
+        Logger.LogInformation("{Content}", $"- Reference Data: {(table.IsRefData ? "Yes" : "No")}");
+        Logger.LogInformation("{Content}", string.Empty);
+        Logger.LogInformation("{Content}", "### Columns");
+        Logger.LogInformation("{Content}", string.Empty);
+        
+        var columns = new List<List<string>>();
+        foreach (var c in table?.Columns ?? [])
+        {
+            columns.Add(
+            [
+                c.Name,
+                c.SqlType2,
+                c.IsNullable ? "Yes" : "No",
+                c.DefaultValue ?? string.Empty,
+                c.IsPrimaryKey ? "Yes" : "No",
+                c.IsIdentity ? "Yes" : "No",
+                c.IsComputed ? "Yes" : "No",
+                c.IsUnique ? "Yes" : "No"
+            ]);
+        }
+
+        var columnMaxLength = Math.Max("Column".Length, columns.Max(x => x[0].Length));
+        var typeMaxLength = Math.Max("Type".Length, columns.Max(x => x[1].Length));
+        var isNullMaxLength = Math.Max("Null".Length, columns.Max(x => x[2].Length));
+        var defaultMaxLength = Math.Max("Default".Length, columns.Max(x => x[3].Length));
+        var pkMaxLength = Math.Max("PK".Length, columns.Max(x => x[4].Length));
+        var identityMaxLength = Math.Max("Identity".Length, columns.Max(x => x[5].Length));
+        var computedMaxLength = Math.Max("Computed".Length, columns.Max(x => x[6].Length));
+        var uniqueMaxLength = Math.Max("Unique".Length, columns.Max(x => x[7].Length));
+
+        Logger.LogInformation("{Content}", $"| Column{new string(' ', columnMaxLength - "Column".Length)} | Type{new string(' ', typeMaxLength - "Type".Length)} | Null{new string(' ', isNullMaxLength - "Null".Length)} | Default{new string(' ', defaultMaxLength - "Default".Length)} | PK{new string(' ', pkMaxLength - "PK".Length)} | Identity{new string(' ', identityMaxLength - "Identity".Length)} | Computed{new string(' ', computedMaxLength - "Computed".Length)} | Unique{new string(' ', uniqueMaxLength - "Unique".Length)} |");
+        Logger.LogInformation("{Content}", $"|-{"".PadRight(columnMaxLength, '-')}-|-{"".PadRight(typeMaxLength, '-')}-|-{"".PadRight(isNullMaxLength, '-')}-|-{"".PadRight(defaultMaxLength, '-')}-|-{"".PadRight(pkMaxLength, '-')}-|-{"".PadRight(identityMaxLength, '-')}-|-{"".PadRight(computedMaxLength, '-')}-|-{"".PadRight(uniqueMaxLength, '-')}-|");
+        foreach (var column in columns)
+        {
+            Logger.LogInformation("{Content}", $"| {column[0].PadRight(columnMaxLength)} | {column[1].PadRight(typeMaxLength)} | {column[2].PadRight(isNullMaxLength)} | {column[3].PadRight(defaultMaxLength)} | {column[4].PadRight(pkMaxLength)} | {column[5].PadRight(identityMaxLength)} | {column[6].PadRight(computedMaxLength)} | {column[7].PadRight(uniqueMaxLength)} |");
+        }
+
+        Logger.LogInformation("{Content}", string.Empty);
     }
 
     /// <summary>

@@ -1,6 +1,7 @@
 ﻿using DbEx.Migration;
 using DbEx.Postgres.Console;
 using DbEx.Postgres.Migration;
+using DbEx.SqlServer.Migration;
 using DbEx.Test.PostgresConsole;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
@@ -96,6 +97,27 @@ namespace DbEx.Test
             Assert.That(await db2.SqlStatement("select fn_get_username()").ScalarAsync<string>(), Is.Not.Null.And.Not.EqualTo("bob@gmail.com"));
             Assert.That(await db2.SqlStatement("select fn_get_tenant_id()").ScalarAsync<string>(), Is.Null);
             Assert.That(await db2.SqlStatement("select fn_get_user_id()").ScalarAsync<string>(), Is.Null);
+        }
+
+        [Test]
+        public async Task PostgresInspect()
+        {
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("PostgresDb");
+            var l = UnitTest.GetLogger<PostgresMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.Inspect, cs) { Logger = l };
+            a.Parameters.Add("Param0", "public");
+            a.Parameters.Add("Param1", "unknown");
+            a.Parameters.Add("Param2", "gender");
+            a.Parameters.Add("Param3", "CONTACT");
+
+            using var m = new PostgresMigration(a);
+            var (Success, Output) = await m.MigrateAndLogAsync().ConfigureAwait(false);
+
+            Assert.IsTrue(Success);
+            Assert.IsTrue(Output.Length > 0);
+
+            using var sr = PostgresMigration.GetRequiredResourcesStreamReader("PostgresInspect.md", [typeof(PostgresMigrationTest).Assembly]);
+            Assert.AreEqual(sr.ReadToEnd(), Output);
         }
     }
 }

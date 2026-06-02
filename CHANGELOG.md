@@ -2,6 +2,11 @@
 
 Represents the **NuGet** versions.
 
+## v3.1.0
+- *Enhancement:* Added new `MigrationCommand.Inspect` to inspect the specified database tables and outputs schema-based markdown to the console. 
+  - This is intended to be a quick-and-easy way to inspect the inferred database schema based on the current database state. It is not intended to be a full-blown documentation generator; therefore, the output is limited to basic markdown tables that show the column names, data types, nullability, default values, and primary key, identity, computed and unique status for the specified tables. The markdown output can be copied and pasted into any markdown viewer or editor for further formatting or documentation purposes.
+  - Command line execution is as: `dotnet run -- inspect schema table1 table2`
+
 ## v3.0.2
 - *Fixed:* The SQL Server outbox stored procedures, where applicable, have had redundant, dead code, removed.
 - *Fixed:* Add name of entry assembly to the generated code file header comments to provide better visibility of generation source process.

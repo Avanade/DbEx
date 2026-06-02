@@ -110,5 +110,11 @@ public enum MigrationCommand
     /// Creates a new <see cref="Migrate">migration</see> script file using the defined naming convention.
     /// </summary>
     /// <remarks>This can not be used with any of the other commands.</remarks>
-    Script = 2048
+    Script = 2048,
+
+    /// <summary>
+    /// Inspects the specified database tables and outputs schema-based markdown to the console. 
+    /// </summary>
+    /// <remarks>This is intended for development and testing purposes only.</remarks>
+    Inspect = 4096
 }

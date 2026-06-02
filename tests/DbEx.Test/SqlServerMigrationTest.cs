@@ -388,5 +388,26 @@ some other stuf", "blah"));
             Assert.That(ss.Schema, Is.EqualTo("Sec"));
             Assert.That(ss.Name, Is.EqualTo("fnGetUserHasPermission"));
         }
+
+        [Test]
+        public async Task SqlServerInspect()
+        {
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
+            var l = UnitTest.GetLogger<SqlServerMigrationTest>();
+            var a = new MigrationArgs(MigrationCommand.Inspect, cs) { Logger = l };
+            a.Parameters.Add("Param0", "test");
+            a.Parameters.Add("Param1", "unknown");
+            a.Parameters.Add("Param2", "gender");
+            a.Parameters.Add("Param3", "CONTACT");
+
+            using var m = new SqlServerMigration(a);
+            var (Success, Output) = await m.MigrateAndLogAsync().ConfigureAwait(false);
+
+            Assert.IsTrue(Success);
+            Assert.IsTrue(Output.Length > 0);
+
+            using var sr = SqlServerMigration.GetRequiredResourcesStreamReader("SqlServerInspect.md", [typeof(SqlServerMigrationTest).Assembly]);
+            Assert.AreEqual(sr.ReadToEnd(), Output);
+        }
     }
 }
