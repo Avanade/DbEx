@@ -49,12 +49,15 @@ public sealed class PostgresMigrationConsole : MigrationConsoleBase<PostgresMigr
     /// </summary>
     public void WriteScriptHelp()
     {
+        Logger?.LogInformation("{help}", "Inspect command and argument(s):");
+        Logger?.LogInformation("{help}", "  inspect <schema> <table1> <table2>...  Inspects one or more database tables within the specified schema.");
+        Logger?.LogInformation("{help}", string.Empty);
         Logger?.LogInformation("{help}", "Script command and argument(s):");
-        Logger?.LogInformation("{help}", "  script [default]                  Creates a default (empty) SQL script.");
-        Logger?.LogInformation("{help}", "  script alter <schema> <table>     Creates a SQL script to perform an ALTER TABLE.");
-        Logger?.LogInformation("{help}", "  script create <schema> <table>    Creates a SQL script to perform a CREATE TABLE.");
-        Logger?.LogInformation("{help}", "  script outbox <Schema> <Table>    Creates a SQL script to perform a CREATE TABLE(s) for an Outbox.");
-        Logger?.LogInformation("{help}", "  script refdata <schema> <table>   Creates a SQL script to perform a CREATE TABLE as reference data.");
-        Logger?.LogInformation("{help}", "  script schema <schema>            Creates a SQL script to perform a CREATE SCHEMA.");
+        Logger?.LogInformation("{help}", "  script [default]                       Creates a default (empty) SQL script.");
+        Logger?.LogInformation("{help}", "  script alter <schema> <table>          Creates a SQL script to perform an ALTER TABLE.");
+        Logger?.LogInformation("{help}", "  script create <schema> <table>         Creates a SQL script to perform a CREATE TABLE.");
+        Logger?.LogInformation("{help}", "  script outbox <Schema> <Table>         Creates a SQL script to perform a CREATE TABLE(s) for an Outbox.");
+        Logger?.LogInformation("{help}", "  script refdata <schema> <table>        Creates a SQL script to perform a CREATE TABLE as reference data.");
+        Logger?.LogInformation("{help}", "  script schema <schema>                 Creates a SQL script to perform a CREATE SCHEMA.");
     }
 }

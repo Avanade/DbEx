@@ -62,8 +62,8 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
     /// <summary>
     /// Gets or sets the supported <see cref="MigrationCommand"/>(s); where executed with an unsupported command an error will occur.
     /// </summary>
-    /// <remarks>Defaults to everything: <see cref="MigrationCommand.All"/>, <see cref="MigrationCommand.Reset"/>, <see cref="MigrationCommand.Drop"/>, <see cref="MigrationCommand.Execute"/> and <see cref="MigrationCommand.Script"/>.</remarks>
-    public MigrationCommand SupportedCommands { get; set; } = MigrationCommand.All | MigrationCommand.Reset | MigrationCommand.Drop | MigrationCommand.Execute | MigrationCommand.Script;
+    /// <remarks>Defaults to everything: <see cref="MigrationCommand.All"/>, <see cref="MigrationCommand.Reset"/>, <see cref="MigrationCommand.Drop"/>, <see cref="MigrationCommand.Execute"/>, <see cref="MigrationCommand.Script"/> and <see cref="MigrationCommand.Inspect"/>.</remarks>
+    public MigrationCommand SupportedCommands { get; set; } = MigrationCommand.All | MigrationCommand.Reset | MigrationCommand.Drop | MigrationCommand.Execute | MigrationCommand.Script | MigrationCommand.Inspect;
 
     /// <summary>
     /// Runs the code generation using the passed <paramref name="migrationCommand"/>.
@@ -142,10 +142,10 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
             if (vr != ValidationResult.Success)
                 return vr;
 
-            if (_additionalArgs.Values.Count > 0 && !(Args.MigrationCommand.HasFlag(MigrationCommand.CodeGen) || Args.MigrationCommand.HasFlag(MigrationCommand.Script) || Args.MigrationCommand.HasFlag(MigrationCommand.Execute)))
-                return new ValidationResult($"Additional arguments can only be specified when the command is '{nameof(MigrationCommand.CodeGen)}', '{nameof(MigrationCommand.Script)}' or '{nameof(MigrationCommand.Execute)}'.", memberNames);
+            if (_additionalArgs.Values.Count > 0 && !(Args.MigrationCommand.HasFlag(MigrationCommand.CodeGen) || Args.MigrationCommand.HasFlag(MigrationCommand.Script) || Args.MigrationCommand.HasFlag(MigrationCommand.Execute) || Args.MigrationCommand.HasFlag(MigrationCommand.Inspect)))
+                return new ValidationResult($"Additional arguments can only be specified when the command is '{nameof(MigrationCommand.CodeGen)}', '{nameof(MigrationCommand.Script)}', '{nameof(MigrationCommand.Execute)}' or '{nameof(MigrationCommand.Inspect)}'.", memberNames);
 
-            if (Args.MigrationCommand.HasFlag(MigrationCommand.CodeGen) || Args.MigrationCommand.HasFlag(MigrationCommand.Script))
+            if (Args.MigrationCommand.HasFlag(MigrationCommand.CodeGen) || Args.MigrationCommand.HasFlag(MigrationCommand.Script) || Args.MigrationCommand.HasFlag(MigrationCommand.Inspect))
             {
                 for (int i = 0; i < _additionalArgs.Values.Count; i++)
                 {
@@ -301,7 +301,7 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
             using var migrator = CreateMigrator();
 
             // Write header, etc.
-            if (!BypassOnWrites)
+            if (!BypassOnWrites && !migrator.Args.MigrationCommand.HasFlag(MigrationCommand.Inspect))
             {
                 OnWriteMasthead();
                 OnWriteHeader();
@@ -315,7 +315,7 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
 
             // Write footer and exit successfully.
             sw.Stop();
-            if (!BypassOnWrites)
+            if (!BypassOnWrites && !migrator.Args.MigrationCommand.HasFlag(MigrationCommand.Inspect))
                 OnWriteFooter(sw.Elapsed.TotalMilliseconds);
 
             return 0;
@@ -347,8 +347,11 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
         if (!await migrator.MigrateAsync(cancellationToken).ConfigureAwait(false))
             return false;
 
-        Logger?.LogInformation("{Content}", string.Empty);
-        Logger?.LogInformation("{Content}", new string('-', 80));
+        if (!migrator.Args.MigrationCommand.HasFlag(MigrationCommand.Inspect))
+        {
+            Logger?.LogInformation("{Content}", string.Empty);
+            Logger?.LogInformation("{Content}", new string('-', 80));
+        }
 
         return true;
     }
