@@ -147,6 +147,9 @@ public class DataParser
         var tables = new List<DataTable>();
         DataConfig? dataConfig = null;
 
+        if (json.RootElement.ValueKind == JsonValueKind.Null)
+            return tables;
+
         // Loop through all the schemas.
         foreach (var js in json.RootElement.EnumerateObject())
         {
@@ -159,6 +162,9 @@ public class DataParser
                 dataConfig = js.Value.Deserialize<DataConfig>();
                 continue;
             }
+
+            if (js.Value.ValueKind == JsonValueKind.Null)
+                continue;
 
             // Loop through the collection of tables.
             foreach (var jto in js.Value.EnumerateArray())

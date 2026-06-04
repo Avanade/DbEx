@@ -1060,6 +1060,13 @@ public abstract class DatabaseMigrationBase : IDisposable
         Logger.LogInformation("{Content}", "**Note**: The following is based on querying the database system tables/views; it may not be 100% accurate. Always refer to the actual database for the source of truth.");
         Logger.LogInformation("{Content}", string.Empty);
 
+        var dbExists = await DatabaseExistsAsync(cancellationToken).ConfigureAwait(false);
+        if (!dbExists)
+        {
+            Logger.LogWarning("{Content}", $"Database does not exist; as such there is no schema to inspect."); 
+            return false;
+        }
+
         if (parameters is null || parameters.Count == 0)
             return true;
 

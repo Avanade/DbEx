@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v3.3.1
+- *Fixed:* Updated `OnRamp` to version `2.2.5` which emits JSON schema arrays allowing null values.
+- *Fixed:* Updated `DataParser` to support JSON arrays allowing null values.
+
 ## v3.1.0
 - *Enhancement:* Added new `MigrationCommand.Inspect` to inspect the specified database tables and outputs schema-based markdown to the console. 
   - This is intended to be a quick-and-easy way to inspect the inferred database schema based on the current database state. It is not intended to be a full-blown documentation generator; therefore, the output is limited to basic markdown tables that show the column names, data types, nullability, default values, and primary key, identity, computed and unique status for the specified tables. The markdown output can be copied and pasted into any markdown viewer or editor for further formatting or documentation purposes.

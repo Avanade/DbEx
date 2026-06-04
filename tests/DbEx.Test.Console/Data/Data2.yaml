@@ -1,7 +1,19 @@
 ﻿Test:
 # Specified again, merge should not result in duplicate error
 - $Status:
-  - { Code: A, Text: Active, TenantId: ^88 }
-  - { Code: I, Text: Inactive, TenantId: ^88 }  
-  - { Code: A, Text: Active, TenantId: ^99 }
-  - { Code: I, Text: Inactive, TenantId: ^99 } 
+  # - { Code: A, Text: Active, TenantId: ^88 }
+  # - { Code: I, Text: Inactive, TenantId: ^88 }  
+  # - { Code: A, Text: Active, TenantId: ^99 }
+  # - { Code: I, Text: Inactive, TenantId: ^99 } 
+  - Code: A
+    Text: Active
+    TenantId: ^88
+  - Code: I
+    Text: Inactive
+    TenantId: ^88
+  - Code: A
+    Text: Active
+    TenantId: ^99
+  - Code: I
+    Text: Inactive
+    TenantId: ^99

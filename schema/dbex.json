@@ -92,7 +92,11 @@
           "description": "Defaults to \u0060Outbox\u0060."
         },
         "tables": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
+          "default": [],
           "title": "The database table collection configuration.",
           "items": {
             "$ref": "#/definitions/Table"
@@ -114,7 +118,11 @@
           "description": "Defaults to the root \u0060{Schema}\u0060."
         },
         "includeColumns": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
+          "default": [],
           "title": "The list of database columns to include specifically.",
           "description": "All columns are included by default; this provides a means to simply select those for inclusion.",
           "items": {
@@ -122,7 +130,11 @@
           }
         },
         "excludeColumns": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
+          "default": [],
           "title": "The list of database columns to exclude specifically.",
           "description": "All columns are included by default; this provides a means to simply select those for exclusion. A single item of \u0027*\u0027 indicates all columns are to be excluded.",
           "items": {
@@ -181,7 +193,11 @@
           "description": "Defaults to \u0060UpdatedOn\u0060."
         },
         "columns": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
+          "default": [],
           "title": "The database column collection configuration.",
           "description": "This collection is optional. It is used to specifically declare and/or override the column configurations. This bypasses the {IncludeColumns} and {ExcludesColumns} lists.",
           "items": {
