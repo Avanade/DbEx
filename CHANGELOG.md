@@ -2,7 +2,7 @@
 
 Represents the **NuGet** versions.
 
-## v3.3.1
+## v3.1.1
 - *Fixed:* Updated `OnRamp` to version `2.2.5` which emits JSON schema arrays allowing null values.
 - *Fixed:* Updated `DataParser` to support JSON arrays allowing null values.
 
