@@ -6,7 +6,7 @@
 START TRANSACTION;
 
 CREATE TABLE `{{lookup Parameters 'Param1'}}` (
-  `{{lookup Parameters 'Param1'}}_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `{{lookup Parameters 'Param1'}}_id` VARCHAR(50) NOT NULL PRIMARY KEY,
   `code` VARCHAR(50) NOT NULL UNIQUE,
   `text` VARCHAR(250) NULL,
   `is_active` BOOL NULL,
