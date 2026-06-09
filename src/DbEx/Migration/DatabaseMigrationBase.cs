@@ -179,6 +179,14 @@ public abstract class DatabaseMigrationBase : IDisposable
         if (!await CommandExecuteAsync(MigrationCommand.Create, "DATABASE CREATE: Checking database existence and creating where not found...", DatabaseCreateAsync, null, cancellationToken).ConfigureAwait(false))
             return false;
 
+        // Check database existence as there is no point continuing if the database was not created successfully or does not exist for some reason.
+        var exists = await DatabaseExistsAsync(cancellationToken).ConfigureAwait(false);
+        if (!exists)
+        {
+            Logger.LogError("{Content}", $"Database '{DatabaseName}' does not exist; cannot continue with command.");
+            return false;
+        }
+
         // Database migration scripts.
         if (!await CommandExecuteAsync(MigrationCommand.Migrate, "DATABASE MIGRATE: Migrating the database...", DatabaseMigrateAsync, null, cancellationToken).ConfigureAwait(false))
             return false;
@@ -314,6 +322,14 @@ public abstract class DatabaseMigrationBase : IDisposable
             Logger.LogInformation("{Content}", string.Empty);
             Logger.LogInformation("{Content}", $"Complete. [{sw.Elapsed.TotalMilliseconds}ms{summary?.Invoke() ?? string.Empty}]");
             return true;
+        }
+        catch (DbException dbex)
+        {
+            // DbException is the base exception for database related exceptions across ADO.NET providers (e.g. SqlException for SQL Server, NpgsqlException for PostgreSQL, MySqlException for MySQL etc.)
+            // and as such is the most appropriate to catch here to log any database related errors that may occur during the execution of the command. No stacktrace is required for these types of exceptions
+            // as the message will contain the relevant details of the error that occurred.
+            Logger.LogError("{Content}", $"A database error occurred: {dbex.Message}");
+            return false;
         }
         catch (Exception ex)
         {
@@ -797,7 +813,9 @@ public abstract class DatabaseMigrationBase : IDisposable
                         || rn.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase) || rn.EndsWith(".jsn", StringComparison.InvariantCultureIgnoreCase))))
                         continue;
 
-                    list.Add((ass.Assembly, rn));
+                    // Filter on named resources where specified; otherwise, include by default.
+                    if (!Args.DataParserArgs.NamedResources.TryGetValue(ass.Assembly, out var namedResources) || namedResources.Any(nr => rn.EndsWith(nr, StringComparison.InvariantCulture)))
+                        list.Add((ass.Assembly, rn));
                 }
             }
         }
@@ -1055,17 +1073,19 @@ public abstract class DatabaseMigrationBase : IDisposable
     {
         Logger.LogInformation("{Content}", $"# DATABASE INSPECT (provider: {Provider})");
         Logger.LogInformation("{Content}", string.Empty);
+
+        // Ensure database exists before trying to query the schema.
+        var dbExists = await DatabaseExistsAsync(cancellationToken).ConfigureAwait(false);
+        if (!dbExists)
+        {
+            Logger.LogWarning("{Content}", $"Database '{DatabaseName}' does not exist; as such there is no schema to inspect.");
+            return false;
+        }
+
         Logger.LogInformation("{Content}", "This command is intended to be used as a quick-and-easy way to inspect the inferred database schema based on the current database state. It is not intended to be a full-blown documentation generator; therefore, the output is limited to basic markdown tables that show the column names, data types, nullability, and primary key status for the specified tables. The markdown output can be copied and pasted into any markdown viewer or editor for further formatting or documentation purposes.");
         Logger.LogInformation("{Content}", string.Empty);
         Logger.LogInformation("{Content}", "**Note**: The following is based on querying the database system tables/views; it may not be 100% accurate. Always refer to the actual database for the source of truth.");
         Logger.LogInformation("{Content}", string.Empty);
-
-        var dbExists = await DatabaseExistsAsync(cancellationToken).ConfigureAwait(false);
-        if (!dbExists)
-        {
-            Logger.LogWarning("{Content}", $"Database does not exist; as such there is no schema to inspect."); 
-            return false;
-        }
 
         if (parameters is null || parameters.Count == 0)
             return true;
@@ -1097,6 +1117,9 @@ public abstract class DatabaseMigrationBase : IDisposable
         return true;
     }
 
+    /// <summary>
+    /// Outputs the markdown for the specified table schema.
+    /// </summary>
     private void InspectTableMarkdown(string? schema, string name, DbSchema.DbTableSchema? table)
     {
         Logger.LogInformation("{Content}", $"## {(string.IsNullOrEmpty(schema) ? "" : $"{schema.ToUpperInvariant()}.")}{name.ToUpperInvariant()} - Exists: {(table != null ? "Yes" : "No")}");

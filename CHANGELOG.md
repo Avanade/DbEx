@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v3.1.2
+- *Fixed:* Where a `DbException` occurs executing a command, only the exception message is now logged; not the full stack trace as this is misleading.
+- *Fixed:* Prior to executing a command that requires the database, its existence will be checked first and an appropriate error returned where not found.
+
 ## v3.1.1
 - *Fixed:* Updated `OnRamp` to version `2.2.5` which emits JSON schema arrays allowing null values.
 - *Fixed:* Updated `DataParser` to support JSON arrays allowing null values.

@@ -1,7 +1,7 @@
 ﻿namespace DbEx.Migration.Data;
 
 /// <summary>
-/// Represents the <see cref="DataParser"/> arguments.
+/// Represents the <see cref="DataParser"/> arguments used for identifying, parsing and loading data from embedded resource files; and also for providing runtime parameters and defaults to support the parsing and loading process.
 /// </summary>
 public class DataParserArgs
 {
@@ -133,6 +133,29 @@ public class DataParserArgs
     public bool ReplaceShorthandGuids { get; set; } = true;
 
     /// <summary>
+    /// Gets the list of named resource files to load.
+    /// </summary>
+    /// <remarks>Empty by default meaning all embedded resources will be considered; otherwise, only the specified resource file names will be considered (case-sensitive). The specified name(s) must match (ends with) the discovered resource file name(s); therefore, they must also include the file suffix.</remarks>
+    public Dictionary<Assembly, string[]> NamedResources { get; private set; } = [];
+
+    /// <summary>
+    /// Adds the specified resource file names to the <see cref="NamedResources"/> list.
+    /// </summary>
+    /// <typeparam name="TResource">The type whose underlying <see cref="Type.Assembly"/> is used as the <see cref="NamedResources"/> assembly reference.</typeparam>
+    /// <param name="resourceFileNames">The resource file names to add.</param>
+    /// <returns>The <see cref="DataParserArgs"/> to support fluent-style method-chaining.</returns>
+    public DataParserArgs AddNamed<TResource>(params string[] resourceFileNames)
+    {
+        if (resourceFileNames == null || resourceFileNames.Length == 0)
+            throw new ArgumentException("Resource file names cannot be null or empty.", nameof(resourceFileNames));
+
+        if (!NamedResources.TryAdd(typeof(TResource).Assembly, resourceFileNames))
+            throw new ArgumentException("Resource file names for the specified assembly have already been added.", nameof(resourceFileNames));
+
+        return this;
+    }
+
+    /// <summary>
     /// Copy and replace from <paramref name="args"/>.
     /// </summary>
     /// <param name="args">The <see cref="DataParserArgs"/> to copy from.</param>
@@ -157,5 +180,6 @@ public class DataParserArgs
         TableNameMappings.Clear();
         args.TableNameMappings.ForEach(x => TableNameMappings.Add(x.Key.ParsedSchema, x.Key.ParsedTable, x.Value.Schema, x.Value.Table, x.Value.ColumnMappings));
         ReplaceShorthandGuids = args.ReplaceShorthandGuids;
+        NamedResources = args.NamedResources;
     }
 }
