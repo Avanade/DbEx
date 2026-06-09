@@ -180,6 +180,8 @@ public class DataParserArgs
         TableNameMappings.Clear();
         args.TableNameMappings.ForEach(x => TableNameMappings.Add(x.Key.ParsedSchema, x.Key.ParsedTable, x.Value.Schema, x.Value.Table, x.Value.ColumnMappings));
         ReplaceShorthandGuids = args.ReplaceShorthandGuids;
-        NamedResources = args.NamedResources;
+        NamedResources.Clear();
+        foreach (var nr in args.NamedResources)
+            NamedResources.Add(nr.Key, nr.Value.ToArray());
     }
 }
