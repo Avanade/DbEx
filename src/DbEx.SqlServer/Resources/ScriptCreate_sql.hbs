@@ -7,7 +7,7 @@
 BEGIN TRANSACTION
 
 CREATE TABLE [{{lookup Parameters 'Param1'}}].[{{lookup Parameters 'Param2'}}] (
-  [{{lookup Parameters 'Param2'}}Id] UNIQUEIDENTIFIER NOT NULL DEFAULT (NEWSEQUENTIALID()) PRIMARY KEY,
+  [{{lookup Parameters 'Param2'}}Id] NVARCHAR(50) NOT NULL PRIMARY KEY,
   -- [Code] NVARCHAR(50) NULL UNIQUE,
   -- [Text] NVARCHAR(250) NULL,
   -- [Bool] BIT NULL,
