@@ -1096,6 +1096,12 @@ public abstract class DatabaseMigrationBase : IDisposable
                 return false;
             }
 
+            if (string.IsNullOrWhiteSpace(statement))
+            {
+                Logger.LogWarning("{Content}", $"** Statement is empty; skipping... [#{index + 1}]");
+                return true;
+            }
+
             Logger.LogInformation("{Content}", $"** Executing: Raw SQL [#{index + 1}]...");
             var script = new DatabaseMigrationScript(this, statement, $"{DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture)}-console-execute.{index + 1:000}.{SchemaConfig.ScriptSuffix}");
             await ExecuteScriptAsync(script, cancellationToken).ConfigureAwait(false);

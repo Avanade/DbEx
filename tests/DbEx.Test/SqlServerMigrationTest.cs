@@ -296,7 +296,7 @@ namespace DbEx.Test
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
             using var m = new SqlServerMigration(a);
 
-            var r = await m.ExecuteSqlStatementsAsync([">SELECT * FROM Test.Contact", "SELECT BANANAS"]).ConfigureAwait(false);
+            var r = await m.ExecuteSqlStatementsAsync([">SELECT * FROM Test.Contact", ">SELECT BANANAS"]).ConfigureAwait(false);
             Assert.IsFalse(r);
         }
 

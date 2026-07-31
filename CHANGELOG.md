@@ -3,7 +3,7 @@
 Represents the **NuGet** versions.
 
 ## v3.2.0
-- *Enhancement:* The `MigrationCommand.Execute` has been enhanced to support the execution of YAML/JSON data files. Raw SQL must _now_ be prefixed by `>` to explicity differentiate from a file path.
+- *Enhancement:* The `MigrationCommand.Execute` has been enhanced to support the execution of YAML/JSON data files. Raw SQL must _now_ be prefixed by `>` to explicitly differentiate from a file path.
 - *Enhancement:* The `MigrationCommand.Inspect` has been enhanced to also report whether each column has been identified as a JSON column (i.e. `DbColumnSchema.IsJson`).
 
 ## v3.1.2

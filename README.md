@@ -210,7 +210,7 @@ Arguments:
   command                    Database migration command (see https://github.com/Avanade/dbex#commands-functions).
                              Allowed values are: None, Drop, Create, Migrate, CodeGen, Schema, Deploy, Reset, Data, DeployWithData, Database, DropAndDatabase, All, DropAndAll,
                              ResetAndData, ResetAndDatabase, ResetAndAll, Execute, Script, Inspect.
-  args                       Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each being a file-path or raw SQL statement).
+  args                       Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each being a file-path or raw SQL statement) -or- 'Inspect' (schema plus one or more table names).
 Options:
   -?|-h|--help               Show help information.
   -cs|--connection-string    Database connection string.

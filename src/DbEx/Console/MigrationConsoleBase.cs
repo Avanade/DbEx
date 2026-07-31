@@ -107,7 +107,7 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
         ConsoleOptions.Add(DropSchemaObjectsName, app.Option("-dso|--drop-schema-objects", "Drop all known schema objects before applying; bypasses automatic skip where all scripts are replacements.", CommandOptionType.NoValue));
         ConsoleOptions.Add(AcceptPromptsOptionName, app.Option("--accept-prompts", "Accept prompts; command should _not_ stop and wait for user confirmation (DROP or RESET commands).", CommandOptionType.NoValue));
         ConsoleOptions.Add(ExpectNoChangesName, app.Option("--expect-no-changes", "Indicates to expect no changes during code-generation (i.e. result in error on change).", CommandOptionType.NoValue));
-        _additionalArgs = app.Argument("args", "Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each being a file-path or raw SQL statement).", multipleValues: true);
+        _additionalArgs = app.Argument("args", "Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each being a file-path or raw SQL statement) -or- 'Inspect' (schema where applicable plus one or more table names).", multipleValues: true);
 
         OnBeforeExecute(app);
 
