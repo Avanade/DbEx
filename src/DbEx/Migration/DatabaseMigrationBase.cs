@@ -175,6 +175,9 @@ public abstract class DatabaseMigrationBase : IDisposable
         if (!await CommandExecuteAsync(MigrationCommand.Drop, "DATABASE DROP: Checking database existence and dropping where found...", DatabaseDropAsync, null, cancellationToken).ConfigureAwait(false))
             return false;
 
+        if (Args.MigrationCommand == MigrationCommand.Drop)
+            return true;    // Where only dropping the database, then exit here to avoid errant database exists check coming up.
+
         // Database create.
         if (!await CommandExecuteAsync(MigrationCommand.Create, "DATABASE CREATE: Checking database existence and creating where not found...", DatabaseCreateAsync, null, cancellationToken).ConfigureAwait(false))
             return false;
@@ -333,7 +336,7 @@ public abstract class DatabaseMigrationBase : IDisposable
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "{Content}", ex.Message);
+            Logger.LogCritical(ex, "{Content}", ex.Message);
             return false;
         }
     }
@@ -367,9 +370,14 @@ public abstract class DatabaseMigrationBase : IDisposable
             {
                 await ExecuteScriptAsync(script, cancellationToken).ConfigureAwait(false);
             }
+            catch (DbException dbex)
+            {
+                Logger.LogError("{Content}", $"A database error occurred: {dbex.Message}");
+                return false;
+            }
             catch (Exception ex)
             {
-                Logger.LogCritical(ex, "An error occurred executing the script: {Message}", ex.Message);
+                Logger.LogCritical(ex, "{Content}", ex.Message);
                 return false;
             }
 
@@ -1032,11 +1040,11 @@ public abstract class DatabaseMigrationBase : IDisposable
     public async Task<bool> ExecuteSqlStatementsAsync(string[]? statements, CancellationToken cancellationToken = default)
     {
         PreExecutionInitialization();
-        return await CommandExecuteAsync("DATABASE EXECUTE: Executes the SQL statement(s)...", async ct => await ExecuteSqlStatementsInternalAsync(statements, ct).ConfigureAwait(false), null, cancellationToken).ConfigureAwait(false);
+        return await CommandExecuteAsync($"DATABASE EXECUTE: Executing the {statements?.Length ?? 0} statement(s)...", async ct => await ExecuteSqlStatementsInternalAsync(statements, ct).ConfigureAwait(false), null, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Executes the raw SQL statements.
+    /// Executes the SQL statements (files or raw SQL).
     /// </summary>
     private async Task<bool> ExecuteSqlStatementsInternalAsync(string[]? statements, CancellationToken cancellationToken)
     {
@@ -1049,18 +1057,82 @@ public abstract class DatabaseMigrationBase : IDisposable
         if (statements.Length >= 1000)
             throw new ArgumentException("A maximum of 999 SQL statements may be executed at one-time.", nameof(statements));
 
-        var sn = $"{DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture)}-console-execute-";
-
-        var scripts = new List<DatabaseMigrationScript>();
         for (int i = 0; i < statements.Length; i++)
         {
-            if (File.Exists(statements[i]))
-                scripts.Add(new DatabaseMigrationScript(this, new FileInfo(statements[i]), statements[i]));
-            else
-                scripts.Add(new DatabaseMigrationScript(this, statements[i], $"{sn}{i + 1:000}.{SchemaConfig.ScriptSuffix}"));
+            Logger.LogInformation("{Content}", string.Empty);
+
+            if (i > 0)
+            {
+                Logger.LogInformation("{Content}", $"  {new string('-', 78)}");
+                Logger.LogInformation("{Content}", string.Empty);
+            }
+
+            if (!await ExecuteSqlStatementInternalAsync(statements[i], i, cancellationToken).ConfigureAwait(false))
+                return false;
         }
 
-        return await ExecuteScriptsAsync(scripts, false, cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    /// <summary>
+    /// Executes an individual SQL statement (file or raw SQL).
+    /// </summary>
+    private async Task<bool> ExecuteSqlStatementInternalAsync(string statement, int index, CancellationToken cancellationToken)
+    {
+        // If the statement is not a file, assume it is a raw SQL statement and create a temporary script to execute it.
+        if (!File.Exists(statement))
+        {
+            if (string.IsNullOrWhiteSpace(statement))
+            {
+                Logger.LogWarning("{Content}", $"** Statement is empty; skipping... [#{index + 1}]");
+                return true;
+            }
+
+            if (statement.StartsWith('>'))
+                statement = statement[1..];
+            else
+            {
+                Logger.LogError("{Content}", $"Error: Statement is not a file (does not exist) or does not start with '>' (raw SQL). [#{index + 1}]");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(statement))
+            {
+                Logger.LogWarning("{Content}", $"** Statement is empty; skipping... [#{index + 1}]");
+                return true;
+            }
+
+            Logger.LogInformation("{Content}", $"** Executing: Raw SQL [#{index + 1}]...");
+            var script = new DatabaseMigrationScript(this, statement, $"{DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture)}-console-execute.{index + 1:000}.{SchemaConfig.ScriptSuffix}");
+            await ExecuteScriptAsync(script, cancellationToken).ConfigureAwait(false);
+            return true;
+        }
+
+        var fi = new FileInfo(statement);
+
+        // If the statement is a YAML or JSON file, parse it and execute the data insert/merge.
+        if (statement.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase) || statement.EndsWith(".yml", StringComparison.InvariantCultureIgnoreCase))
+        {
+            Logger.LogInformation("{Content}", $"** Parsing and executing: {fi.FullName} [#{index + 1}]...");
+            using var sr = new StreamReader(statement);
+            var schema = await Database.SelectSchemaAsync(this, cancellationToken).ConfigureAwait(false);
+            var tables = await new DataParser(this, schema).ParseYamlAsync(sr, cancellationToken).ConfigureAwait(false);
+            return await DatabaseDataAsync(tables, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (statement.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase) || statement.EndsWith(".jsn", StringComparison.InvariantCultureIgnoreCase))
+        {
+            Logger.LogInformation("{Content}", $"** Parsing and executing: {fi.FullName} [#{index + 1}]...");
+            using var sr = new StreamReader(statement);
+            var tables = await new DataParser(this, await Database.SelectSchemaAsync(this, cancellationToken).ConfigureAwait(false)).ParseJsonAsync(sr, cancellationToken).ConfigureAwait(false);
+            return await DatabaseDataAsync(tables, cancellationToken).ConfigureAwait(false);
+        }
+
+        // Assume the statement is a SQL file, create a script to execute it.
+        Logger.LogInformation("{Content}", $"** Executing: {fi.FullName} [#{index + 1}] ...");
+        var sqlScript = new DatabaseMigrationScript(this, new FileInfo(statement), Path.GetFileName(statement));
+        await ExecuteScriptAsync(sqlScript, cancellationToken).ConfigureAwait(false);
+        return true;
     }
 
     /// <summary>
@@ -1148,7 +1220,8 @@ public abstract class DatabaseMigrationBase : IDisposable
                 c.IsPrimaryKey ? "Yes" : "No",
                 c.IsIdentity ? "Yes" : "No",
                 c.IsComputed ? "Yes" : "No",
-                c.IsUnique ? "Yes" : "No"
+                c.IsUnique ? "Yes" : "No",
+                c.IsJsonContent ? "Yes" : "No"
             ]);
         }
 
@@ -1160,12 +1233,13 @@ public abstract class DatabaseMigrationBase : IDisposable
         var identityMaxLength = Math.Max("Identity".Length, columns.Max(x => x[5].Length));
         var computedMaxLength = Math.Max("Computed".Length, columns.Max(x => x[6].Length));
         var uniqueMaxLength = Math.Max("Unique".Length, columns.Max(x => x[7].Length));
+        var jsonMaxLength = Math.Max("JSON".Length, columns.Max(x => x[8].Length));
 
-        Logger.LogInformation("{Content}", $"| Column{new string(' ', columnMaxLength - "Column".Length)} | Type{new string(' ', typeMaxLength - "Type".Length)} | Null{new string(' ', isNullMaxLength - "Null".Length)} | Default{new string(' ', defaultMaxLength - "Default".Length)} | PK{new string(' ', pkMaxLength - "PK".Length)} | Identity{new string(' ', identityMaxLength - "Identity".Length)} | Computed{new string(' ', computedMaxLength - "Computed".Length)} | Unique{new string(' ', uniqueMaxLength - "Unique".Length)} |");
-        Logger.LogInformation("{Content}", $"|-{"".PadRight(columnMaxLength, '-')}-|-{"".PadRight(typeMaxLength, '-')}-|-{"".PadRight(isNullMaxLength, '-')}-|-{"".PadRight(defaultMaxLength, '-')}-|-{"".PadRight(pkMaxLength, '-')}-|-{"".PadRight(identityMaxLength, '-')}-|-{"".PadRight(computedMaxLength, '-')}-|-{"".PadRight(uniqueMaxLength, '-')}-|");
+        Logger.LogInformation("{Content}", $"| Column{new string(' ', columnMaxLength - "Column".Length)} | Type{new string(' ', typeMaxLength - "Type".Length)} | Null{new string(' ', isNullMaxLength - "Null".Length)} | Default{new string(' ', defaultMaxLength - "Default".Length)} | PK{new string(' ', pkMaxLength - "PK".Length)} | Identity{new string(' ', identityMaxLength - "Identity".Length)} | Computed{new string(' ', computedMaxLength - "Computed".Length)} | Unique{new string(' ', uniqueMaxLength - "Unique".Length)} | JSON{new string(' ', jsonMaxLength - "JSON".Length)} |");
+        Logger.LogInformation("{Content}", $"|-{"".PadRight(columnMaxLength, '-')}-|-{"".PadRight(typeMaxLength, '-')}-|-{"".PadRight(isNullMaxLength, '-')}-|-{"".PadRight(defaultMaxLength, '-')}-|-{"".PadRight(pkMaxLength, '-')}-|-{"".PadRight(identityMaxLength, '-')}-|-{"".PadRight(computedMaxLength, '-')}-|-{"".PadRight(uniqueMaxLength, '-')}-|-{"".PadRight(jsonMaxLength, '-')}-|");
         foreach (var column in columns)
         {
-            Logger.LogInformation("{Content}", $"| {column[0].PadRight(columnMaxLength)} | {column[1].PadRight(typeMaxLength)} | {column[2].PadRight(isNullMaxLength)} | {column[3].PadRight(defaultMaxLength)} | {column[4].PadRight(pkMaxLength)} | {column[5].PadRight(identityMaxLength)} | {column[6].PadRight(computedMaxLength)} | {column[7].PadRight(uniqueMaxLength)} |");
+            Logger.LogInformation("{Content}", $"| {column[0].PadRight(columnMaxLength)} | {column[1].PadRight(typeMaxLength)} | {column[2].PadRight(isNullMaxLength)} | {column[3].PadRight(defaultMaxLength)} | {column[4].PadRight(pkMaxLength)} | {column[5].PadRight(identityMaxLength)} | {column[6].PadRight(computedMaxLength)} | {column[7].PadRight(uniqueMaxLength)} | {column[8].PadRight(jsonMaxLength)} |");
         }
 
         Logger.LogInformation("{Content}", string.Empty);

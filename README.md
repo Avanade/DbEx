@@ -78,7 +78,7 @@ Command | Description
 `ResetAndAll` | Performs `Reset` and `All` (designed primarily for testing).
 `ResetAndData` | Performs `Reset` and `Data` (designed primarily for testing).
 `ResetAndDatabase` | Performs `Reset` and `Database` (designed primarily for testing).
-`Execute` | Executes the SQL statement(s) passed as additional arguments.
+`Execute` | Executes the SQL statement(s) passed as additional arguments (each being a file-path or raw SQL statement).
 `Script` | Creates a new [`migration`](#Migrate) script file using the defined naming convention.
 [`Inspect`](#Inspect) | Inspects one or more existing database tables and outputs the inferred schema (columns, types, nullability, defaults, primary key, identity, computed and unique flags) as markdown to the console.
 
@@ -210,8 +210,7 @@ Arguments:
   command                    Database migration command (see https://github.com/Avanade/dbex#commands-functions).
                              Allowed values are: None, Drop, Create, Migrate, CodeGen, Schema, Deploy, Reset, Data, DeployWithData, Database, DropAndDatabase, All, DropAndAll,
                              ResetAndData, ResetAndDatabase, ResetAndAll, Execute, Script, Inspect.
-  args                       Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each a SQL statement to invoke) -or- 'Inspect' (schema followed by one or more table names).
-
+  args                       Additional arguments; 'Script' arguments (first being the script name) -or- 'Execute' (each being a file-path or raw SQL statement) -or- 'Inspect' (schema plus one or more table names).
 Options:
   -?|-h|--help               Show help information.
   -cs|--connection-string    Database connection string.
@@ -285,13 +284,16 @@ dotnet run script cdc Foo Bar
 
 #### Execute command
 
-The execute command allows one or more SQL Statements, and/or Script files, to be executed directly against the database. This is intended for enabling commands to be executed only. No response other than success or failure will be acknowledged; as such this is not intended for performing queries.
+The execute command allows one or more SQL Statements, and/or Script files, to be executed directly against the database. This is intended for enabling commands to be executed only. No response other than success or failure will be acknowledged; as such this is not intended for performing queries. A raw SQL statement must be prefixed with a `>` character, otherwise it will be treated as a file path to a SQL script file. The SQL statement(s) or script file(s) must be specified in the order they are to be executed.
+
+Additionally, YAML and JSON data seeding files can be specified to be executed directly against the database.
 
 Examples as follows.
 
 ```
-dotnet run execute "create schema [Xyz] authorization [dbo]"
+dotnet run execute "> create schema [Xyz] authorization [dbo]"
 dotnet run execute ./schema/createscehma.sql
+dotnet run execute ./data/data.yaml ./data/other.json
 ```
 
 <br/>

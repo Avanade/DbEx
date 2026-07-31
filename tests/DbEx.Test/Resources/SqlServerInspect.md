@@ -16,15 +16,15 @@ This command is intended to be used as a quick-and-easy way to inspect the infer
 
 ### Columns
 
-| Column    | Type           | Null | Default | PK  | Identity | Computed | Unique |
-|-----------|----------------|------|---------|-----|----------|----------|--------|
-| GenderId  | INT            | No   |         | Yes | Yes      | No       | No     |
-| Code      | NVARCHAR(50)   | No   |         | No  | No       | No       | Yes    |
-| Text      | VARCHAR(256)   | No   |         | No  | No       | No       | No     |
-| CreatedBy | NVARCHAR(250)  | Yes  |         | No  | No       | No       | No     |
-| CreatedOn | DATETIMEOFFSET | Yes  |         | No  | No       | No       | No     |
-| UpdatedBy | NVARCHAR(250)  | Yes  |         | No  | No       | No       | No     |
-| UpdatedOn | DATETIMEOFFSET | Yes  |         | No  | No       | No       | No     |
+| Column    | Type           | Null | Default | PK  | Identity | Computed | Unique | JSON |
+|-----------|----------------|------|---------|-----|----------|----------|--------|------|
+| GenderId  | INT            | No   |         | Yes | Yes      | No       | No     | No   |
+| Code      | NVARCHAR(50)   | No   |         | No  | No       | No       | Yes    | No   |
+| Text      | VARCHAR(256)   | No   |         | No  | No       | No       | No     | No   |
+| CreatedBy | NVARCHAR(250)  | Yes  |         | No  | No       | No       | No     | No   |
+| CreatedOn | DATETIMEOFFSET | Yes  |         | No  | No       | No       | No     | No   |
+| UpdatedBy | NVARCHAR(250)  | Yes  |         | No  | No       | No       | No     | No   |
+| UpdatedOn | DATETIMEOFFSET | Yes  |         | No  | No       | No       | No     | No   |
 
 ## TEST.CONTACT - Exists: Yes
 
@@ -36,15 +36,15 @@ This command is intended to be used as a quick-and-easy way to inspect the infer
 
 ### Columns
 
-| Column          | Type          | Null | Default | PK  | Identity | Computed | Unique |
-|-----------------|---------------|------|---------|-----|----------|----------|--------|
-| ContactId       | INT           | No   |         | Yes | No       | No       | No     |
-| Name            | NVARCHAR(200) | No   |         | No  | No       | No       | No     |
-| Phone           | VARCHAR(15)   | Yes  |         | No  | No       | No       | No     |
-| DateOfBirth     | DATE          | Yes  |         | No  | No       | No       | No     |
-| ContactTypeId   | INT           | No   | ((1))   | No  | No       | No       | No     |
-| GenderId        | INT           | Yes  |         | No  | No       | No       | No     |
-| TenantId        | NVARCHAR(50)  | Yes  |         | No  | No       | No       | No     |
-| Notes           | NVARCHAR(MAX) | Yes  |         | No  | No       | No       | No     |
-| ContactTypeCode | NVARCHAR(50)  | Yes  |         | No  | No       | No       | No     |
+| Column          | Type          | Null | Default | PK  | Identity | Computed | Unique | JSON |
+|-----------------|---------------|------|---------|-----|----------|----------|--------|------|
+| ContactId       | INT           | No   |         | Yes | No       | No       | No     | No   |
+| Name            | NVARCHAR(200) | No   |         | No  | No       | No       | No     | No   |
+| Phone           | VARCHAR(15)   | Yes  |         | No  | No       | No       | No     | No   |
+| DateOfBirth     | DATE          | Yes  |         | No  | No       | No       | No     | No   |
+| ContactTypeId   | INT           | No   | ((1))   | No  | No       | No       | No     | No   |
+| GenderId        | INT           | Yes  |         | No  | No       | No       | No     | No   |
+| TenantId        | NVARCHAR(50)  | Yes  |         | No  | No       | No       | No     | No   |
+| Notes           | NVARCHAR(MAX) | Yes  |         | No  | No       | No       | No     | No   |
+| ContactTypeCode | NVARCHAR(50)  | Yes  |         | No  | No       | No       | No     | No   |
 

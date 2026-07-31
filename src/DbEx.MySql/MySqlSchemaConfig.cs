@@ -84,7 +84,7 @@ public class MySqlSchemaConfig(MySqlMigration migration) : DatabaseSchemaConfig(
             IsDotNetTimeOnly = RemovePrecisionFromDataType(dt).Equals("TIME", StringComparison.OrdinalIgnoreCase)
         };
 
-        c.IsJsonContent = c.Type.Equals("JSON", StringComparison.OrdinalIgnoreCase) || (c.DotNetName == "string" && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal));
+        c.IsJsonContent = c.Type.Equals("JSON", StringComparison.OrdinalIgnoreCase) || (c.DotNetType == "string" && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal));
         if (c.IsJsonContent && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal))
             c.DotNetCleanedName = DbTableSchema.CreateDotNetName(c.Name[..^JsonColumnNameSuffix.Length]);
 

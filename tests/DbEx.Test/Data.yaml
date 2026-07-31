@@ -1,0 +1,4 @@
+Test:
+- Contact:
+  - { ContactId: 101, ContactType: E, Gender: M, Name: Bob, DateOfBirth: 2001-10-22, Addresses: [ { ContactAddressId: 1010, Street: "1 Main Street" } ] }
+  - { ContactId: 102, ContactType: I, Name: ^jane_name, Phone: 1234, Addresses: [ { ContactAddressId: 2020, ContactId: 102, Street: "1 Main Street" } ] }

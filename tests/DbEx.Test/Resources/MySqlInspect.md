@@ -16,15 +16,15 @@ This command is intended to be used as a quick-and-easy way to inspect the infer
 
 ### Columns
 
-| Column     | Type         | Null | Default | PK  | Identity | Computed | Unique |
-|------------|--------------|------|---------|-----|----------|----------|--------|
-| gender_id  | INT          | No   |         | Yes | Yes      | No       | No     |
-| code       | VARCHAR(50)  | No   |         | No  | No       | No       | Yes    |
-| text       | VARCHAR(256) | No   |         | No  | No       | No       | No     |
-| created_by | VARCHAR(50)  | Yes  |         | No  | No       | No       | No     |
-| created_on | DATETIME     | Yes  |         | No  | No       | No       | No     |
-| updated_by | VARCHAR(50)  | Yes  |         | No  | No       | No       | No     |
-| updated_on | DATETIME     | Yes  |         | No  | No       | No       | No     |
+| Column     | Type         | Null | Default | PK  | Identity | Computed | Unique | JSON |
+|------------|--------------|------|---------|-----|----------|----------|--------|------|
+| gender_id  | INT          | No   |         | Yes | Yes      | No       | No     | No   |
+| code       | VARCHAR(50)  | No   |         | No  | No       | No       | Yes    | No   |
+| text       | VARCHAR(256) | No   |         | No  | No       | No       | No     | No   |
+| created_by | VARCHAR(50)  | Yes  |         | No  | No       | No       | No     | No   |
+| created_on | DATETIME     | Yes  |         | No  | No       | No       | No     | No   |
+| updated_by | VARCHAR(50)  | Yes  |         | No  | No       | No       | No     | No   |
+| updated_on | DATETIME     | Yes  |         | No  | No       | No       | No     | No   |
 
 ## CONTACT - Exists: Yes
 
@@ -36,18 +36,18 @@ This command is intended to be used as a quick-and-easy way to inspect the infer
 
 ### Columns
 
-| Column            | Type         | Null | Default | PK  | Identity | Computed | Unique |
-|-------------------|--------------|------|---------|-----|----------|----------|--------|
-| contact_id        | INT          | No   |         | Yes | Yes      | No       | No     |
-| name              | VARCHAR(200) | No   |         | No  | No       | No       | No     |
-| phone             | VARCHAR(15)  | Yes  |         | No  | No       | No       | No     |
-| date_of_birth     | DATE         | Yes  |         | No  | No       | No       | No     |
-| contact_type_id   | INT          | No   | 1       | No  | No       | No       | No     |
-| gender_id         | INT          | Yes  |         | No  | No       | No       | No     |
-| notes             | TEXT         | Yes  |         | No  | No       | No       | No     |
-| created_by        | VARCHAR(50)  | Yes  |         | No  | No       | No       | No     |
-| created_on        | DATETIME     | Yes  |         | No  | No       | No       | No     |
-| updated_by        | VARCHAR(50)  | Yes  |         | No  | No       | No       | No     |
-| updated_on        | DATETIME     | Yes  |         | No  | No       | No       | No     |
-| contact_type_code | VARCHAR(50)  | Yes  |         | No  | No       | No       | No     |
+| Column            | Type         | Null | Default | PK  | Identity | Computed | Unique | JSON |
+|-------------------|--------------|------|---------|-----|----------|----------|--------|------|
+| contact_id        | INT          | No   |         | Yes | Yes      | No       | No     | No   |
+| name              | VARCHAR(200) | No   |         | No  | No       | No       | No     | No   |
+| phone             | VARCHAR(15)  | Yes  |         | No  | No       | No       | No     | No   |
+| date_of_birth     | DATE         | Yes  |         | No  | No       | No       | No     | No   |
+| contact_type_id   | INT          | No   | 1       | No  | No       | No       | No     | No   |
+| gender_id         | INT          | Yes  |         | No  | No       | No       | No     | No   |
+| notes             | TEXT         | Yes  |         | No  | No       | No       | No     | No   |
+| created_by        | VARCHAR(50)  | Yes  |         | No  | No       | No       | No     | No   |
+| created_on        | DATETIME     | Yes  |         | No  | No       | No       | No     | No   |
+| updated_by        | VARCHAR(50)  | Yes  |         | No  | No       | No       | No     | No   |
+| updated_on        | DATETIME     | Yes  |         | No  | No       | No       | No     | No   |
+| contact_type_code | VARCHAR(50)  | Yes  |         | No  | No       | No       | No     | No   |
 
