@@ -172,18 +172,23 @@ namespace DbEx.Test
             var a = new MigrationArgs(MigrationCommand.DropAndAll, cs) { Logger = l }.AddAssembly(typeof(Console.Program)).IncludeExtendedSchemaScripts();
             using var m = new SqlServerMigration(a);
 
-            m.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
-            m.Args.DataParserArgs.Parameters.Add("jane_name", "Jane");
-            m.Args.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
-            m.Args.DataParserArgs.ColumnDefaults.Add(new DataParserColumnDefault("*", "*", "TenantId", _ => "test-tenant"));
-            m.Args.DataParserArgs.TableNameMappings.Add("XTest", "XContactType", "Test", "ContactType", new() { { "XNumber", "Number" } })
-                                                   .Add("Test", "Addresses", "Test", "ContactAddress");
+            ConfigureMigrationArgs(m);
 
             var r = await m.MigrateAsync().ConfigureAwait(false);
 
             Assert.IsTrue(r);
 
             return (cs, l, m);
+        }
+
+        private static void ConfigureMigrationArgs(SqlServerMigration m)
+        {
+            m.Args.DataParserArgs.Parameters.Add("DefaultName", "Bazza");
+            m.Args.DataParserArgs.Parameters.Add("jane_name", "Jane");
+            m.Args.DataParserArgs.RefDataColumnDefaults.Add("SortOrder", i => i);
+            m.Args.DataParserArgs.ColumnDefaults.Add(new DataParserColumnDefault("*", "*", "TenantId", _ => "test-tenant"));
+            m.Args.DataParserArgs.TableNameMappings.Add("XTest", "XContactType", "Test", "ContactType", new() { { "XNumber", "Number" } })
+                                                   .Add("Test", "Addresses", "Test", "ContactAddress");
         }
 
         [Test]
@@ -280,7 +285,7 @@ namespace DbEx.Test
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
             using var m = new SqlServerMigration(a);
 
-            var r = await m.ExecuteSqlStatementsAsync(["SELECT * FROM Test.Contact"]).ConfigureAwait(false);
+            var r = await m.ExecuteSqlStatementsAsync([">SELECT * FROM Test.Contact"]).ConfigureAwait(false);
             Assert.IsTrue(r);
         }
 
@@ -291,7 +296,7 @@ namespace DbEx.Test
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
             using var m = new SqlServerMigration(a);
 
-            var r = await m.ExecuteSqlStatementsAsync(["SELECT * FROM Test.Contact", "SELECT BANANAS"]).ConfigureAwait(false);
+            var r = await m.ExecuteSqlStatementsAsync([">SELECT * FROM Test.Contact", "SELECT BANANAS"]).ConfigureAwait(false);
             Assert.IsFalse(r);
         }
 
@@ -302,7 +307,7 @@ namespace DbEx.Test
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
             using var m = new SqlServerMigration(a);
 
-            var r = await m.ExecuteSqlStatementsAsync([@"SELECT * FROM Test.ContactBad; /* end */ GO; SELECT * FROM Test.Contact -- comment"]).ConfigureAwait(false);
+            var r = await m.ExecuteSqlStatementsAsync([@">SELECT * FROM Test.ContactBad; /* end */ GO; SELECT * FROM Test.Contact -- comment"]).ConfigureAwait(false);
             Assert.IsFalse(r);
         }
 
@@ -313,10 +318,22 @@ namespace DbEx.Test
             var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
             using var m = new SqlServerMigration(a);
 
-            var r = await m.ExecuteSqlStatementsAsync([ @"SELECT * FROM Test.Contact;
+            var r = await m.ExecuteSqlStatementsAsync([ @"> SELECT * FROM Test.Contact;
 /* end */ 
 GO 
 SELECT * FROM Test.Contact -- comment" ]).ConfigureAwait(false);
+            Assert.IsTrue(r);
+        }
+
+        [Test]
+        public async Task B140_Execute_Console_YAML_File()
+        {
+            var c = await CreateConsoleDb().ConfigureAwait(false);
+            var a = new MigrationArgs(MigrationCommand.Execute, c.cs) { Logger = c.l }.AddAssembly(typeof(Console.Program).Assembly);
+            using var m = new SqlServerMigration(a);
+            ConfigureMigrationArgs(m);
+
+            var r = await m.ExecuteSqlStatementsAsync(["Data.yaml"]).ConfigureAwait(false);
             Assert.IsTrue(r);
         }
 

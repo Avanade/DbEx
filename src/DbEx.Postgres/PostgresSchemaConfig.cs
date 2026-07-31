@@ -83,7 +83,7 @@ public class PostgresSchemaConfig(PostgresMigration migration) : DatabaseSchemaC
             IsDotNetTimeOnly = RemovePrecisionFromDataType(dr.GetValue<string>("DATA_TYPE")!).Equals("TIME WITHOUT TIME ZONE", StringComparison.OrdinalIgnoreCase)
         };
 
-        c.IsJsonContent = c.Type.Equals("JSON", StringComparison.OrdinalIgnoreCase) || (c.DotNetName == "string" && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal));
+        c.IsJsonContent = c.Type.Equals("JSON", StringComparison.OrdinalIgnoreCase) || (c.DotNetType == "string" && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal));
         if (c.IsJsonContent && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal))
             c.DotNetCleanedName = DbTableSchema.CreateDotNetName(c.Name[..^JsonColumnNameSuffix.Length]);
 

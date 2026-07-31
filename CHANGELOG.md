@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v3.2.0
+- *Enhancement:* The `MigrationCommand.Execute` has been enhanced to support the execution of YAML/JSON data files. Raw SQL must _now_ be prefixed by `>` to explicity differentiate from a file path.
+- *Enhancement:* The `MigrationCommand.Inspect` has been enhanced to also report whether each column has been identified as a JSON column (i.e. `DbColumnSchema.IsJson`).
+
 ## v3.1.2
 - *Fixed:* Where a `DbException` occurs executing a command, only the exception message is now logged; not the full stack trace as this is misleading (experience improvement).
 - *Fixed:* Prior to executing a command that requires the database, its existence will be checked first and an appropriate error emitted where not found (experience improvement).

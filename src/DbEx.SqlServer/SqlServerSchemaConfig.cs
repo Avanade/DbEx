@@ -80,7 +80,8 @@ public class SqlServerSchemaConfig(SqlServerMigration migration) : DatabaseSchem
             IsDotNetTimeOnly = RemovePrecisionFromDataType(dr.GetValue<string>("DATA_TYPE")!).Equals("TIME", StringComparison.OrdinalIgnoreCase),
         };
 
-        if (c.IsJsonContent = c.DotNetName == "string" && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal))
+        c.IsJsonContent = c.Type.Equals("JSON", StringComparison.OrdinalIgnoreCase) || (c.DotNetType == "string" && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal));
+        if (c.IsJsonContent && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal))
             c.DotNetCleanedName = DbTableSchema.CreateDotNetName(c.Name[..^JsonColumnNameSuffix.Length]);
 
         return c;
@@ -196,7 +197,7 @@ public class SqlServerSchemaConfig(SqlServerMigration migration) : DatabaseSchem
 
         return dbType.ToUpperInvariant() switch
         {
-            "NCHAR" or "CHAR" or "NVARCHAR" or "VARCHAR" or "TEXT" or "NTEXT" => "string",
+            "NCHAR" or "CHAR" or "NVARCHAR" or "VARCHAR" or "TEXT" or "NTEXT" or "JSON" => "string",
             "DECIMAL" or "MONEY" or "NUMERIC" or "SMALLMONEY" => "decimal",
             "DATETIME" or "DATETIME2" or "SMALLDATETIME" => "DateTime",
             "DATETIMEOFFSET" => "DateTimeOffset",

@@ -16,16 +16,16 @@ This command is intended to be used as a quick-and-easy way to inspect the infer
 
 ### Columns
 
-| Column     | Type                     | Null | Default | PK  | Identity | Computed | Unique |
-|------------|--------------------------|------|---------|-----|----------|----------|--------|
-| gender_id  | INTEGER                  | No   |         | Yes | Yes      | No       | No     |
-| code       | CHARACTER VARYING(50)    | No   |         | No  | No       | No       | Yes    |
-| text       | CHARACTER VARYING(256)   | No   |         | No  | No       | No       | No     |
-| created_by | CHARACTER VARYING(50)    | Yes  |         | No  | No       | No       | No     |
-| created_on | TIMESTAMP WITH TIME ZONE | Yes  |         | No  | No       | No       | No     |
-| updated_by | CHARACTER VARYING(50)    | Yes  |         | No  | No       | No       | No     |
-| updated_on | TIMESTAMP WITH TIME ZONE | Yes  |         | No  | No       | No       | No     |
-| xmin       | XID                      | No   |         | No  | No       | Yes      | No     |
+| Column     | Type                     | Null | Default | PK  | Identity | Computed | Unique | JSON |
+|------------|--------------------------|------|---------|-----|----------|----------|--------|------|
+| gender_id  | INTEGER                  | No   |         | Yes | Yes      | No       | No     | No   |
+| code       | CHARACTER VARYING(50)    | No   |         | No  | No       | No       | Yes    | No   |
+| text       | CHARACTER VARYING(256)   | No   |         | No  | No       | No       | No     | No   |
+| created_by | CHARACTER VARYING(50)    | Yes  |         | No  | No       | No       | No     | No   |
+| created_on | TIMESTAMP WITH TIME ZONE | Yes  |         | No  | No       | No       | No     | No   |
+| updated_by | CHARACTER VARYING(50)    | Yes  |         | No  | No       | No       | No     | No   |
+| updated_on | TIMESTAMP WITH TIME ZONE | Yes  |         | No  | No       | No       | No     | No   |
+| xmin       | XID                      | No   |         | No  | No       | Yes      | No     | No   |
 
 ## PUBLIC.CONTACT - Exists: Yes
 
@@ -37,19 +37,19 @@ This command is intended to be used as a quick-and-easy way to inspect the infer
 
 ### Columns
 
-| Column            | Type                     | Null | Default | PK  | Identity | Computed | Unique |
-|-------------------|--------------------------|------|---------|-----|----------|----------|--------|
-| contact_id        | INTEGER                  | No   |         | Yes | Yes      | No       | No     |
-| name              | CHARACTER VARYING(200)   | No   |         | No  | No       | No       | No     |
-| phone             | CHARACTER VARYING(15)    | Yes  |         | No  | No       | No       | No     |
-| date_of_birth     | DATE                     | Yes  |         | No  | No       | No       | No     |
-| contact_type_id   | INTEGER                  | No   | 1       | No  | No       | No       | No     |
-| gender_id         | INTEGER                  | Yes  |         | No  | No       | No       | No     |
-| notes             | TEXT                     | Yes  |         | No  | No       | No       | No     |
-| created_by        | CHARACTER VARYING(50)    | Yes  |         | No  | No       | No       | No     |
-| created_on        | TIMESTAMP WITH TIME ZONE | Yes  |         | No  | No       | No       | No     |
-| updated_by        | CHARACTER VARYING(50)    | Yes  |         | No  | No       | No       | No     |
-| updated_on        | TIMESTAMP WITH TIME ZONE | Yes  |         | No  | No       | No       | No     |
-| contact_type_code | CHARACTER VARYING(50)    | Yes  |         | No  | No       | No       | No     |
-| xmin              | XID                      | No   |         | No  | No       | Yes      | No     |
+| Column            | Type                     | Null | Default | PK  | Identity | Computed | Unique | JSON |
+|-------------------|--------------------------|------|---------|-----|----------|----------|--------|------|
+| contact_id        | INTEGER                  | No   |         | Yes | Yes      | No       | No     | No   |
+| name              | CHARACTER VARYING(200)   | No   |         | No  | No       | No       | No     | No   |
+| phone             | CHARACTER VARYING(15)    | Yes  |         | No  | No       | No       | No     | No   |
+| date_of_birth     | DATE                     | Yes  |         | No  | No       | No       | No     | No   |
+| contact_type_id   | INTEGER                  | No   | 1       | No  | No       | No       | No     | No   |
+| gender_id         | INTEGER                  | Yes  |         | No  | No       | No       | No     | No   |
+| notes             | TEXT                     | Yes  |         | No  | No       | No       | No     | No   |
+| created_by        | CHARACTER VARYING(50)    | Yes  |         | No  | No       | No       | No     | No   |
+| created_on        | TIMESTAMP WITH TIME ZONE | Yes  |         | No  | No       | No       | No     | No   |
+| updated_by        | CHARACTER VARYING(50)    | Yes  |         | No  | No       | No       | No     | No   |
+| updated_on        | TIMESTAMP WITH TIME ZONE | Yes  |         | No  | No       | No       | No     | No   |
+| contact_type_code | CHARACTER VARYING(50)    | Yes  |         | No  | No       | No       | No     | No   |
+| xmin              | XID                      | No   |         | No  | No       | Yes      | No     | No   |
 
