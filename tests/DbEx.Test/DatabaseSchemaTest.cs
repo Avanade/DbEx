@@ -354,6 +354,31 @@ namespace DbEx.Test
             Assert.IsNull(col.ForeignTable);
             Assert.IsNull(col.ForeignColumn);
             Assert.IsNotNull(col.DefaultValue);
+
+            // [Test].[ClrTypes] - CLR and other non-primitive types map to string.
+            tab = tables.Where(x => x.Name == "ClrTypes").SingleOrDefault();
+            Assert.IsNotNull(tab);
+            Assert.AreEqual(5, tab.Columns.Count);
+
+            col = tab.Columns[1];
+            Assert.AreEqual("Location", col.Name);
+            Assert.AreEqual("geography", col.Type);
+            Assert.AreEqual("string", col.DotNetType);
+
+            col = tab.Columns[2];
+            Assert.AreEqual("Shape", col.Name);
+            Assert.AreEqual("geometry", col.Type);
+            Assert.AreEqual("string", col.DotNetType);
+
+            col = tab.Columns[3];
+            Assert.AreEqual("Path", col.Name);
+            Assert.AreEqual("hierarchyid", col.Type);
+            Assert.AreEqual("string", col.DotNetType);
+
+            col = tab.Columns[4];
+            Assert.AreEqual("Document", col.Name);
+            Assert.AreEqual("xml", col.Type);
+            Assert.AreEqual("string", col.DotNetType);
         }
 
         [Test]

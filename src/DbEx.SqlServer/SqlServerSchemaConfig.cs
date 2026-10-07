@@ -212,6 +212,10 @@ public class SqlServerSchemaConfig(SqlServerMigration migration) : DatabaseSchem
             "TINYINT" => "byte",
             "REAL" => "float",
             "UNIQUEIDENTIFIER" => "Guid",
+            // CLR and other non-primitive types surface as their string representation (WKT, path, XML, JSON array);
+            // SQL Server converts the string implicitly on insert. Without a mapping, a single column of one of
+            // these types in any table would fail the whole schema inference (Data, Reset and Inspect).
+            "GEOGRAPHY" or "GEOMETRY" or "HIERARCHYID" or "XML" or "VECTOR" => "string",
             _ => throw new InvalidOperationException($"Database data type '{dbType}' does not have corresponding .NET type mapping defined."),
         };
     }

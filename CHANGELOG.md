@@ -2,6 +2,9 @@
 
 Represents the **NuGet** versions.
 
+## v3.2.1
+- *Fixed:* SQL Server schema inference no longer throws `Database data type 'x' does not have corresponding .NET type mapping defined` for `geography`, `geometry`, `hierarchyid`, `xml` and `vector` columns; they map to `string`. Previously a single column of one of these types in any table failed the `Data`, `Reset` and `Inspect` commands for the whole database.
+
 ## v3.2.0
 - *Enhancement:* The `MigrationCommand.Execute` has been enhanced to support the execution of YAML/JSON data files. Raw SQL must _now_ be prefixed by `>` to explicitly differentiate from a file path.
 - *Enhancement:* The `MigrationCommand.Inspect` has been enhanced to also report whether each column has been identified as a JSON column (i.e. `DbColumnSchema.IsJson`).
