@@ -2,8 +2,15 @@
 
 Represents the **NuGet** versions.
 
-## v3.2.1
-- *Fixed:* SQL Server schema inference no longer throws `Database data type 'x' does not have corresponding .NET type mapping defined` for `geography`, `geometry`, `hierarchyid`, `xml` and `vector` columns; they map to `string`. Previously a single column of one of these types in any table failed the `Data`, `Reset` and `Inspect` commands for the whole database.
+## v3.3.0
+- *Enhancement:* Non-primitive database types are now mapped to their correct .NET types (unqualified; a `global using` is expected) instead of throwing `Database data type 'x' does not have corresponding .NET type mapping defined`, which previously failed the `Data`, `Reset` and `Inspect` commands for the whole database. Originated from PR #72 by Wesley Teixeira.
+  - SQL Server: `geography`/`geometry` (`Geometry`), `hierarchyid` (`HierarchyId`), `vector` (`SqlVector<float>`), `xml`/`json` (`string`) and `sql_variant` (`object`).
+  - Postgres: network, text-search, geometric, bit-string, range/multirange, array, `hstore`, `ltree`, `citext`, enum, PostGIS and pgvector types.
+  - MySql: `mediumint`, `year`, `bit(n)`, `vector` and spatial types (a spatial value with an `SRID=n;` prefix is interpreted as longitude then latitude, consistent with Postgres and SQL Server).
+- *Enhancement:* Added `DbColumnSchema.DataParserType` (the primitive type the data parser uses to parse YAML/JSON values; `DotNetType` remains the true EF type), `IsDotNetTypeAClass` (generated EF models now emit `= default!` for non-nullable class types), `IsDataComparable`, `UdtName` and `NativeSqlType`. The provider `DatabaseSchemaConfig` has corresponding virtual methods.
+- *Fixed:* SQL Server `BINARY(n)` and `VECTOR(n)` columns are now formatted with their length/dimensions.
+- *Fixed:* SQL Server data merge no longer compares non-comparable columns (e.g. `xml`, `geography`) using `EXCEPT`.
+- *Note:* Test databases are now SQL Server 2025, MySQL 9 and Postgres 17 with PostGIS and pgvector (see `.github/postgres/Dockerfile`).
 
 ## v3.2.0
 - *Enhancement:* The `MigrationCommand.Execute` has been enhanced to support the execution of YAML/JSON data files. Raw SQL must _now_ be prefixed by `>` to explicitly differentiate from a file path.

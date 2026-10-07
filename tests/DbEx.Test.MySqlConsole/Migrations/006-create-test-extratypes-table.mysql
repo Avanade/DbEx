@@ -1,0 +1,19 @@
+CREATE TABLE `extra_types` (
+  `extra_types_id` INT NOT NULL PRIMARY KEY,
+  `medium_value` MEDIUMINT NULL,
+  `year_value` YEAR NULL,
+  `bit_flag` BIT(1) NULL,
+  `bit_mask` BIT(8) NULL,
+  `enum_value` ENUM('a', 'b') NULL,
+  `set_value` SET('x', 'y', 'z') NULL,
+  `geom` GEOMETRY NULL,
+  `pt` POINT NULL,
+  `ln` LINESTRING NULL,
+  `poly` POLYGON NULL,
+  `multi_pt` MULTIPOINT NULL,
+  `multi_ln` MULTILINESTRING NULL,
+  `multi_poly` MULTIPOLYGON NULL,
+  `geom_coll` GEOMETRYCOLLECTION NULL,
+  `geog` POINT SRID 4326 NULL,
+  `embedding` VECTOR(3) NULL
+)

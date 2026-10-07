@@ -9,3 +9,6 @@
 - contact:
   - { contact_id: 1, contact_type: E, gender: M, name: Bob, date_of_birth: 2001-10-22 }
   - { contact_id: 2, contact_type: I, name: Jane, phone: 1234 }
+- extra_types:
+  - { extra_types_id: 1, medium_value: 100000, year_value: 2024, bit_flag: true, bit_mask: "10101010", enum_value: a, set_value: "x,z", geom: "POINT(1 2)", pt: "POINT(1 2)", ln: "LINESTRING(0 0, 1 1)", poly: "POLYGON((0 0, 4 0, 4 4, 0 4, 0 0))", multi_pt: "MULTIPOINT((0 0), (1 1))", multi_ln: "MULTILINESTRING((0 0, 1 1), (2 2, 3 3))", multi_poly: "MULTIPOLYGON(((0 0, 4 0, 4 4, 0 4, 0 0)))", geom_coll: "GEOMETRYCOLLECTION(POINT(1 2))", geog: "SRID=4326;POINT(10 20)", embedding: "[1, 2, 3]" }
+  - { extra_types_id: 2 }

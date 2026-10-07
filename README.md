@@ -319,6 +319,31 @@ Within a code-generation, or other context, the database schema may need to be i
 
 The [`Database`](./src/DbEx/DatabaseExtensions.cs) class provides a `SelectSchemaAsync` method to return a [`DbTableSchema`](./src/DbEx/DbSchema/DbTableSchema.cs) list, including the respective columns for each table (see [`DbColumnSchema`](./src/DbEx/DbSchema/DbColumnSchema.cs)).
 
+### Data types
+
+Each [`DbColumnSchema`](./src/DbEx/DbSchema/DbColumnSchema.cs) exposes the inferred .NET type, and how data is parsed:
+
+Property | Description
+-|-
+`DotNetType` | The .NET type a column maps to, e.g. `string`, `int`, `Geometry` or `NpgsqlRange<int>`. Types are _not_ namespace-qualified; the consuming project is expected to have the required `global using` statements in place for the types used (e.g. NetTopologySuite, Npgsql and Pgvector types).
+`IsDotNetTypeAClass` | Indicates whether `DotNetType` is a reference type (e.g. a non-nullable property that needs initializing, such as `= default!`). Value types, including structs such as `NpgsqlCidr`, return `false`.
+`DataParserType` | The primitive .NET type used to parse a YAML/JSON data value for the column. For a type that has no primitive representation, e.g. spatial, vector and network types, this is `string` and the value is specified using its text form (see below); the provider then converts to the database type.
+`NativeSqlType` | The full native database type (including precision, length and dimensions) where available, e.g. `vector(3)`.
+`UdtName` | The underlying user-defined/extension type name where applicable (Postgres).
+`IsDataComparable` | Indicates whether the database can compare values (e.g. SQL Server `xml` and `geography` cannot). Where not, the SQL Server `$` merge updates matched rows without the changed-data check.
+
+Non-primitive types are supported by each provider, including (non-exhaustive):
+
+Provider | Types
+-|-
+SQL Server | `geography` and `geometry` (`Geometry`), `hierarchyid` (`HierarchyId`), `vector` (`SqlVector<float>`), `xml` and `json` (`string`), `sql_variant` (`object`).
+Postgres | network (`inet`, `cidr`, `macaddr`), text search, geometric, bit-string, range and multirange, array, `hstore`, `ltree`, `citext`, enum, plus PostGIS (`geometry`, `geography`) and pgvector (`vector`, `halfvec`, `sparsevec`) extensions.
+MySQL | `mediumint`, `year`, `bit(n)`, `vector`, and the spatial types (`geometry`, `point`, `linestring`, `polygon`, etc.).
+
+For the _data_ YAML/JSON, spatial values are specified as [well-known text](https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry) (WKT), with an optional [extended](https://postgis.net/docs/using_postgis_dbmanagement.html#EWKB_EWKT) `SRID=n;` prefix, e.g. `SRID=4326;POINT(-122.349 47.651)`. The coordinate order is _always_ longitude then latitude (x y); MySQL is explicitly instructed to use this order as it otherwise defaults to latitude then longitude for geographic coordinate systems. A vector is specified as `[1, 2, 3]`, and a multi-bit value as a bit string, e.g. `10101010`.
+
+> Note: where a database extension is required (e.g. PostGIS, pgvector) it must be enabled by a migration script before the data is loaded. See the [`DbEx.Test.PostgresConsole`](./tests/DbEx.Test.PostgresConsole/Migrations/006-create-test-extratypes-table.pgsql) test for an example.
+
 <br/>
 
 ## Other considerations

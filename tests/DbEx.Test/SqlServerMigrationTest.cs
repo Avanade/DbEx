@@ -165,6 +165,56 @@ namespace DbEx.Test
             Assert.IsNull(row.GenderId);
         }
 
+        [Test]
+        public async Task A135_MigrateAll_Console_ExtraTypes_RoundTrip()
+        {
+            var (cs, _, _) = await CreateConsoleDb().ConfigureAwait(false);
+            using var db = new SqlServerDatabase(() => new SqlConnection(cs));
+
+            async Task AssertRowsAsync()
+            {
+                var rows = (await db.SqlStatement(
+                    "SELECT [ExtraTypesId], [Location].STAsText() AS [Location], [Location].STSrid AS [LocationSrid], [Shape].STAsText() AS [Shape], [Path].ToString() AS [Path], " +
+                    "CAST([Document] AS NVARCHAR(MAX)) AS [Document], CAST([Embedding] AS NVARCHAR(MAX)) AS [Embedding], CAST([Variant] AS VARCHAR(50)) AS [Variant], CAST([Payload] AS NVARCHAR(MAX)) AS [Payload] " +
+                    "FROM [Test].[ExtraTypes] ORDER BY [ExtraTypesId]").SelectQueryAsync(dr => new
+                    {
+                        Id = dr.GetValue<int>("ExtraTypesId"),
+                        Location = dr.GetValue<string>("Location"),
+                        LocationSrid = dr.GetValue<int?>("LocationSrid"),
+                        Shape = dr.GetValue<string>("Shape"),
+                        Path = dr.GetValue<string>("Path"),
+                        Document = dr.GetValue<string>("Document"),
+                        Embedding = dr.GetValue<string>("Embedding"),
+                        Variant = dr.GetValue<string>("Variant"),
+                        Payload = dr.GetValue<string>("Payload")
+                    }).ConfigureAwait(false)).ToList();
+
+                Assert.AreEqual(4, rows.Count);
+
+                Assert.AreEqual("POINT (-122.349 47.651)", rows[0].Location);
+                Assert.AreEqual("POLYGON ((0 0, 4 0, 4 4, 0 4, 0 0))", rows[0].Shape);
+                Assert.AreEqual("/1/2/", rows[0].Path);
+                Assert.AreEqual("<root><item>1</item></root>", rows[0].Document);
+                Assert.That(rows[0].Embedding, Does.Contain("1.5"));
+                Assert.AreEqual("variant", rows[0].Variant);
+                Assert.That(rows[0].Payload, Does.Contain("\"a\""));
+
+                Assert.AreEqual(4326, rows[1].LocationSrid);
+                Assert.IsNull(rows[1].Shape);
+                Assert.IsNull(rows[1].Document);
+
+                Assert.AreEqual(3, rows[2].Id);
+                Assert.IsNull(rows[2].Location);
+                Assert.IsNull(rows[2].Path);
+                Assert.IsNull(rows[2].Embedding);
+                Assert.IsNull(rows[2].Variant);
+                Assert.IsNull(rows[2].Payload);
+            }
+
+            // Data2.yaml merges ExtraTypes (existing row 1 plus new row 4) during the migration, so the merge path with non-comparable columns is exercised by these assertions.
+            await AssertRowsAsync().ConfigureAwait(false);
+        }
+
         private static async Task<(string cs, ILogger l, SqlServerMigration m)> CreateConsoleDb()
         {
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("ConsoleDb");
@@ -416,6 +466,7 @@ some other stuf", "blah"));
             a.Parameters.Add("Param1", "unknown");
             a.Parameters.Add("Param2", "gender");
             a.Parameters.Add("Param3", "CONTACT");
+            a.Parameters.Add("Param4", "ExtraTypes");
 
             using var m = new SqlServerMigration(a);
             var (Success, Output) = await m.MigrateAndLogAsync().ConfigureAwait(false);
@@ -424,7 +475,7 @@ some other stuf", "blah"));
             Assert.IsTrue(Output.Length > 0);
 
             using var sr = SqlServerMigration.GetRequiredResourcesStreamReader("SqlServerInspect.md", [typeof(SqlServerMigrationTest).Assembly]);
-            Assert.AreEqual(sr.ReadToEnd(), Output);
+            MarkdownAssert.AreEqual(sr.ReadToEnd(), Output);
         }
     }
 }

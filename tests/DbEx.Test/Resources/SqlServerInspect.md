@@ -48,3 +48,24 @@ This command is intended to be used as a quick-and-easy way to inspect the infer
 | Notes           | NVARCHAR(MAX) | Yes  |         | No  | No       | No       | No     | No   |
 | ContactTypeCode | NVARCHAR(50)  | Yes  |         | No  | No       | No       | No     | No   |
 
+## TEST.EXTRATYPES - Exists: Yes
+
+- Schema: Test
+- Name: ExtraTypes
+- Qualified Name: [Test].[ExtraTypes]
+- Table or View: Table
+- Reference Data: No
+
+### Columns
+
+| Column       | Type        | Null | Default | PK  | Identity | Computed | Unique | JSON |
+|--------------|-------------|------|---------|-----|----------|----------|--------|------|
+| ExtraTypesId | INT         | No   |         | Yes | No       | No       | No     | No   |
+| Location     | GEOGRAPHY   | Yes  |         | No  | No       | No       | No     | No   |
+| Shape        | GEOMETRY    | Yes  |         | No  | No       | No       | No     | No   |
+| Path         | HIERARCHYID | Yes  |         | No  | No       | No       | No     | No   |
+| Document     | XML         | Yes  |         | No  | No       | No       | No     | No   |
+| Embedding    | VECTOR(3)   | Yes  |         | No  | No       | No       | No     | No   |
+| Variant      | SQL_VARIANT | Yes  |         | No  | No       | No       | No     | No   |
+| Payload      | JSON        | Yes  |         | No  | No       | No       | No     | Yes  |
+

@@ -51,3 +51,33 @@ This command is intended to be used as a quick-and-easy way to inspect the infer
 | updated_on        | DATETIME     | Yes  |         | No  | No       | No       | No     | No   |
 | contact_type_code | VARCHAR(50)  | Yes  |         | No  | No       | No       | No     | No   |
 
+## EXTRA_TYPES - Exists: Yes
+
+- Schema: 
+- Name: extra_types
+- Qualified Name: `extra_types`
+- Table or View: Table
+- Reference Data: No
+
+### Columns
+
+| Column         | Type            | Null | Default | PK  | Identity | Computed | Unique | JSON |
+|----------------|-----------------|------|---------|-----|----------|----------|--------|------|
+| extra_types_id | INT             | No   |         | Yes | No       | No       | No     | No   |
+| medium_value   | MEDIUMINT       | Yes  |         | No  | No       | No       | No     | No   |
+| year_value     | YEAR            | Yes  |         | No  | No       | No       | No     | No   |
+| bit_flag       | BIT(1)          | Yes  |         | No  | No       | No       | No     | No   |
+| bit_mask       | BIT(8)          | Yes  |         | No  | No       | No       | No     | No   |
+| enum_value     | ENUM            | Yes  |         | No  | No       | No       | No     | No   |
+| set_value      | SET             | Yes  |         | No  | No       | No       | No     | No   |
+| geom           | GEOMETRY        | Yes  |         | No  | No       | No       | No     | No   |
+| pt             | POINT           | Yes  |         | No  | No       | No       | No     | No   |
+| ln             | LINESTRING      | Yes  |         | No  | No       | No       | No     | No   |
+| poly           | POLYGON         | Yes  |         | No  | No       | No       | No     | No   |
+| multi_pt       | MULTIPOINT      | Yes  |         | No  | No       | No       | No     | No   |
+| multi_ln       | MULTILINESTRING | Yes  |         | No  | No       | No       | No     | No   |
+| multi_poly     | MULTIPOLYGON    | Yes  |         | No  | No       | No       | No     | No   |
+| geom_coll      | GEOMCOLLECTION  | Yes  |         | No  | No       | No       | No     | No   |
+| geog           | POINT           | Yes  |         | No  | No       | No       | No     | No   |
+| embedding      | VECTOR(3)       | Yes  |         | No  | No       | No       | No     | No   |
+

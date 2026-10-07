@@ -8,6 +8,8 @@ using Npgsql;
 using NUnit.Framework;
 using System;
 using System.Data.Common;
+using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
@@ -26,6 +28,74 @@ namespace DbEx.Test
             using var m = new PostgresMigration(a);
             var r = await m.MigrateAsync().ConfigureAwait(false);
             Assert.IsTrue(r);
+        }
+
+        [Test]
+        public async Task A125_MigrateAll_ExtraTypes_RoundTrip()
+        {
+            await A120_MigrateAll();
+
+            // Read everything back as text; the spatial types are read as WKT (plus SRID) as their default text form is the binary hex.
+            var overrides = new Dictionary<string, string>
+            {
+                ["geom"] = "ST_AsText(\"geom\")",
+                ["geom_any"] = "ST_AsText(\"geom_any\")",
+                ["geog"] = "ST_AsText(\"geog\")"
+            };
+
+            var columns = new[]
+            {
+                "extra_types_id", "ip_address", "network", "mac_address", "mac_address8", "search_vector", "search_query", "pt", "ln", "seg", "bx", "pth", "poly", "circ",
+                "bit_flag", "bit_mask", "bit_varying", "tags", "numbers", "current_mood", "moods", "int_range", "ts_range", "date_range", "int_multirange",
+                "attributes", "label", "ci_text", "geom", "geom_any", "geog", "embedding", "half_embedding", "sparse_embedding"
+            };
+
+            var sql = $"SELECT {string.Join(", ", columns.Select(c => $"{(overrides.TryGetValue(c, out var e) ? e : $"\"{c}\"::text")} AS \"{c}\""))}, ST_SRID(\"geom\") AS \"geom_srid\" FROM \"public\".\"extra_types\" ORDER BY \"extra_types_id\"";
+
+            var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("PostgresDb");
+            using var conn = new NpgsqlConnection(cs);
+            await conn.OpenAsync();
+
+            var rows = await ExtraTypesReader.ReadAsync(conn, sql);
+
+            ExtraTypesReader.AssertRows(rows, "extra_types_id", new Dictionary<string, string?>
+            {
+                ["extra_types_id"] = "1",
+                ["ip_address"] = "192.168.1.10/32",
+                ["network"] = "10.1.0.0/16",
+                ["mac_address"] = "08:00:2b:01:02:03",
+                ["mac_address8"] = "08:00:2b:01:02:03:04:05",
+                ["search_vector"] = "'cat':3 'fat':2",
+                ["search_query"] = "'fat' & 'rat'",
+                ["pt"] = "(1,2)",
+                ["ln"] = "{1,2,3}",
+                ["seg"] = "[(0,0),(1,1)]",
+                ["bx"] = "(1,1),(0,0)",
+                ["pth"] = "[(0,0),(1,1),(2,0)]",
+                ["poly"] = "((0,0),(4,0),(4,4))",
+                ["circ"] = "<(0,0),5>",
+                ["bit_flag"] = "1",
+                ["bit_mask"] = "10101010",
+                ["bit_varying"] = "101",
+                ["tags"] = "{a,b,c}",
+                ["numbers"] = "{1,2,3}",
+                ["current_mood"] = "happy",
+                ["moods"] = "{sad,ok}",
+                ["int_range"] = "[1,10)",
+                ["ts_range"] = "[\"2024-01-01 00:00:00+00\",\"2024-02-01 00:00:00+00\")",
+                ["date_range"] = "[2024-01-01,2024-02-01)",
+                ["int_multirange"] = "{[1,3),[5,8)}",
+                ["attributes"] = "\"a\"=>\"1\", \"b\"=>\"2\"",
+                ["label"] = "Top.Science.Astronomy",
+                ["ci_text"] = "Hello",
+                ["geom"] = "POINT(1 2)",
+                ["geom_any"] = "POLYGON((0 0,4 0,4 4,0 0))",
+                ["geog"] = "POINT(-122.349 47.651)",
+                ["embedding"] = "[1,2,3]",
+                ["half_embedding"] = "[1,2,3]",
+                ["sparse_embedding"] = "{1:1,3:2}/3",
+                ["geom_srid"] = "4326"
+            });
         }
 
         [Test]
@@ -109,6 +179,7 @@ namespace DbEx.Test
             a.Parameters.Add("Param1", "unknown");
             a.Parameters.Add("Param2", "gender");
             a.Parameters.Add("Param3", "CONTACT");
+            a.Parameters.Add("Param4", "extra_types");
 
             using var m = new PostgresMigration(a);
             var (Success, Output) = await m.MigrateAndLogAsync().ConfigureAwait(false);
@@ -117,7 +188,7 @@ namespace DbEx.Test
             Assert.IsTrue(Output.Length > 0);
 
             using var sr = PostgresMigration.GetRequiredResourcesStreamReader("PostgresInspect.md", [typeof(PostgresMigrationTest).Assembly]);
-            Assert.AreEqual(sr.ReadToEnd(), Output);
+            MarkdownAssert.AreEqual(sr.ReadToEnd(), Output);
         }
     }
 }

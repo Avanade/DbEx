@@ -116,6 +116,11 @@ public class DataTable
     public List<DbColumnSchema> MergeMatchColumns => [.. Columns.Where(x => !x.IsCreatedAudit && !x.IsUpdatedAudit && !(UseIdentifierGenerator && x.IsPrimaryKey))];
 
     /// <summary>
+    /// Indicates whether any of the <see cref="MergeMatchColumns"/> are not <see cref="DbColumnSchema.IsDataComparable"/>; therefore, the data change detection cannot be performed by the database.
+    /// </summary>
+    public bool HasNonComparableMergeMatchColumns => MergeMatchColumns.Any(x => !x.IsDataComparable);
+
+    /// <summary>
     /// Gets the merge insert columns.
     /// </summary>
     public List<DbColumnSchema> MergeInsertColumns => [.. Columns.Where(x => !x.IsUpdatedAudit)];

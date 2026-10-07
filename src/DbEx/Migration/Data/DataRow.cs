@@ -78,7 +78,7 @@ public class DataRow
         {
             str = column.Table.DbTable.Migration.SchemaConfig.ToFormattedDataParserValue(column.Table.ParserArgs, column.Value);
 
-            switch (col.DotNetType)
+            switch (col.DataParserType)
             {
                 case "string": column.Value = str; break;
                 case "bool": column.Value = str switch { "1" or "Y" => true, "0" or "N" or "" => false, _ => bool.Parse(str) }; break;
