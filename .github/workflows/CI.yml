@@ -29,10 +29,7 @@ jobs:
       run: dotnet build --no-restore
 
     - name: Start databases (SQL Server, MySQL, Postgres)
-      run: docker compose up -d --build
-      
-    - name: Sleep (allow databases to complete startup)
-      run: sleep 30
+      run: docker compose up -d --build --wait --wait-timeout 180
 
     - name: Set EnvVar for Test
       run: |

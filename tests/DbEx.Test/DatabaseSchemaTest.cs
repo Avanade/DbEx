@@ -679,7 +679,7 @@ namespace DbEx.Test
                 ("medium_value", "mediumint", "int", false, "int"),
                 ("year_value", "year", "short", false, "short"),
                 ("bit_flag", "bit", "bool", false, "bool"),
-                ("bit_mask", "bit", "byte[]", true, "string"),
+                ("bit_mask", "bit", "ulong", false, "string"),
                 ("enum_value", "enum", "string", true, "string"),
                 ("set_value", "set", "string", true, "string"),
                 ("geom", "geometry", "Geometry", true, "string"),

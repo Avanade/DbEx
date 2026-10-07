@@ -99,25 +99,12 @@ public class PostgresSchemaConfig(PostgresMigration migration) : DatabaseSchemaC
     private static string RemovePrecisionFromDataType(string type) => type.Contains('(') ? type[..type.IndexOf('(')] : type;
 
     /// <inheritdoc/>
-    public override async Task LoadAdditionalInformationSchema(IDatabase database, List<DbTableSchema> tables, CancellationToken cancellationToken)
+    public override async Task LoadNativeTypesSchema(IDatabase database, List<DbTableSchema> tables, CancellationToken cancellationToken)
     {
-        // Add the row version 'xmin' column to the table schema.
-        foreach (var table in tables)
-        {
-            table.Columns.Add(new DbColumnSchema(table, migration.Args.RowVersionColumnName!, "xid", "RowVersion")
-            {
-                IsNullable = false,
-                Scale = 0,
-                Precision = 32,
-                IsComputed = true,
-                IsRowVersion = true
-            });
-        }
-
         // Select the full native types (including type modifiers) and enum types; these are not available via INFORMATION_SCHEMA for the likes of array, enum and extension types (e.g. PostGIS, pgvector).
         _enumTypeNames.Clear();
-        using var sr2 = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"SelectTableNativeTypes.{ScriptSuffix}", [typeof(PostgresSchemaConfig).Assembly]);
-        await database.SqlStatement(await sr2.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr =>
+        using var sr = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"SelectTableNativeTypes.{ScriptSuffix}", [typeof(PostgresSchemaConfig).Assembly]);
+        await database.SqlStatement(await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr =>
         {
             if (dr.GetValue<string>("type_kind") == "e")
                 _enumTypeNames.Add(dr.GetValue<string>("udt_name")!);
@@ -132,6 +119,23 @@ public class PostgresSchemaConfig(PostgresMigration migration) : DatabaseSchemaC
 
             return 0;
         }, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    public override async Task LoadAdditionalInformationSchema(IDatabase database, List<DbTableSchema> tables, CancellationToken cancellationToken)
+    {
+        // Add the row version 'xmin' column to the table schema.
+        foreach (var table in tables)
+        {
+            table.Columns.Add(new DbColumnSchema(table, migration.Args.RowVersionColumnName!, "xid", "RowVersion")
+            {
+                IsNullable = false,
+                Scale = 0,
+                Precision = 32,
+                IsComputed = true,
+                IsRowVersion = true
+            });
+        }
 
         // Configure all the single column foreign keys.
         using var sr3 = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"SelectTableForeignKeys.{ScriptSuffix}", [typeof(PostgresSchemaConfig).Assembly]);
@@ -206,7 +210,8 @@ public class PostgresSchemaConfig(PostgresMigration migration) : DatabaseSchemaC
     /// </summary>
     private string ToDotNetArrayElementTypeName(DbColumnSchema schema)
     {
-        var udt = schema.UdtName?.TrimStart('_');
+        // Only the single array prefix underscore is removed; the element type name may itself start with an underscore.
+        var udt = schema.UdtName is { Length: > 0 } u && u[0] == '_' ? u[1..] : schema.UdtName;
         var element = string.IsNullOrEmpty(udt) ? null : ToDotNetTypeNameFromUdtName(udt, null);
         return element is null
             ? throw new InvalidOperationException($"Database data type 'ARRAY' ('{schema.UdtName}') does not have corresponding .NET type mapping defined.")

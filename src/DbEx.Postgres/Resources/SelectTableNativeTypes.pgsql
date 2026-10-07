@@ -8,5 +8,5 @@ SELECT n.nspname AS table_schema, c.relname AS table_name, a.attname AS column_n
     INNER JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
     INNER JOIN pg_catalog.pg_type AS t ON t.oid = a.atttypid
     LEFT OUTER JOIN pg_catalog.pg_type AS et ON et.oid = t.typelem
- WHERE a.attnum > 0 AND NOT a.attisdropped AND c.relkind IN ('r', 'p')
+ WHERE a.attnum > 0 AND NOT a.attisdropped AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
    AND n.nspname NOT IN ('information_schema', 'pg_catalog')

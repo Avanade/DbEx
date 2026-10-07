@@ -130,6 +130,16 @@ public abstract class DatabaseSchemaConfig(DatabaseMigrationBase migration, bool
     public abstract DbColumnSchema CreateColumnFromInformationSchema(DbTableSchema table, DatabaseRecord dr);
 
     /// <summary>
+    /// Opportunity to load additional native column type information that is specific to the database (for example, <see cref="DbColumnSchema.NativeSqlType"/>).
+    /// </summary>
+    /// <param name="database">The <see cref="IDatabase"/>.</param>
+    /// <param name="tables">The <see cref="DbTableSchema"/> list to load additional data into.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <remarks>This is invoked immediately after the tables and columns are inferred, and before any other schema inference that may require the <see cref="DbColumnSchema.DotNetType"/> (for example, reference data detection); as the
+    /// <see cref="DbColumnSchema.DotNetType"/> is cached on first access, anything required to determine the type must be loaded here and not within <see cref="LoadAdditionalInformationSchema(IDatabase, List{DbTableSchema}, CancellationToken)"/>.</remarks>
+    public virtual Task LoadNativeTypesSchema(IDatabase database, List<DbTableSchema> tables, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    /// <summary>
     /// Opportunity to load additional `InformationSchema` related data that is specific to the database.
     /// </summary>
     /// <param name="database">The <see cref="IDatabase"/>.</param>

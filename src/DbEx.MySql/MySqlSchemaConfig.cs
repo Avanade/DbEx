@@ -171,7 +171,7 @@ public class MySqlSchemaConfig(MySqlMigration migration) : DatabaseSchemaConfig(
             "TIME" => "TimeOnly",
             "BINARY" or "VARBINARY" or "TINYBLOB" or "BLOB" or "MEDIUMBLOB" or "LONGBLOB" or "VECTOR" => "byte[]",
             "BOOL" or "BOOLEAN" => "bool",
-            "BIT" => schema.Precision is null or 1 ? "bool" : "byte[]",
+            "BIT" => schema.Precision is null or 1 ? "bool" : "ulong",
             "DOUBLE" => "double",
             "INT" or "INTEGER" or "MEDIUMINT" => "int",
             "BIGINT" => "long",
@@ -191,9 +191,12 @@ public class MySqlSchemaConfig(MySqlMigration migration) : DatabaseSchemaConfig(
     }
 
     /// <inheritdoc/>
-    /// <remarks>A <c>VECTOR</c> is a <c>byte[]</c> in .NET, but is parsed from (and written as) its text (string) representation (e.g. <c>[1,2,3]</c>); likewise a multi-bit <c>BIT</c> is parsed from its bit-string (e.g. <c>10101010</c>).</remarks>
+    /// <remarks>A <c>VECTOR</c> is a <c>byte[]</c> in .NET, but is parsed from (and written as) its text (string) representation (e.g. <c>[1,2,3]</c>); likewise a multi-bit <c>BIT</c> is a <c>ulong</c> in .NET (as per the MySql.Data and Pomelo EF providers), but is parsed from its bit-string (e.g. <c>10101010</c>).</remarks>
     public override string ToDataParserTypeName(DbColumnSchema schema)
-        => schema.ThrowIfNull(nameof(schema)).Type.ToUpperInvariant() is "VECTOR" or "BIT" && schema.DotNetType == "byte[]" ? "string" : base.ToDataParserTypeName(schema);
+    {
+        var type = schema.ThrowIfNull(nameof(schema)).Type.ToUpperInvariant();
+        return (type is "VECTOR" && schema.DotNetType == "byte[]") || (type is "BIT" && schema.DotNetType == "ulong") ? "string" : base.ToDataParserTypeName(schema);
+    }
 
     /// <inheritdoc/>
     public override string ToFormattedSqlType(DbColumnSchema schema, bool includeNullability = true)
