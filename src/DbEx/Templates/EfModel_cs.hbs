@@ -19,7 +19,7 @@ public partial class {{EfModelName}}
   {{#if DbColumn.IsPrimaryKey}}
     /// <remarks>This is {{#ifeq Parent.DbTable.PrimaryKeyColumns.Count 1}}the primary key{{else}}part of the primary key{{/ifeq}}.</remarks>
   {{/if}}
-    public {{Type}} {{Property}} { get; set; }{{#ifval Default}} = {{Default}};{{else}}{{#unless DbColumn.IsNullable}}{{#ifeq DbColumn.DotNetType "string"}} = default!;{{/ifeq}}{{/unless}}{{/ifval}}
+    public {{Type}} {{Property}} { get; set; }{{#ifval Default}} = {{Default}};{{else}}{{#unless DbColumn.IsNullable}}{{#if DbColumn.IsDotNetTypeAClass}} = default!;{{/if}}{{/unless}}{{/ifval}}
 {{/each}}
 }
 

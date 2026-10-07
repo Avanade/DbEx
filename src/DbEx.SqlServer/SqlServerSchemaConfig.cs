@@ -80,7 +80,7 @@ public class SqlServerSchemaConfig(SqlServerMigration migration) : DatabaseSchem
             IsDotNetTimeOnly = RemovePrecisionFromDataType(dr.GetValue<string>("DATA_TYPE")!).Equals("TIME", StringComparison.OrdinalIgnoreCase),
         };
 
-        c.IsJsonContent = c.Type.Equals("JSON", StringComparison.OrdinalIgnoreCase) || (c.DotNetType == "string" && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal));
+        c.IsJsonContent = c.Type.Equals("JSON", StringComparison.OrdinalIgnoreCase) || (c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal) && c.DotNetType == "string");
         if (c.IsJsonContent && c.Name.EndsWith(JsonColumnNameSuffix, StringComparison.Ordinal))
             c.DotNetCleanedName = DbTableSchema.CreateDotNetName(c.Name[..^JsonColumnNameSuffix.Length]);
 
@@ -181,6 +181,25 @@ public class SqlServerSchemaConfig(SqlServerMigration migration) : DatabaseSchem
             c.IsComputed = true;
             return 0;
         }, cancellationToken).ConfigureAwait(false);
+
+        // Select the vector dimensions (INFORMATION_SCHEMA does not expose them); only queried where a vector column exists as the catalog column requires SQL Server 2025+.
+        if (tables.Any(t => t.Columns.Any(c => c.Type.Equals("VECTOR", StringComparison.OrdinalIgnoreCase))))
+        {
+            using var sr7 = DatabaseMigrationBase.GetRequiredResourcesStreamReader("SelectTableVectorColumns.sql", [typeof(SqlServerSchemaConfig).Assembly]);
+#if NET7_0_OR_GREATER
+            await database.SqlStatement(await sr7.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr =>
+#else
+            await database.SqlStatement(await sr7.ReadToEndAsync().ConfigureAwait(false)).SelectQueryAsync(dr =>
+#endif
+            {
+                var t = tables.SingleOrDefault(x => x.Schema == dr.GetValue<string>("TABLE_SCHEMA") && x.Name == dr.GetValue<string>("TABLE_NAME"));
+                var c = t?.Columns.SingleOrDefault(x => x.Name == dr.GetValue<string>("COLUMN_NAME"));
+                if (c is not null)
+                    c.Length = (ulong?)dr.GetValue<int?>("VECTOR_DIMENSIONS");
+
+                return 0;
+            }, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     /// <inheritdoc/>
@@ -212,9 +231,20 @@ public class SqlServerSchemaConfig(SqlServerMigration migration) : DatabaseSchem
             "TINYINT" => "byte",
             "REAL" => "float",
             "UNIQUEIDENTIFIER" => "Guid",
+            "XML" => "string",
+            "GEOGRAPHY" or "GEOMETRY" => "Geometry",
+            "HIERARCHYID" => "HierarchyId",
+            "VECTOR" => "SqlVector<float>",
+            "SQL_VARIANT" => "object",
             _ => throw new InvalidOperationException($"Database data type '{dbType}' does not have corresponding .NET type mapping defined."),
         };
     }
+
+    /// <inheritdoc/>
+    public override bool IsDotNetTypeAClass(DbColumnSchema schema) => schema.ThrowIfNull(nameof(schema)).DotNetType != "SqlVector<float>" && base.IsDotNetTypeAClass(schema);
+
+    /// <inheritdoc/>
+    public override bool IsDataComparable(DbColumnSchema schema) => RemovePrecisionFromDataType(schema.ThrowIfNull(nameof(schema)).Type).ToUpperInvariant() is not ("XML" or "GEOGRAPHY" or "GEOMETRY" or "VECTOR" or "JSON" or "TEXT" or "NTEXT" or "IMAGE");
 
     /// <inheritdoc/>
     public override string ToFormattedSqlType(DbColumnSchema schema, bool includeNullability = true)
@@ -223,11 +253,11 @@ public class SqlServerSchemaConfig(SqlServerMigration migration) : DatabaseSchem
 
         sb.Append(schema.Type.ToUpperInvariant() switch
         {
-            "CHAR" or "VARCHAR" or "NCHAR" or "NVARCHAR" => schema.Length.HasValue && schema.Length.Value > 0 ? $"({schema.Length.Value})" : "(MAX)",
+            "CHAR" or "VARCHAR" or "NCHAR" or "NVARCHAR" or "BINARY" or "VARBINARY" => schema.Length.HasValue && schema.Length.Value > 0 ? $"({schema.Length.Value})" : "(MAX)",
             "DECIMAL" => $"({schema.Precision}, {schema.Scale})",
             "NUMERIC" => $"({schema.Precision}, {schema.Scale})",
             "TIME" => schema.Scale.HasValue && schema.Scale.Value > 0 ? $"({schema.Scale})" : string.Empty,
-            "BINARY" or "VARBINARY" => $"(schema.Precision)",
+            "VECTOR" => schema.Length.HasValue && schema.Length.Value > 0 ? $"({schema.Length.Value})" : string.Empty,
             _ => string.Empty
         });
 
@@ -238,18 +268,63 @@ public class SqlServerSchemaConfig(SqlServerMigration migration) : DatabaseSchem
     }
 
     /// <inheritdoc/>
-    public override string ToFormattedSqlStatementValue(DbColumnSchema dbColumnSchema, object? value) => value switch
+    public override string ToFormattedSqlStatementValue(DbColumnSchema dbColumnSchema, object? value)
     {
-        null => "NULL",
-        string str => $"N'{str.Replace("'", "''", StringComparison.Ordinal)}'",
-        bool b => b ? "1" : "0",
-        Guid => $"CONVERT(UNIQUEIDENTIFIER, '{value}')",
-        DateTime dt => $"'{dt.ToString(Migration.Args.DataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
-        DateTimeOffset dto => $"'{dto.ToString(Migration.Args.DataParserArgs.DateTimeOffsetFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
+        // The data parser converts these types as text; the database must be explicitly told how to convert (implicit conversion is not supported for all of them).
+        if (value is string text)
+        {
+            var literal = $"N'{text.Replace("'", "''", StringComparison.Ordinal)}'";
+            switch (RemovePrecisionFromDataType(dbColumnSchema.ThrowIfNull(nameof(dbColumnSchema)).Type).ToUpperInvariant())
+            {
+                case "GEOGRAPHY":
+                    return ToFormattedSpatialValue("geography", text);
+
+                case "GEOMETRY":
+                    return ToFormattedSpatialValue("geometry", text);
+
+                case "HIERARCHYID":
+                    return $"hierarchyid::Parse({literal})";
+
+                case "XML":
+                    return $"CAST({literal} AS XML)";
+
+                case "VECTOR":
+                    return $"CAST({literal} AS {dbColumnSchema.SqlType2})";
+
+                case "SQL_VARIANT":
+                    return $"CAST({literal} AS SQL_VARIANT)";
+            }
+        }
+
+        return value switch
+        {
+            null => "NULL",
+            string str => $"N'{str.Replace("'", "''", StringComparison.Ordinal)}'",
+            bool b => b ? "1" : "0",
+            Guid => $"CONVERT(UNIQUEIDENTIFIER, '{value}')",
+            DateTime dt => $"'{dt.ToString(Migration.Args.DataParserArgs.DateTimeFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
+            DateTimeOffset dto => $"'{dto.ToString(Migration.Args.DataParserArgs.DateTimeOffsetFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
 #if NET7_0_OR_GREATER
-        DateOnly d => $"'{d.ToString(Migration.Args.DataParserArgs.DateOnlyFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
-        TimeOnly t => $"'{t.ToString(Migration.Args.DataParserArgs.TimeOnlyFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
+            DateOnly d => $"'{d.ToString(Migration.Args.DataParserArgs.DateOnlyFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
+            TimeOnly t => $"'{t.ToString(Migration.Args.DataParserArgs.TimeOnlyFormat, System.Globalization.CultureInfo.InvariantCulture)}'",
 #endif
-        _ => value.ToString()!
-    };
+            _ => value.ToString()!
+        };
+    }
+
+    /// <summary>
+    /// Formats the spatial <paramref name="wkt"/> (well-known text) value; an optional leading '<c>SRID=n;</c>' (EWKT) is supported to specify the spatial reference identifier.
+    /// </summary>
+    private static string ToFormattedSpatialValue(string type, string wkt)
+    {
+        var text = wkt.Trim();
+        if (text.StartsWith("SRID=", StringComparison.OrdinalIgnoreCase))
+        {
+            var i = text.IndexOf(';', StringComparison.Ordinal);
+            if (i > 5 && int.TryParse(text[5..i], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var srid))
+                return $"{type}::STGeomFromText(N'{text[(i + 1)..].Replace("'", "''", StringComparison.Ordinal)}', {srid})";
+        }
+
+        return $"{type}::Parse(N'{text.Replace("'", "''", StringComparison.Ordinal)}')";
+    }
 }

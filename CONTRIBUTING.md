@@ -51,6 +51,8 @@ We use [`NUnit`](https://github.com/nunit/nunit) for all unit testing.
 
 We understand there is more work to be performed in generating a higher level of code coverage; this technical debt is on the backlog.
 
+The tests are executed against live SQL Server, MySQL and Postgres (with PostGIS and pgvector) databases. These can be started using the [`docker-compose.yml`](./docker-compose.yml) (`docker compose up -d --build`); the `DbEx_ConnectionStrings__*` environment variables, as set within the [CI](./.github/workflows/CI.yml) workflow, must then be configured to reference them.
+
 <br/>
 
 ## Code reviews and checkins

@@ -16,10 +16,10 @@ INSERT INTO #temp ({{#each Columns}}[{{Name}}]{{#unless @last}}, {{/unless}}{{/e
 MERGE INTO [{{Schema}}].[{{Name}}] WITH (HOLDLOCK) as [t]
   USING (SELECT {{#each Columns}}[{{Name}}]{{#unless @last}}, {{/unless}}{{/each}} FROM #temp) AS [s] 
     ON ({{#if IsRefData}}[s].[{{DbTable.RefDataCodeColumn.Name}}] = [t].[{{DbTable.RefDataCodeColumn.Name}}]{{else}}{{#each PrimaryKeyColumns}}{{#unless @first}} ON {{/unless}}[s].[{{Name}}] = [t].[{{Name}}]{{/each}}{{/if}}{{#ifval DbTable.TenantIdColumn}} AND [s].[{{DbTable.TenantIdColumn.Name}}] = [t].[{{DbTable.TenantIdColumn.Name}}]{{/ifval}})
-  WHEN MATCHED AND EXISTS (
+  WHEN MATCHED{{#unless HasNonComparableMergeMatchColumns}} AND EXISTS (
       SELECT {{#each MergeMatchColumns}}[s].[{{Name}}]{{#unless @last}}, {{/unless}}{{/each}}
       EXCEPT
-      SELECT {{#each MergeMatchColumns}}[t].[{{Name}}]{{#unless @last}}, {{/unless}}{{/each}})
+      SELECT {{#each MergeMatchColumns}}[t].[{{Name}}]{{#unless @last}}, {{/unless}}{{/each}}){{/unless}}
     THEN UPDATE SET {{#each MergeUpdateColumns}}[t].[{{Name}}] = [s].[{{Name}}]{{#unless @last}}, {{/unless}}{{/each}}
   WHEN NOT MATCHED BY TARGET
     THEN INSERT ({{#each MergeInsertColumns}}[{{Name}}]{{#unless @last}}, {{/unless}}{{/each}})

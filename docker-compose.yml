@@ -2,23 +2,43 @@ name: DbEx
 
 services:
   db-sql-server:
-    image: mcr.microsoft.com/mssql/server:2019-latest
+    image: mcr.microsoft.com/mssql/server:2025-latest
     environment:
       SA_PASSWORD: "yourStrong(!)Password"
       ACCEPT_EULA: "Y"
     ports:
       - "1433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$SA_PASSWORD\" -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
     
   db-mysql:
-    image: mysql
+    image: mysql:9
     environment:
       MYSQL_ROOT_PASSWORD: "yourStrong#!Password"
     ports:
       - "3306:3306"
+    healthcheck:
+      # TCP (not the socket) as the temporary initialization server only listens on the socket.
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
 
   db-postgres:
-    image: postgres
+    build: ./.github/postgres
+    image: dbex-postgres-test
     environment:
       POSTGRES_PASSWORD: "yourStrong#!Password"
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s

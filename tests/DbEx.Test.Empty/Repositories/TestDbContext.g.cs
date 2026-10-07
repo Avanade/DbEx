@@ -30,6 +30,21 @@ public partial class TestDbContext
             e.Property(p => p.ContactTypeCode).HasColumnName("ContactTypeCode").HasColumnType("NVARCHAR(50)");
         });
 
+        // Add the entity/model configuration for the [Test].[ExtraTypes] database table.
+        modelBuilder.Entity<DbEx.Test.Empty.Persistence.ExtraTypes>(e =>
+        {
+            e.ToTable("ExtraTypes", "Test");
+            e.HasKey(p => p.ExtraTypesId);
+            e.Property(p => p.ExtraTypesId).HasColumnName("ExtraTypesId").HasColumnType("INT");
+            e.Property(p => p.Location).HasColumnName("Location").HasColumnType("GEOGRAPHY");
+            e.Property(p => p.Shape).HasColumnName("Shape").HasColumnType("GEOMETRY");
+            e.Property(p => p.Path).HasColumnName("Path").HasColumnType("HIERARCHYID");
+            e.Property(p => p.Document).HasColumnName("Document").HasColumnType("XML");
+            e.Property(p => p.Embedding).HasColumnName("Embedding").HasColumnType("VECTOR(3)");
+            e.Property(p => p.Variant).HasColumnName("Variant").HasColumnType("SQL_VARIANT");
+            e.Property(p => p.Payload).HasColumnName("Payload").HasColumnType("JSON");
+        });
+
         // Add the entity/model configuration for the [Test].[Person] database table.
         modelBuilder.Entity<DbEx.Test.Empty.Persistence.Person>(e =>
         {

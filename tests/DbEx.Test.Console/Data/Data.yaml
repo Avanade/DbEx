@@ -16,3 +16,7 @@
   - { Code: I, Text: Inactive, TenantId: ^88 }  
   - { Code: A, Text: Active, TenantId: ^99 }
   - { Code: I, Text: Inactive, TenantId: ^99 } 
+- ExtraTypes:
+  - { ExtraTypesId: 1, Location: "POINT(-122.349 47.651)", Shape: "POLYGON((0 0, 4 0, 4 4, 0 4, 0 0))", Path: "/1/2/", Document: "<root><item>1</item></root>", Embedding: "[1.5, 2.5, 3.5]", Variant: "variant", Payload: '{"a":1}' }
+  - { ExtraTypesId: 2, Location: "SRID=4326;POINT(-122.349 47.651)" }
+  - { ExtraTypesId: 3 }

@@ -100,6 +100,9 @@ public class Database<TConnection>(Func<TConnection> create, DbProviderFactory p
         if (tables.Count == 0)
             return tables;
 
+        // Load the native type information specific to the database provider; must occur before anything that may access the .NET type (as it is cached).
+        await migration.SchemaConfig.LoadNativeTypesSchema(this, tables, cancellationToken).ConfigureAwait(false);
+
         // Configure all the single column primary and unique constraints.
         using var sr2 = DatabaseMigrationBase.GetRequiredResourcesStreamReader($"SelectTablePrimaryKey.{migration.SchemaConfig.ScriptSuffix}", probeAssemblies);
         var pks = await SqlStatement(await ReadSqlAsync(migration, sr2, cancellationToken).ConfigureAwait(false)).SelectQueryAsync(dr => new

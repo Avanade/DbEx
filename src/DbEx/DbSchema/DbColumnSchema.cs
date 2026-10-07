@@ -11,6 +11,8 @@
 public class DbColumnSchema(DbTableSchema dbTable, string name, string type, string? dotNetNameOverride = null)
 {
     private string? _dotNetType;
+    private string? _dataParserType;
+    private bool? _isDotNetTypeAClass;
     private string? _dotNetName = dotNetNameOverride;
     private string? _dotNetCleanedName;
     private string? _sqlType;
@@ -30,6 +32,16 @@ public class DbColumnSchema(DbTableSchema dbTable, string name, string type, str
     /// Gets the SQL Server data type.
     /// </summary>
     public string Type { get; } = type.ThrowIfNull(nameof(type));
+
+    /// <summary>
+    /// Gets or sets the provider-specific underlying type name where the <see cref="Type"/> is generic (for example, the Postgres <c>udt_name</c> for <c>USER-DEFINED</c> and <c>ARRAY</c> types).
+    /// </summary>
+    public string? UdtName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the full database-native formatted type (for example, <c>vector(3)</c>, <c>geometry(Point,4326)</c>, <c>integer[]</c>) where it is able to be determined and is richer than the <see cref="Type"/>, <see cref="Length"/>, <see cref="Precision"/> and <see cref="Scale"/>.
+    /// </summary>
+    public string? NativeSqlType { get; set; }
 
     /// <summary>
     /// Indicates whether the column is nullable.
@@ -187,9 +199,26 @@ public class DbColumnSchema(DbTableSchema dbTable, string name, string type, str
     public string DotNetType => _dotNetType ??= DbTable?.Migration.SchemaConfig.ToDotNetTypeName(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(DotNetType)} property can be accessed.");
 
     /// <summary>
+    /// Gets the .NET <see cref="System.Type"/> name (excludes nullability) that the data parser (see <see cref="Migration.Data.DataParser"/>) uses to convert the textual (JSON/YAML) value.
+    /// </summary>
+    /// <remarks>Generally the same as the <see cref="DotNetType"/>; however, a database type that has no sensible textual .NET representation (for example, spatial types) is parsed as a <c>string</c> and converted by the database.</remarks>
+    public string DataParserType => _dataParserType ??= DbTable?.Migration.SchemaConfig.ToDataParserTypeName(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(DataParserType)} property can be accessed.");
+
+    /// <summary>
+    /// Indicates whether the <see cref="DotNetType"/> is a reference type (class); otherwise, a value type (struct).
+    /// </summary>
+    /// <remarks>Used to determine whether a non-nullable property requires initialization (e.g. <c>= default!</c>) to avoid compiler nullable warnings.</remarks>
+    public bool IsDotNetTypeAClass => _isDotNetTypeAClass ??= DbTable?.Migration.SchemaConfig.IsDotNetTypeAClass(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(IsDotNetTypeAClass)} property can be accessed.");
+
+    /// <summary>
+    /// Indicates whether the column value can be compared for equality within the database (for example, using <c>EXCEPT</c>) when determining whether data has changed.
+    /// </summary>
+    public bool IsDataComparable => DbTable?.Migration.SchemaConfig.IsDataComparable(this) ?? throw new InvalidOperationException($"The {nameof(DbTable)} must be set before the {nameof(IsDataComparable)} property can be accessed.");
+
+    /// <summary>
     /// Gets the corresponding .NET <see cref="System.Type"/> name (including nullability).
     /// </summary>
-    /// <remarks>A <see cref="string"/> type is always considered nullable; otherwise, the nullability is determined by the <see cref="IsNullable"/> property.</remarks>
+    /// <remarks>The nullability is determined by the <see cref="IsNullable"/> property.</remarks>
     public string DotNetTypeWithNullability => IsNullable ? $"{DotNetType}?" : DotNetType;
 
     /// <summary>
@@ -251,9 +280,13 @@ public class DbColumnSchema(DbTableSchema dbTable, string name, string type, str
     public void CopyFrom(DbColumnSchema column)
     {
         _dotNetType = column.ThrowIfNull(nameof(column))._dotNetType;
+        _dataParserType = column._dataParserType;
+        _isDotNetTypeAClass = column._isDotNetTypeAClass;
         _dotNetName = column._dotNetName;
         _dotNetCleanedName = column._dotNetCleanedName;
         _sqlType = column._sqlType;
+        UdtName = column.UdtName;
+        NativeSqlType = column.NativeSqlType;
         IsNullable = column.IsNullable;
         Length = column.Length;
         Precision = column.Precision;

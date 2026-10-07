@@ -130,6 +130,16 @@ public abstract class DatabaseSchemaConfig(DatabaseMigrationBase migration, bool
     public abstract DbColumnSchema CreateColumnFromInformationSchema(DbTableSchema table, DatabaseRecord dr);
 
     /// <summary>
+    /// Opportunity to load additional native column type information that is specific to the database (for example, <see cref="DbColumnSchema.NativeSqlType"/>).
+    /// </summary>
+    /// <param name="database">The <see cref="IDatabase"/>.</param>
+    /// <param name="tables">The <see cref="DbTableSchema"/> list to load additional data into.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <remarks>This is invoked immediately after the tables and columns are inferred, and before any other schema inference that may require the <see cref="DbColumnSchema.DotNetType"/> (for example, reference data detection); as the
+    /// <see cref="DbColumnSchema.DotNetType"/> is cached on first access, anything required to determine the type must be loaded here and not within <see cref="LoadAdditionalInformationSchema(IDatabase, List{DbTableSchema}, CancellationToken)"/>.</remarks>
+    public virtual Task LoadNativeTypesSchema(IDatabase database, List<DbTableSchema> tables, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    /// <summary>
     /// Opportunity to load additional `InformationSchema` related data that is specific to the database.
     /// </summary>
     /// <param name="database">The <see cref="IDatabase"/>.</param>
@@ -151,6 +161,44 @@ public abstract class DatabaseSchemaConfig(DatabaseMigrationBase migration, bool
     /// <param name="schema">The <see cref="DbColumnSchema"/>.</param>
     /// <returns>The .NET <see cref="Type"/> name.</returns>
     public abstract string ToDotNetTypeName(DbColumnSchema schema);
+
+    /// <summary>
+    /// Gets the .NET <see cref="Type"/> name that the data parser (see <see cref="Migration.Data.DataParser"/>) uses to convert the textual (JSON/YAML) value for the specified <see cref="DbColumnSchema"/>.
+    /// </summary>
+    /// <param name="schema">The <see cref="DbColumnSchema"/>.</param>
+    /// <returns>The data parser .NET <see cref="Type"/> name.</returns>
+    /// <remarks>Defaults to <see cref="ToDotNetTypeName(DbColumnSchema)"/> where the data parser supports the type; otherwise, <c>string</c>. A database type that has no sensible textual .NET representation (for example, spatial types) is therefore parsed as text and
+    /// the database is then responsible for converting the text (see <see cref="ToFormattedSqlStatementValue(DbColumnSchema, object?)"/>). Override to change this behavior.</remarks>
+    public virtual string ToDataParserTypeName(DbColumnSchema schema)
+    {
+        var type = ToDotNetTypeName(schema);
+        return DataParserTypeNames.Contains(type) ? type : "string";
+    }
+
+    /// <summary>
+    /// Indicates whether the .NET <see cref="Type"/> (see <see cref="ToDotNetTypeName(DbColumnSchema)"/>) for the specified <see cref="DbColumnSchema"/> is a reference type (class); otherwise, a value type (struct).
+    /// </summary>
+    /// <param name="schema">The <see cref="DbColumnSchema"/>.</param>
+    /// <returns><c>true</c> where a class; otherwise, <c>false</c>.</returns>
+    /// <remarks>Defaults to <c>false</c> for the known .NET primitive and other value types (e.g. <c>int</c>, <c>DateTime</c>, <c>Guid</c>); otherwise, <c>true</c> (the safe default as initializing a struct using <c>default!</c> is harmless).</remarks>
+    public virtual bool IsDotNetTypeAClass(DbColumnSchema schema) => !DotNetValueTypeNames.Contains(schema.ThrowIfNull(nameof(schema)).DotNetType);
+
+    /// <summary>
+    /// Indicates whether the column value can be compared for equality within the database (for example, using <c>EXCEPT</c>) when determining whether data has changed.
+    /// </summary>
+    /// <param name="schema">The <see cref="DbColumnSchema"/>.</param>
+    /// <returns><c>true</c> where comparable (default); otherwise, <c>false</c>.</returns>
+    public virtual bool IsDataComparable(DbColumnSchema schema) => true;
+
+    /// <summary>
+    /// Gets the known .NET primitive and other value type names (unqualified and without nullability).
+    /// </summary>
+    protected static HashSet<string> DotNetValueTypeNames { get; } = ["bool", "byte", "sbyte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "decimal", "char", "DateTime", "DateTimeOffset", "DateOnly", "TimeOnly", "TimeSpan", "Guid"];
+
+    /// <summary>
+    /// Gets the .NET type names that are natively supported by the data parser (see <see cref="Migration.Data.DataParser"/>).
+    /// </summary>
+    protected static HashSet<string> DataParserTypeNames { get; } = ["string", "bool", "byte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "decimal", "DateTime", "DateTimeOffset", "DateOnly", "TimeOnly", "TimeSpan", "Guid", "byte[]"];
 
     /// <summary>
     /// Gets the long-form formatted SQL type; includes size, precision, etc.

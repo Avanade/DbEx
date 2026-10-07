@@ -1,4 +1,5 @@
 ﻿using DbEx.Migration;
+using DbEx.DbSchema;
 using DbEx.MySql.Migration;
 using DbEx.Postgres.Migration;
 using DbEx.SqlServer.Migration;
@@ -7,6 +8,8 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using NUnit.Framework;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -354,6 +357,20 @@ namespace DbEx.Test
             Assert.IsNull(col.ForeignTable);
             Assert.IsNull(col.ForeignColumn);
             Assert.IsNotNull(col.DefaultValue);
+
+            // [Test].[ExtraTypes] - the .NET (EF) type is the "true" type; text is used for data parsing.
+            AssertExtraTypes(tables, "ExtraTypes",
+            [
+                ("Location", "geography", "Geometry", true, "string"),
+                ("Shape", "geometry", "Geometry", true, "string"),
+                ("Path", "hierarchyid", "HierarchyId", true, "string"),
+                ("Document", "xml", "string", true, "string"),
+                ("Embedding", "vector", "SqlVector<float>", false, "string"),
+                ("Variant", "sql_variant", "object", true, "string"),
+                ("Payload", "json", "string", true, "string"),
+            ]);
+
+            Assert.AreEqual("VECTOR(3) NULL", tables.Single(x => x.Name == "ExtraTypes").Columns.Single(x => x.Name == "Embedding").SqlType);
         }
 
         [Test]
@@ -656,6 +673,26 @@ namespace DbEx.Test
             Assert.IsNull(col.ForeignTable);
             Assert.IsNull(col.ForeignColumn);
             Assert.IsNull(col.DefaultValue);
+
+            AssertExtraTypes(tables, "extra_types",
+            [
+                ("medium_value", "mediumint", "int", false, "int"),
+                ("year_value", "year", "short", false, "short"),
+                ("bit_flag", "bit", "bool", false, "bool"),
+                ("bit_mask", "bit", "ulong", false, "string"),
+                ("enum_value", "enum", "string", true, "string"),
+                ("set_value", "set", "string", true, "string"),
+                ("geom", "geometry", "Geometry", true, "string"),
+                ("pt", "point", "Point", true, "string"),
+                ("ln", "linestring", "LineString", true, "string"),
+                ("poly", "polygon", "Polygon", true, "string"),
+                ("multi_pt", "multipoint", "MultiPoint", true, "string"),
+                ("multi_ln", "multilinestring", "MultiLineString", true, "string"),
+                ("multi_poly", "multipolygon", "MultiPolygon", true, "string"),
+                ("geom_coll", "geomcollection", "GeometryCollection", true, "string"),
+                ("geog", "point", "Point", true, "string"),
+                ("embedding", "vector", "byte[]", true, "string"),
+            ]);
         }
 
         [Test]
@@ -982,6 +1019,71 @@ namespace DbEx.Test
             Assert.IsNull(col.ForeignTable);
             Assert.IsNull(col.ForeignColumn);
             Assert.IsNull(col.DefaultValue);
+
+            AssertExtraTypes(tables, "extra_types",
+            [
+                ("ip_address", "inet", "IPAddress", true, "string"),
+                ("network", "cidr", "NpgsqlCidr", false, "string"),
+                ("mac_address", "macaddr", "PhysicalAddress", true, "string"),
+                ("mac_address8", "macaddr8", "PhysicalAddress", true, "string"),
+                ("search_vector", "tsvector", "NpgsqlTsVector", true, "string"),
+                ("search_query", "tsquery", "NpgsqlTsQuery", true, "string"),
+                ("pt", "point", "NpgsqlPoint", false, "string"),
+                ("ln", "line", "NpgsqlLine", false, "string"),
+                ("seg", "lseg", "NpgsqlLSeg", false, "string"),
+                ("bx", "box", "NpgsqlBox", false, "string"),
+                ("pth", "path", "NpgsqlPath", false, "string"),
+                ("poly", "polygon", "NpgsqlPolygon", false, "string"),
+                ("circ", "circle", "NpgsqlCircle", false, "string"),
+                ("bit_flag", "bit", "bool", false, "bool"),
+                ("bit_mask", "bit", "BitArray", true, "string"),
+                ("bit_varying", "bit varying", "BitArray", true, "string"),
+                ("tags", "ARRAY", "string[]", true, "string"),
+                ("numbers", "ARRAY", "int[]", true, "string"),
+                ("current_mood", "USER-DEFINED", "string", true, "string"),
+                ("moods", "ARRAY", "string[]", true, "string"),
+                ("int_range", "int4range", "NpgsqlRange<int>", false, "string"),
+                ("ts_range", "tstzrange", "NpgsqlRange<DateTime>", false, "string"),
+                ("date_range", "daterange", "NpgsqlRange<DateOnly>", false, "string"),
+                ("int_multirange", "int4multirange", "NpgsqlRange<int>[]", true, "string"),
+                ("attributes", "USER-DEFINED", "Dictionary<string, string?>", true, "string"),
+                ("label", "USER-DEFINED", "string", true, "string"),
+                ("ci_text", "USER-DEFINED", "string", true, "string"),
+                ("geom", "USER-DEFINED", "Point", true, "string"),
+                ("geom_any", "USER-DEFINED", "Geometry", true, "string"),
+                ("geog", "USER-DEFINED", "Geometry", true, "string"),
+                ("embedding", "USER-DEFINED", "Vector", true, "string"),
+                ("half_embedding", "USER-DEFINED", "HalfVector", true, "string"),
+                ("sparse_embedding", "USER-DEFINED", "SparseVector", true, "string"),
+            ]);
+        }
+
+        /// <summary>
+        /// Asserts the extra (non-primitive) types for the specified table; all mismatches are reported together.
+        /// </summary>
+        private static void AssertExtraTypes(List<DbTableSchema> tables, string tableName, (string Column, string Type, string DotNetType, bool IsClass, string DataParserType)[] expected)
+        {
+            var tab = tables.SingleOrDefault(x => x.Name == tableName);
+            Assert.IsNotNull(tab, $"Table '{tableName}' not found.");
+
+            var errors = new List<string>();
+            foreach (var e in expected)
+            {
+                var col = tab.Columns.SingleOrDefault(x => x.Name == e.Column);
+                if (col is null)
+                {
+                    errors.Add($"{e.Column}: column not found.");
+                    continue;
+                }
+
+                var actual = $"{col.Type}|{col.DotNetType}|{col.IsDotNetTypeAClass}|{col.DataParserType}|{col.IsNullable}";
+                var expect = $"{e.Type}|{e.DotNetType}|{e.IsClass}|{e.DataParserType}|True";
+                if (!string.Equals(actual, expect, StringComparison.OrdinalIgnoreCase))
+                    errors.Add($"{e.Column}: expected '{expect}' but was '{actual}' (SqlType: '{col.SqlType}', Native: '{col.NativeSqlType}').");
+            }
+
+            Assert.AreEqual(expected.Length + 1, tab.Columns.Count(x => !x.IsRowVersion), "Column count (including the primary key) is unexpected.");
+            Assert.IsEmpty(errors, string.Join(Environment.NewLine, errors));
         }
     }
 }

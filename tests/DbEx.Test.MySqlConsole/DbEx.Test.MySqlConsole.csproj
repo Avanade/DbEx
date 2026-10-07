@@ -17,6 +17,7 @@
     <EmbeddedResource Include="Migrations\003-create-test-gender-table.mysql" />
     <EmbeddedResource Include="Migrations\004-create-test-contact-table.mysql" />
     <EmbeddedResource Include="Migrations\005-create-test-multipk-table.mysql" />
+    <EmbeddedResource Include="Migrations\006-create-test-extratypes-table.mysql" />
     <EmbeddedResource Include="Schema\spGetContact.mysql" />
   </ItemGroup>
 

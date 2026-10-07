@@ -17,3 +17,7 @@
   - Code: I
     Text: Inactive
     TenantId: ^99
+# Specified again (and one new) via merge; the non-comparable columns must neither error nor be duplicated.
+- $ExtraTypes:
+  - { ExtraTypesId: 1, Location: "POINT(-122.349 47.651)", Shape: "POLYGON((0 0, 4 0, 4 4, 0 4, 0 0))", Path: "/1/2/", Document: "<root><item>1</item></root>", Embedding: "[1.5, 2.5, 3.5]", Variant: "variant", Payload: '{"a":1}' }
+  - { ExtraTypesId: 4, Location: "POINT(1 2)", Path: "/3/" }

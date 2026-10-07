@@ -4,6 +4,7 @@ schema: Test
 outbox: true
 tables:
 - name: Contact
+- name: ExtraTypes
 - name: Person
   columns:
   - name: AddressJson
