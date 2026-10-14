@@ -125,15 +125,15 @@ namespace DbEx.Test
             var cs = UnitTest.GetConfig("DbEx_").GetConnectionString("PostgresDb");
             using var db = new PostgresDatabase(() => new Npgsql.NpgsqlConnection(cs));
 
-            Assert.AreEqual("56003", Assert.ThrowsAsync<PostgresException>(() => db.StoredProcedure("sp_throw_authorization_exception").Param("@message", (string)null).NonQueryAsync()).SqlState);
-            Assert.AreEqual("56002", Assert.ThrowsAsync<PostgresException>(() => db.StoredProcedure("sp_throw_business_exception").Param("@message", (string)null).NonQueryAsync()).SqlState);
-            Assert.AreEqual("56004", Assert.ThrowsAsync<PostgresException>(() => db.StoredProcedure("sp_throw_concurrency_exception").Param("@message", (string)null).NonQueryAsync()).SqlState);
-            Assert.AreEqual("56006", Assert.ThrowsAsync<PostgresException>(() => db.StoredProcedure("sp_throw_conflict_exception").Param("@message", (string)null).NonQueryAsync()).SqlState);
-            Assert.AreEqual("56007", Assert.ThrowsAsync<PostgresException>(() => db.StoredProcedure("sp_throw_duplicate_exception").Param("@message", (string)null).NonQueryAsync()).SqlState);
-            Assert.AreEqual("56005", Assert.ThrowsAsync<PostgresException>(() => db.StoredProcedure("sp_throw_not_found_exception").Param("@message", (string)null).NonQueryAsync()).SqlState);
-            Assert.AreEqual("56001", Assert.ThrowsAsync<PostgresException>(() => db.StoredProcedure("sp_throw_validation_exception").Param("@message", (string)null).NonQueryAsync()).SqlState);
+            Assert.AreEqual("56003", Assert.ThrowsAsync<PostgresException>((AsyncTestDelegate)(() => db.StoredProcedure("sp_throw_authorization_exception").Param("@message", (string)null).NonQueryAsync())).SqlState);
+            Assert.AreEqual("56002", Assert.ThrowsAsync<PostgresException>((AsyncTestDelegate)(() => db.StoredProcedure("sp_throw_business_exception").Param("@message", (string)null).NonQueryAsync())).SqlState);
+            Assert.AreEqual("56004", Assert.ThrowsAsync<PostgresException>((AsyncTestDelegate)(() => db.StoredProcedure("sp_throw_concurrency_exception").Param("@message", (string)null).NonQueryAsync())).SqlState);
+            Assert.AreEqual("56006", Assert.ThrowsAsync<PostgresException>((AsyncTestDelegate)(() => db.StoredProcedure("sp_throw_conflict_exception").Param("@message", (string)null).NonQueryAsync())).SqlState);
+            Assert.AreEqual("56007", Assert.ThrowsAsync<PostgresException>((AsyncTestDelegate)(() => db.StoredProcedure("sp_throw_duplicate_exception").Param("@message", (string)null).NonQueryAsync())).SqlState);
+            Assert.AreEqual("56005", Assert.ThrowsAsync<PostgresException>((AsyncTestDelegate)(() => db.StoredProcedure("sp_throw_not_found_exception").Param("@message", (string)null).NonQueryAsync())).SqlState);
+            Assert.AreEqual("56001", Assert.ThrowsAsync<PostgresException>((AsyncTestDelegate)(() => db.StoredProcedure("sp_throw_validation_exception").Param("@message", (string)null).NonQueryAsync())).SqlState);
 
-            var vex = Assert.ThrowsAsync<PostgresException>(() => db.StoredProcedure("sp_throw_validation_exception").Param("@message", "On no!").NonQueryAsync());
+            var vex = Assert.ThrowsAsync<PostgresException>((AsyncTestDelegate)(() => db.StoredProcedure("sp_throw_validation_exception").Param("@message", "On no!").NonQueryAsync()));
             Assert.AreEqual("On no!", vex.MessageText.TrimEnd());
         }
 
