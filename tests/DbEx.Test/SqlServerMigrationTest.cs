@@ -247,15 +247,15 @@ namespace DbEx.Test
             var (cs, l, m) = await CreateConsoleDb().ConfigureAwait(false);
             using var db = new SqlServerDatabase(() => new SqlConnection(cs));
 
-            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowAuthorizationException").Param("message", (string)null).NonQueryAsync()).Number, 56003);
-            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowBusinessException").Param("message", (string)null).NonQueryAsync()).Number, 56002);
-            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowConcurrencyException").Param("message", (string)null).NonQueryAsync()).Number, 56004);
-            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowConflictException").Param("message", (string)null).NonQueryAsync()).Number, 56006);
-            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowDuplicateException").Param("message", (string)null).NonQueryAsync()).Number, 56007);
-            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowNotFoundException").Param("message", (string)null).NonQueryAsync()).Number, 56005);
-            Assert.AreEqual(Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowValidationException").Param("message", (string)null).NonQueryAsync()).Number, 56001);
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>((AsyncTestDelegate)(() => db.StoredProcedure("spThrowAuthorizationException").Param("message", (string)null).NonQueryAsync())).Number, 56003);
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>((AsyncTestDelegate)(() => db.StoredProcedure("spThrowBusinessException").Param("message", (string)null).NonQueryAsync())).Number, 56002);
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>((AsyncTestDelegate)(() => db.StoredProcedure("spThrowConcurrencyException").Param("message", (string)null).NonQueryAsync())).Number, 56004);
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>((AsyncTestDelegate)(() => db.StoredProcedure("spThrowConflictException").Param("message", (string)null).NonQueryAsync())).Number, 56006);
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>((AsyncTestDelegate)(() => db.StoredProcedure("spThrowDuplicateException").Param("message", (string)null).NonQueryAsync())).Number, 56007);
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>((AsyncTestDelegate)(() => db.StoredProcedure("spThrowNotFoundException").Param("message", (string)null).NonQueryAsync())).Number, 56005);
+            Assert.AreEqual(Assert.ThrowsAsync<SqlException>((AsyncTestDelegate)(() => db.StoredProcedure("spThrowValidationException").Param("message", (string)null).NonQueryAsync())).Number, 56001);
 
-            var vex = Assert.ThrowsAsync<SqlException>(() => db.StoredProcedure("spThrowValidationException").Param("message", "On no!").NonQueryAsync());
+            var vex = Assert.ThrowsAsync<SqlException>((AsyncTestDelegate)(() => db.StoredProcedure("spThrowValidationException").Param("message", "On no!").NonQueryAsync()));
             Assert.AreEqual("On no!", vex.Message);
         }
 

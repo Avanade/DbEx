@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v3.3.1
+- *Fixed:* Updated package dependencies to the latest compatible versions within their existing major versions.
+- *Fixed:* Updated `System.Security.Cryptography.Pkcs` to patched versions (`8.0.2` for `net8.0`; `9.0.21` for `net9.0` and `net10.0`) to address known vulnerabilities.
+
 ## v3.3.0
 - *Enhancement:* Non-primitive database types are now mapped to their correct .NET types (unqualified; a `global using` is expected) instead of throwing `Database data type 'x' does not have corresponding .NET type mapping defined`, which previously failed the `Data`, `Reset` and `Inspect` commands for the whole database. Originated from PR #72 by Wesley Teixeira.
   - SQL Server: `geography`/`geometry` (`Geometry`), `hierarchyid` (`HierarchyId`), `vector` (`SqlVector<float>`), `xml`/`json` (`string`) and `sql_variant` (`object`).
