@@ -2,6 +2,10 @@
 
 Represents the **NuGet** versions.
 
+## v3.4.0
+- *Enhancement:* Added `net11.0` support across builds, tests and NuGet packages.
+- *Fixed:* Updated the `MySqlConnector` transitive dependency to `2.6.1` to address [GHSA-473q-m89c-ghf8](https://github.com/advisories/GHSA-473q-m89c-ghf8).
+
 ## v3.3.1
 - *Fixed:* Updated package dependencies to the latest compatible versions within their existing major versions.
 - *Fixed:* Updated `System.Security.Cryptography.Pkcs` to patched versions (`8.0.2` for `net8.0`; `9.0.21` for `net9.0` and `net10.0`) to address known vulnerabilities.
