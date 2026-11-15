@@ -6,39 +6,68 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
-  build:
+  test:
+    name: .NET ${{ matrix.version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['8.0', '9.0', '10.0', '11.0']
+    env:
+      DbEx_ConnectionStrings__NoneDb: "Data Source=localhost,1433;Initial Catalog=DbEx.None;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true"
+      DbEx_ConnectionStrings__ErrorDb: "Data Source=localhost,1433;Initial Catalog=DbEx.Error;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true"
+      DbEx_ConnectionStrings__EmptyDb: "Data Source=localhost,1433;Initial Catalog=DbEx.Empty;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true"
+      DbEx_ConnectionStrings__ConsoleDb: "Data Source=localhost,1433;Initial Catalog=DbEx.Console;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true"
+      DbEx_ConnectionStrings__MySqlDb: "Server=localhost;Port=3306;Database=dbex_test;Uid=root;Pwd=yourStrong#!Password;"
+      DbEx_ConnectionStrings__PostgresDb: "Server=localhost;Port=5432;Database=dbex_test;Username=postgres;Pwd=yourStrong#!Password;Pooling=false"
 
     steps:
     - name: Checkout
       uses: actions/checkout@v7
-    
-    - name: Setup .NET
+
+    - name: Setup .NET 11 SDK
       uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
-        
+        dotnet-version: 11.0.x
+
+    - name: Setup target .NET runtime
+      if: matrix.version != '11.0'
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: ${{ matrix.version }}.x
+
     - name: Restore dependencies
-      run: dotnet restore
-      
-    - name: Build
-      run: dotnet build --no-restore
+      run: dotnet restore DbEx.sln
+
+    - name: Build test project and dependencies
+      run: dotnet build tests/DbEx.Test/DbEx.Test.csproj --framework net${{ matrix.version }} --no-restore
+
+    - name: Build tooling
+      if: matrix.version == '10.0' || matrix.version == '11.0'
+      run: dotnet build tools/DbEx.Tooling.Console/DbEx.Tooling.Console.csproj --framework net${{ matrix.version }} --no-restore
+
+    - name: Test build-output cleanup
+      if: matrix.version == '11.0'
+      run: pwsh -NoProfile -File tests/clean-build-outputs.Tests.ps1
 
     - name: Start databases (SQL Server, MySQL, Postgres)
+      id: databases
       run: docker compose up -d --build --wait --wait-timeout 180
 
-    - name: Set EnvVar for Test
-      run: |
-        echo "DbEx_ConnectionStrings__NoneDb=Data Source=localhost, 1433;Initial Catalog=DbEx.None;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
-        echo "DbEx_ConnectionStrings__ErrorDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Error;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
-        echo "DbEx_ConnectionStrings__EmptyDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Empty;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
-        echo "DbEx_ConnectionStrings__ConsoleDb=Data Source=localhost, 1433;Initial Catalog=DbEx.Console;User id=sa;Password=yourStrong(!)Password;TrustServerCertificate=true" >> $GITHUB_ENV
-        echo "DbEx_ConnectionStrings__MySqlDb=Server=localhost; Port=3306; Database=dbex_test; Uid=root; Pwd=yourStrong#!Password;" >> $GITHUB_ENV
-        echo "DbEx_ConnectionStrings__PostgresDb=Server=localhost; Port=5432; Database=dbex_test; Username=postgres; Pwd=yourStrong#!Password; Pooling=false" >> $GITHUB_ENV
-        
     - name: Test
-      run: dotnet test --no-build --verbosity normal -p:TestTfmsInParallel=false
+      run: dotnet test tests/DbEx.Test/DbEx.Test.csproj --framework net${{ matrix.version }} --no-build --verbosity normal
+
+    - name: Show database logs on failure
+      if: failure() && steps.databases.outcome != 'skipped'
+      run: |
+        docker compose ps -a
+        docker compose logs --no-color
+
+    - name: Stop databases
+      if: always() && steps.databases.outcome != 'skipped'
+      run: docker compose down --volumes --remove-orphans
