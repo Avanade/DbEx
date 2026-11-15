@@ -14,7 +14,7 @@ the next build; the trade-off is losing incremental-build state, so that build i
 Use -WhatIf to preview what would be removed.
 
 .PARAMETER Configuration
-The build configurations to remove. Defaults to Debug and Release.
+The build configurations to remove, as single directory names. Defaults to Debug and Release.
 
 .PARAMETER ShutdownBuildServers
 Shuts down MSBuild/compiler build servers first to release any file locks.
@@ -33,6 +33,21 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $Configuration -or $Configuration.Count -eq 0) {
+    throw "At least one configuration directory name is required."
+}
+
+foreach ($config in $Configuration) {
+    if ([string]::IsNullOrWhiteSpace($config) -or
+        $config -in @(".", "..") -or
+        [IO.Path]::IsPathRooted($config) -or
+        $config -match '[\\/:]' -or
+        $config -match '[. ]$' -or
+        $config.IndexOfAny([IO.Path]::GetInvalidFileNameChars()) -ge 0) {
+        throw "Invalid configuration directory name: '$config'."
+    }
+}
 
 $repoRoot = $PSScriptRoot
 $searchRoots = @("src", "tests", "tools") |
