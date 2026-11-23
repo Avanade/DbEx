@@ -52,10 +52,6 @@ public sealed class MySqlMigrationConsole : MigrationConsoleBase<MySqlMigrationC
         Logger?.LogInformation("{help}", "Inspect command and argument(s):");
         Logger?.LogInformation("{help}", "  inspect <table1> <table2>...  Inspects one or more database tables.");
         Logger?.LogInformation("{help}", string.Empty);
-        Logger?.LogInformation("{help}", "Script command and argument(s):");
-        Logger?.LogInformation("{help}", "  script [default]              Creates a default (empty) SQL script.");
-        Logger?.LogInformation("{help}", "  script alter <table>          Creates a SQL script to perform an ALTER TABLE.");
-        Logger?.LogInformation("{help}", "  script create <table>         Creates a SQL script to perform a CREATE TABLE.");
-        Logger?.LogInformation("{help}", "  script refdata <table>        Creates a SQL script to perform a CREATE TABLE as reference data.");
+        WriteScriptTemplateHelp("mysql", typeof(MySqlMigration).Assembly);
     }
 }

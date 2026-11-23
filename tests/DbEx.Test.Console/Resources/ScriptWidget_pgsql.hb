@@ -1,0 +1,6 @@
+{{! COMMAND: script widget <Schema> <Table> }}
+{{! HELP: Exports the external PostgreSQL widget template. }}
+{{! FILENAME:create-[lower (lookup Parameters 'Param1')]-[lower (lookup Parameters 'Param2')]-table }}
+{{! PARAM:Param1=Schema }}
+{{! PARAM:Param2=Widget }}
+CREATE TABLE "{{lookup Parameters 'Param1'}}"."{{lookup Parameters 'Param2'}}" ("Id" INTEGER NOT NULL);

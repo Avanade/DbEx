@@ -1,4 +1,6 @@
 ﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
+{{! COMMAND: script create <table> }}
+{{! HELP: Creates a SQL script to perform a CREATE TABLE. }}
 {{! FILENAME:create-[lower (lookup Parameters 'Param1')]-table }}
 {{! PARAM:Param1=Name }}
 -- Create table: `{{lookup Parameters 'Param1'}}`

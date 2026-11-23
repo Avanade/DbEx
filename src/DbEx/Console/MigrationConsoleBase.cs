@@ -94,7 +94,13 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
 
         // Set up the app.
         using var app = new CommandLineApplication(PhysicalConsole.Singleton) { Name = AppName, Description = AppTitle };
-        _helpOption = app.HelpOption();
+        // The standard help option stops parsing immediately, ignoring resource options that follow it.
+        _helpOption = app.Option("-?|-h|--help", "Show help information.", CommandOptionType.NoValue);
+        app.OnParsingComplete(_ =>
+        {
+            if (_helpOption.HasValue())
+                app.ShowHelp(usePager: false);
+        });
 
         _commandArg = app.Argument<MigrationCommand>("command", "Database migration command (see https://github.com/Avanade/dbex#commands-functions).").IsRequired();
         ConsoleOptions.Add(nameof(OnRamp.CodeGeneratorDbArgsBase.ConnectionString), app.Option("-cs|--connection-string", "Database connection string.", CommandOptionType.SingleValue));
@@ -126,17 +132,9 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
                 Args.SchemaOrder.AddRange(so.Values.Where(x => !string.IsNullOrEmpty(x)).OfType<string>().Distinct());
             }
 
-            UpdateStringOption(nameof(MigrationArgsBase.OutputDirectory), v => Args.OutputDirectory = new DirectoryInfo(v));
-
-            var vr = ValidateMultipleValue(nameof(MigrationArgsBase.Assemblies), ctx, (ctx, co) => new AssemblyValidator(Args).GetValidationResult(co, ctx));
+            var vr = ApplyResourceOptions(ctx);
             if (vr != ValidationResult.Success)
                 return vr;
-
-            UpdateBooleanOption(EntryAssemblyOnlyOptionName, () =>
-            {
-                Args.ClearAssemblies();
-                Args.AddAssembly(Assembly.GetEntryAssembly()!);
-            });
 
             vr = ValidateMultipleValue(nameof(MigrationArgsBase.Parameters), ctx, (ctx, co) => new ParametersValidator(Args).GetValidationResult(co, ctx));
             if (vr != ValidationResult.Success)
@@ -149,7 +147,14 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
             {
                 for (int i = 0; i < _additionalArgs.Values.Count; i++)
                 {
-                    Args.Parameters.Add($"Param{i}", _additionalArgs.Values[i]);
+                    var key = $"Param{i}";
+                    if (Args.MigrationCommand.HasFlag(MigrationCommand.Script) && Args.Parameters.TryGetValue(key, out var existing))
+                    {
+                        if (!string.Equals(existing?.ToString(), _additionalArgs.Values[i], StringComparison.Ordinal))
+                            return new ValidationResult($"Script parameter '{key}' has conflicting positional and named values. Specify it only once.");
+                    }
+                    else
+                        Args.Parameters.Add(key, _additionalArgs.Values[i]);
                 }
             }
 
@@ -214,7 +219,23 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
             var result = await app.ExecuteAsync(args, cancellationToken).ConfigureAwait(false);
 
             if (result == 0 && _helpOption.HasValue())
+            {
+                var validation = ApplyResourceOptions(new ValidationContext(app));
+                if (validation != ValidationResult.Success)
+                {
+                    Logger?.LogError("{Content}", validation?.ErrorMessage);
+                    return 1;
+                }
+
+                validation = ValidateMultipleValue(nameof(MigrationArgsBase.Parameters), new ValidationContext(app), (ctx, option) => new ParametersValidator(Args).GetValidationResult(option, ctx));
+                if (validation != ValidationResult.Success)
+                {
+                    Logger?.LogError("{Content}", validation?.ErrorMessage);
+                    return 1;
+                }
+
                 OnWriteHelp();
+            }
 
             return result;
         }
@@ -223,6 +244,56 @@ public abstract class MigrationConsoleBase(MigrationArgsBase args)
             Args.Logger?.LogError("{Content}", cpex.Message);
             Args.Logger?.LogError("{Content}", string.Empty);
             return 1;
+        }
+        catch (CodeGenException ex)
+        {
+            Logger?.LogError("{Content}", ex.Message);
+            return 2;
+        }
+    }
+
+    /// <summary>
+    /// Applies resource options for both execution and help, which bypasses normal validation.
+    /// </summary>
+    private ValidationResult ApplyResourceOptions(ValidationContext context)
+    {
+        UpdateStringOption(nameof(MigrationArgsBase.OutputDirectory), v => Args.OutputDirectory = new DirectoryInfo(v));
+        if (GetCommandOption(nameof(MigrationArgsBase.OutputDirectory)).HasValue() && Args.OutputDirectory != null && !Directory.Exists(Args.OutputDirectory.FullName))
+            return new ValidationResult($"Output directory '{Args.OutputDirectory.FullName}' does not exist.");
+
+        var result = ValidateMultipleValue(nameof(MigrationArgsBase.Assemblies), context, (ctx, option) => new AssemblyValidator(Args).GetValidationResult(option, ctx));
+        if (result != ValidationResult.Success)
+            return result;
+
+        UpdateBooleanOption(EntryAssemblyOnlyOptionName, () =>
+        {
+            Args.ClearAssemblies();
+            Args.AddAssembly(Assembly.GetEntryAssembly()!);
+        });
+
+        return ValidationResult.Success!;
+    }
+
+    /// <summary>
+    /// Writes provider-specific Script help from the effective template resources.
+    /// </summary>
+    /// <param name="suffix">The provider script suffix.</param>
+    /// <param name="providerAssembly">Provider assembly to probe after explicitly registered assemblies.</param>
+    protected void WriteScriptTemplateHelp(string suffix, Assembly providerAssembly)
+    {
+        var templates = ScriptTemplate.Discover(suffix, Args, providerAssembly, [providerAssembly]);
+        var output = Args.OutputDirectory ?? new DirectoryInfo(CodeGenConsole.GetBaseExeDirectory());
+        var width = templates.Count == 0 ? 0 : templates.Max(x => x.Command.Length);
+        Logger?.LogInformation("{help}", "Script command and argument(s):");
+        foreach (var template in templates)
+        {
+            var parameters = template.ResolveParameters(Args.CreateStringParameters(), output, out var schemaFromConfiguration);
+            Logger?.LogInformation("{help}", $"  {template.Command.PadRight(width)}  {template.Help}");
+            if (template.Defaults.Count > 0)
+            {
+                var defaults = template.Defaults.Select(x => $"{x.Key}={parameters[x.Key] ?? "(null)"}{(x.Value == "Schema" && schemaFromConfiguration && !Args.Parameters.ContainsKey(x.Key) ? " (dbex.yaml schema)" : string.Empty)}");
+                Logger?.LogInformation("{help}", $"    Defaults: {string.Join(", ", defaults)}");
+            }
         }
     }
 

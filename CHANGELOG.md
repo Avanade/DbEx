@@ -2,6 +2,11 @@
 
 Represents the **NuGet** versions.
 
+## v3.5.0
+- *Enhancement:* Discover provider-specific `Script{Name}` templates from registered assemblies and local resources, with template-owned `COMMAND`/`HELP` metadata and effective defaults in database-independent CLI help.
+- *Enhancement:* Resolve omitted literal `Schema` parameter defaults from top-level `dbex.yaml` schema when available; reject invalid configuration when needed and otherwise retain existing literal defaults.
+- *Fixed:* Script exports use deterministic Script-only source precedence and create-new writes, preventing collisions from overwriting application-owned migration snapshots.
+
 ## v3.4.0
 - *Enhancement:* Added `net11.0` support across builds, tests and NuGet packages.
 - *Fixed:* Updated the `MySqlConnector` transitive dependency to `2.6.1` to address [GHSA-473q-m89c-ghf8](https://github.com/advisories/GHSA-473q-m89c-ghf8).
