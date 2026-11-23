@@ -12,6 +12,7 @@ using NUnit.Framework;
 using OnRamp.Utility;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -81,6 +82,60 @@ public class ScriptProvisioningTest
         Assert.That(await migrator.CreateScriptAsync("wIdGeT", supplied), Is.True);
         Assert.That(File.ReadAllText(ExportedFile().FullName), Does.Contain($"[{schema}].[{table}]"));
         Assert.That(supplied.Count, Is.EqualTo(2));
+    }
+
+    [TestCase("dictionary")]
+    [TestCase("sorted")]
+    [TestCase("read-only")]
+    public async Task CaseInsensitiveInputs_PreserveComparerAndOverrideDefaults(string kind)
+    {
+        File.WriteAllText(Path.Combine(_directory.FullName, "dbex.yaml"), "schema: [");
+        var values = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) { ["param1"] = "Sales", ["param2"] = "Orders" };
+        IDictionary<string, string?> supplied = kind switch
+        {
+            "sorted" => new SortedDictionary<string, string?>(values, StringComparer.OrdinalIgnoreCase),
+            "read-only" => new ReadOnlyDictionary<string, string?>(values),
+            _ => values
+        };
+        using var migrator = CreateMigrator("sql", CreateArgs());
+        Assert.That(await migrator.CreateScriptAsync("widget", supplied), Is.True);
+        Assert.That(File.ReadAllText(ExportedFile().FullName), Does.Contain("[Sales].[Orders]"));
+        Assert.That(supplied.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task CaseSensitiveInputs_KeepDistinctDefaultKeys()
+    {
+        var supplied = new Dictionary<string, string?> { ["param1"] = "Sales" };
+        using var migrator = CreateMigrator("sql", CreateArgs());
+        Assert.That(await migrator.CreateScriptAsync("widget", supplied), Is.True);
+        Assert.That(File.ReadAllText(ExportedFile().FullName), Does.Contain("[Schema].[Widget]"));
+        Assert.That(supplied.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task ReadOnlyInputs_PreserveComparerForUndeclaredParameters()
+    {
+        File.WriteAllText(Path.Combine(_directory.FullName, "ScriptCustom_sql.hbs"),
+            "{{! PARAM:Param1=Schema }}\n-- {{lookup Parameters 'Param1'}}: {{lookup Parameters 'Extra'}}");
+        File.WriteAllText(Path.Combine(_directory.FullName, "dbex.yaml"), "schema: [");
+        var values = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) { ["param1"] = "Sales", ["extra"] = "value" };
+        var supplied = new ReadOnlyDictionary<string, string?>(values);
+        using var migrator = CreateMigrator("sql", CreateArgs());
+        Assert.That(await migrator.CreateScriptAsync("custom", supplied), Is.True);
+        Assert.That(File.ReadAllText(ExportedFile().FullName), Does.Contain("-- Sales: value"));
+        Assert.That(supplied.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task ReadOnlyInputs_FillDefaultsWithoutChangingCaller()
+    {
+        var values = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) { ["param1"] = "Sales" };
+        var supplied = new ReadOnlyDictionary<string, string?>(values);
+        using var migrator = CreateMigrator("sql", CreateArgs());
+        Assert.That(await migrator.CreateScriptAsync("widget", supplied), Is.True);
+        Assert.That(File.ReadAllText(ExportedFile().FullName), Does.Contain("[Sales].[Widget]"));
+        Assert.That(supplied.Count, Is.EqualTo(1));
     }
 
     [Test]
@@ -317,6 +372,11 @@ public class ScriptProvisioningTest
         async Task<(int ExitCode, string Output)> RunConsoleAsync(params string[] arguments)
         {
             var start = new ProcessStartInfo("dotnet") { RedirectStandardOutput = true, RedirectStandardError = true };
+            start.ArgumentList.Add("exec");
+            start.ArgumentList.Add("--depsfile");
+            start.ArgumentList.Add(Path.ChangeExtension(typeof(ScriptProvisioningTest).Assembly.Location, ".deps.json"));
+            start.ArgumentList.Add("--runtimeconfig");
+            start.ArgumentList.Add(Path.ChangeExtension(typeof(ScriptProvisioningTest).Assembly.Location, ".runtimeconfig.json"));
             start.ArgumentList.Add(ExternalAssembly.Location);
             foreach (var argument in arguments)
                 start.ArgumentList.Add(argument);
@@ -490,7 +550,7 @@ public class ScriptProvisioningTest
         using var migrator = CreateMigrator("sql", CreateArgs());
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
-        Assert.ThrowsAsync<OperationCanceledException>(async () => await migrator.CreateScriptAsync("widget", cancellationToken: cancellation.Token));
+        Assert.ThrowsAsync<OperationCanceledException>(new Func<Task>(async () => await migrator.CreateScriptAsync("widget", cancellationToken: cancellation.Token)));
         Assert.That(Directory.Exists(Path.Combine(_directory.FullName, "Migrations")), Is.False);
     }
 

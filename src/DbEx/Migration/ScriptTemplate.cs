@@ -173,9 +173,17 @@ internal sealed class ScriptTemplate
     /// <param name="outputDirectory">The directory containing dbex.yaml, when present.</param>
     /// <param name="schemaFromConfiguration">Indicates that a default was resolved from dbex.yaml.</param>
     /// <returns>A new parameter dictionary containing the resolved defaults.</returns>
-    public Dictionary<string, string?> ResolveParameters(IDictionary<string, string?>? parameters, DirectoryInfo outputDirectory, out bool schemaFromConfiguration)
+    public IDictionary<string, string?> ResolveParameters(IDictionary<string, string?>? parameters, DirectoryInfo outputDirectory, out bool schemaFromConfiguration)
     {
-        var resolved = parameters == null ? new Dictionary<string, string?>() : new Dictionary<string, string?>(parameters);
+        IDictionary<string, string?> resolved = parameters switch
+        {
+            Dictionary<string, string?> dictionary => new Dictionary<string, string?>(dictionary, dictionary.Comparer),
+            SortedDictionary<string, string?> sorted => new SortedDictionary<string, string?>(sorted, sorted.Comparer),
+            SortedList<string, string?> sorted => new SortedList<string, string?>(sorted, sorted.Comparer),
+            null => new Dictionary<string, string?>(),
+            _ => new ParameterOverlay(parameters)
+        };
+
         schemaFromConfiguration = false;
         string? schema = null;
         foreach (var parameter in Defaults)
@@ -190,10 +198,55 @@ internal sealed class ScriptTemplate
                 value = schema;
             }
 
-            resolved.Add(parameter.Key, value);
+            if (resolved is ParameterOverlay overlay)
+                overlay.AddDefault(parameter.Key, value);
+            else
+                resolved.Add(parameter.Key, value);
         }
 
         return resolved;
+    }
+
+    // IDictionary does not expose its comparer; delegate lookups to the caller and keep defaults separate.
+    private sealed class ParameterOverlay(IDictionary<string, string?> supplied) : IDictionary<string, string?>
+    {
+        private readonly Dictionary<string, string?> _defaults = [];
+
+        public string? this[string key]
+        {
+            get => supplied.TryGetValue(key, out var value) ? value : _defaults[key];
+            set => throw new NotSupportedException();
+        }
+
+        public ICollection<string> Keys => supplied.Keys.Concat(_defaults.Keys).ToArray();
+        public ICollection<string?> Values => supplied.Values.Concat(_defaults.Values).ToArray();
+        public int Count => supplied.Count + _defaults.Count;
+        public bool IsReadOnly => true;
+
+        public void AddDefault(string key, string? value)
+        {
+            if (ContainsKey(key))
+                throw new ArgumentException($"A parameter with the key '{key}' already exists.", nameof(key));
+
+            _defaults.Add(key, value);
+        }
+
+        public bool ContainsKey(string key) => supplied.ContainsKey(key) || _defaults.ContainsKey(key);
+        public bool TryGetValue(string key, out string? value) => supplied.TryGetValue(key, out value) || _defaults.TryGetValue(key, out value);
+        public IEnumerator<KeyValuePair<string, string?>> GetEnumerator() => supplied.Concat(_defaults).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public void Add(string key, string? value) => throw new NotSupportedException();
+        public void Add(KeyValuePair<string, string?> item) => throw new NotSupportedException();
+        public bool Contains(KeyValuePair<string, string?> item) => TryGetValue(item.Key, out var value) && EqualityComparer<string?>.Default.Equals(value, item.Value);
+        public void CopyTo(KeyValuePair<string, string?>[] array, int arrayIndex)
+        {
+            foreach (var item in this)
+                array[arrayIndex++] = item;
+        }
+
+        public bool Remove(string key) => throw new NotSupportedException();
+        public bool Remove(KeyValuePair<string, string?> item) => throw new NotSupportedException();
+        public void Clear() => throw new NotSupportedException();
     }
 
     /// <summary>
