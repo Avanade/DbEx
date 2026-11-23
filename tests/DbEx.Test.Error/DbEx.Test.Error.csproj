@@ -14,6 +14,8 @@
     <EmbeddedResource Include="Migrations\001-create-test-schema.sql" />
     <EmbeddedResource Include="Migrations\002-create-test-contact-type-table.sql" />
     <EmbeddedResource Include="Migrations\003-create-test-gender-table.sql" />
+    <EmbeddedResource Include="Resources\First.hbs" LogicalName="First.Resources.ScriptAmbiguous_sql.hbs" />
+    <EmbeddedResource Include="Resources\Second.hbs" LogicalName="Second.Resources.ScriptAmbiguous_sql.hbs" />
   </ItemGroup>
 
 </Project>

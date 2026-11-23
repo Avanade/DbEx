@@ -1,0 +1,5 @@
+{{! COMMAND: script widget <Schema> <Table> }}
+{{! HELP: Widget override from the last registered assembly. }}
+{{! PARAM:Param1=Schema }}
+{{! PARAM:Param2=SecondWidget }}
+-- Second assembly: [{{lookup Parameters 'Param1'}}].[{{lookup Parameters 'Param2'}}]

@@ -17,6 +17,7 @@
     <EmbeddedResource Include="Resources\MySqlInspect.md" />
     <EmbeddedResource Include="Resources\PostgresInspect.md" />
     <EmbeddedResource Include="Resources\SqlServerInspect.md" />
+    <EmbeddedResource Include="Resources\Script*.hb*" />
   </ItemGroup>
 
   <ItemGroup>

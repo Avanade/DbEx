@@ -9,6 +9,7 @@
     <EmbeddedResource Include="Schema\**\*" />
     <EmbeddedResource Include="Migrations\**\*" />
     <EmbeddedResource Include="Data\**\*" />
+    <EmbeddedResource Include="Resources\Script*.hb*" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,6 @@
 ﻿{{! Copyright (c) Avanade. Licensed under the MIT License. See https://github.com/Avanade/DbEx }}
+{{! COMMAND: script refdata <table> }}
+{{! HELP: Creates a SQL script to perform a CREATE TABLE as reference data. }}
 {{! FILENAME:create-[lower (lookup Parameters 'Param1')]-refdata-table }}
 {{! PARAM:Param1=Name }}
 -- Create Reference Data table: `{{lookup Parameters 'Param1'}}`

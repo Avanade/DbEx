@@ -7,7 +7,6 @@ public abstract class DatabaseMigrationBase : IDisposable
 {
     private const string NothingFoundText = "  ** Nothing found. **";
     private const string OnDatabaseCreateName = "post.database.create";
-    private static readonly string[] _splitters = ["\r\n", "\r", "\n"];
     private HandlebarsCodeGenerator? _dataCodeGen;
     private bool _hasInitialized = false;
 
@@ -308,7 +307,10 @@ public abstract class DatabaseMigrationBase : IDisposable
     /// <param name="summary">Optional summary text appended to the complete log text.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <remarks>This will also catch any unhandled exceptions and log accordingly.</remarks>
-    protected async Task<bool> CommandExecuteAsync(string title, Func<CancellationToken, Task<bool>> action, Func<string>? summary, CancellationToken cancellationToken)
+    protected Task<bool> CommandExecuteAsync(string title, Func<CancellationToken, Task<bool>> action, Func<string>? summary, CancellationToken cancellationToken)
+        => CommandExecuteAsync(title, action, summary, cancellationToken, propagateCancellation: false);
+
+    private async Task<bool> CommandExecuteAsync(string title, Func<CancellationToken, Task<bool>> action, Func<string>? summary, CancellationToken cancellationToken, bool propagateCancellation)
     {
         Logger.LogInformation("{Content}", string.Empty);
         Logger.LogInformation("{Content}", new string('-', 80));
@@ -325,6 +327,10 @@ public abstract class DatabaseMigrationBase : IDisposable
             Logger.LogInformation("{Content}", string.Empty);
             Logger.LogInformation("{Content}", $"Complete. [{sw.Elapsed.TotalMilliseconds}ms{summary?.Invoke() ?? string.Empty}]");
             return true;
+        }
+        catch (OperationCanceledException) when (propagateCancellation && cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (DbException dbex)
         {
@@ -961,7 +967,7 @@ public abstract class DatabaseMigrationBase : IDisposable
     public async Task<bool> CreateScriptAsync(string? name = null, IDictionary<string, string?>? parameters = null, CancellationToken cancellationToken = default)
     {
         PreExecutionInitialization();
-        return await CommandExecuteAsync("DATABASE SCRIPT: Create a new database script...", async ct => await CreateScriptInternalAsync(name, parameters, ct).ConfigureAwait(false), null, cancellationToken).ConfigureAwait(false);
+        return await CommandExecuteAsync("DATABASE SCRIPT: Create a new database script...", async ct => await CreateScriptInternalAsync(name, parameters, ct).ConfigureAwait(false), null, cancellationToken, propagateCancellation: true).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -970,61 +976,57 @@ public abstract class DatabaseMigrationBase : IDisposable
     private async Task<bool> CreateScriptInternalAsync(string? name, IDictionary<string, string?>? parameters, CancellationToken cancellationToken)
     {
         name ??= "Default";
-        var rn = $"Script{name}_{SchemaConfig.ScriptSuffix}";
+        cancellationToken.ThrowIfCancellationRequested();
+        var providerType = GetType();
+        while (providerType.BaseType != null && providerType.BaseType != typeof(DatabaseMigrationBase))
+            providerType = providerType.BaseType;
 
-        // Find the resource.
-        using var sr = StreamLocator.GetResourcesStreamReader(rn, [.. ArtefactResourceAssemblies], StreamLocator.HandlebarsExtensions).StreamReader;
-
-        if (sr == null)
+        var template = ScriptTemplate.Discover(SchemaConfig.ScriptSuffix, Args, providerType.Assembly, ArtefactResourceAssemblies)
+            .FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        if (template == null)
         {
-            Logger.LogError("{Content}", $"The Script '{name}' does not exist.");
+            Logger.LogError("{Content}", $"The Script '{name}' does not exist. Use --help to list available scripts.");
             return false;
         }
 
-        // Read the resource stream.
-#if NET7_0_OR_GREATER
-        var txt = await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-#else
-        var txt = await sr.ReadToEndAsync().ConfigureAwait(false);
-#endif
-
-        // Extract the filename from content if specified.
-        var data = new { Parameters = parameters ?? new Dictionary<string, string?>() };
-        var lines = txt.Split(_splitters, StringSplitOptions.None);
-        string fn = "new-script";
-        foreach (var line in lines)
-        {
-            var lt = line.Trim();
-            if (lt.StartsWith("{{! FILENAME:", StringComparison.InvariantCultureIgnoreCase) && lt.EndsWith("}}", StringComparison.InvariantCultureIgnoreCase))
-            {
-                fn = lt[13..^2].Trim();
-                continue;
-            }
-
-            if (lt.StartsWith("{{! PARAM:", StringComparison.InvariantCultureIgnoreCase) && lt.EndsWith("}}", StringComparison.InvariantCultureIgnoreCase))
-            {
-                var pv = lt[10..^2].Trim();
-                if (string.IsNullOrEmpty(pv))
-                    continue;
-
-                var parts = pv.Split('=', StringSplitOptions.RemoveEmptyEntries);
-                data.Parameters.TryAdd(parts[0], parts.Length <= 1 ? null : parts[1].Trim());
-            }
-        }
-
-        // Update the filename.
         if (Args.OutputDirectory == null)
             throw new InvalidOperationException("Args.OutputDirectory has not been correctly determined.");
 
-        fn = $"{DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture)}-{fn.Replace("[", "{{").Replace("]", "}}")}.{SchemaConfig.ScriptSuffix}";
-        fn = Path.Combine(Args.OutputDirectory.FullName, MigrationsNamespace, new HandlebarsCodeGenerator(fn).Generate(data).Replace(" ", "-").ToLowerInvariant());
-        var fi = new FileInfo(fn);
+        var data = new { Parameters = template.ResolveParameters(parameters, Args.OutputDirectory, out _) };
+        var fn = $"{DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture)}-{template.FileName.Replace("[", "{{").Replace("]", "}}")}.{SchemaConfig.ScriptSuffix}";
+        fn = new HandlebarsCodeGenerator(fn).Generate(data).Replace(" ", "-").ToLowerInvariant();
+        if (fn.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || fn.Contains('/') || fn.Contains('\\'))
+            throw new CodeGenException($"Script template '{template.Source}' rendered an invalid migration filename '{fn}'. Use simple identifier inputs.");
 
-        // Generate the script content and write to file system.
+        var content = new HandlebarsCodeGenerator(template.Content).Generate(data);
+        var fi = new FileInfo(Path.Combine(Args.OutputDirectory.FullName, MigrationsNamespace, fn));
         if (!fi.Directory!.Exists)
             fi.Directory.Create();
 
-        await File.WriteAllTextAsync(fi.FullName, new HandlebarsCodeGenerator(txt).Generate(data), cancellationToken).ConfigureAwait(false);
+        FileStream stream;
+        try
+        {
+            stream = new FileStream(fi.FullName, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, useAsync: true);
+        }
+        catch (IOException) when (File.Exists(fi.FullName))
+        {
+            throw new CodeGenException($"Script file '{fi.FullName}' already exists and was not changed. Retry with a different timestamp or filename.");
+        }
+
+        try
+        {
+            await using (stream.ConfigureAwait(false))
+            {
+                using var writer = new StreamWriter(stream, new UTF8Encoding(false), 4096, leaveOpen: true);
+                await writer.WriteAsync(content.AsMemory(), cancellationToken).ConfigureAwait(false);
+                await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch
+        {
+            File.Delete(fi.FullName);
+            throw;
+        }
 
         Logger.LogWarning("{Content}", $"Script file created: {fi.FullName}");
         return true;

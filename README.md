@@ -258,12 +258,12 @@ To simplify the process for the developer _DbEx_ enables the creation of new mig
 
 This requires the usage of the `Script` command, plus zero or more optional arguments where the first is the sub-command (these are will depend on the script being created). The optional arguments must appear in the order listed; where not specified it will default within the script file. Depending on the database provider not all of the following will be supported.
 
-The following shows the `Script` sub-commands for SQL Server. Use `--help` to see the commands available at rubntime.
+The following shows the built-in `Script` sub-commands for SQL Server. Use `--help` to discover the effective templates, their template-defined command/help text, and parameter defaults at runtime, including templates from registered assemblies. Help does not require a connection string or connect to a database.
 
 Sub-command | Argument(s) | Description
 -|-|-
 [N/A](./src/DbEx.SqlServer/Resources/ScriptDefault_sql.hbs) | N/A | Creates a new empty skeleton script file.
-[`Schema`](./src/DbEx.SqlServer/Resources/ScriptSchema_sql.hbs) | `Schema` and `Table` | Creates a new table create script file for the named schema and table.
+[`Schema`](./src/DbEx.SqlServer/Resources/ScriptSchema_sql.hbs) | `Schema` | Creates a new schema create script file.
 [`Create`](./src/DbEx.SqlServer/Resources/ScriptCreate_sql.hbs) | `Schema` and `Table` | Creates a new table create script file for the named schema and table.
 [`RefData`](./src/DbEx.SqlServer/Resources/ScriptRefData_sql.hbs) | `Schema` and `Table` | Creates a new reference data table create script file for the named schema and table.
 [`Alter`](./src/DbEx.SqlServer/Resources/ScriptAlter_sql.hbs) | `Schema` and `Table` | Creates a new table alter script file for the named schema and table.
@@ -274,13 +274,65 @@ Examples as follows.
 
 ```
 dotnet run script
-dotent run script schema Foo
+dotnet run script schema Foo
 dotnet run script create Foo Bar
 dotnet run script refdata Foo Gender
 dotnet run script alter Foo Bar
 dotnet run script cdcdb
 dotnet run script cdc Foo Bar
 ```
+
+##### Package-owned templates
+
+Packages can embed templates in `Resources\Script{Name}_{provider}.hbs` (or `.hb`), where the **Script prefix is required** and the provider suffix is `sql`, `pgsql`, or `mysql`. For example, embed `Resources\ScriptWidget_sql.hbs` with a manifest resource name such as `Example.Database.Resources.ScriptWidget_sql.hbs`:
+
+```handlebars
+{{! COMMAND: script widget <Schema> <Table> }}
+{{! HELP: Creates a SQL script for a widget table. }}
+{{! FILENAME:create-[lower (lookup Parameters 'Param1')]-[lower (lookup Parameters 'Param2')]-table }}
+{{! PARAM:Param1=Schema }}
+{{! PARAM:Param2=Widget }}
+CREATE TABLE [{{lookup Parameters 'Param1'}}].[{{lookup Parameters 'Param2'}}] ([Id] INT NOT NULL);
+```
+
+`COMMAND` and `HELP` define the displayed usage and description; they do not register an alternative command name. The command must match the name derived from the resource; `script [default]` is supported for `ScriptDefault`. Existing templates without this metadata remain exportable and appear as `script <name>` without a description. `FILENAME` retains its existing bracket-to-Handlebars expression syntax, and `PARAM:Name=Value` supplies a literal fallback (not an argument label). Bare or empty PARAM defaults remain null.
+
+Register the package assembly using the existing APIs:
+
+```csharp
+var args = new MigrationArgs(MigrationCommand.Script, connectionString)
+    .AddAssembly(typeof(PackageMarker).Assembly);
+// Alternatively, use the migration console's .Assemblies(typeof(PackageMarker).Assembly).
+```
+
+The package must be referenced/copied into the application's output. CLI registration also accepts an assembly path or assembly name using `-a|--assembly`:
+
+```text
+dotnet run -- --help --assembly Example.Database --output .
+dotnet run -- script widget --assembly Example.Database
+dotnet run -- script widget Sales Orders --assembly Example.Database
+dotnet run -- script widget -p Param1=Sales -p Param2=Orders --assembly Example.Database
+```
+
+`Param0` selects the script; subsequent arguments fill `Param1`, `Param2`, etc. Arguments cannot skip a positional slot, but `-p Param2=Orders` can override only that parameter. Conflicting positional and named values for the same Script parameter are rejected; equal values are accepted. Repeated `-p` values retain their existing last-value-wins behavior. Script names are case-insensitive.
+
+For **an omitted parameter whose literal template default is exactly `Schema`**, resolution is:
+
+1. Explicit caller input (positional, named, or API).
+2. The top-level string `schema` in `dbex.yaml` under the configured output directory.
+3. Literal `Schema` when the file or key is absent.
+
+Explicit input, including explicit `Schema` or null, is not replaced. Other defaults such as `Name` and `Outbox` are unchanged. Existing built-in templates with a `Schema` default participate in this lookup; the built-in `script schema` template defaults to `Name`, so it is unchanged. No YAML file is required for explicit-only exports or other literal defaults.
+
+YAML is read only when a Schema default needs resolution. At that point malformed YAML, duplicate keys, a non-mapping document, or a present blank/null/non-string `schema` produces an error before writing a migration. No CodeGen, database inspection, or configuration rewrite occurs. Help uses the same resolution rules to display effective defaults and honors assembly, output, entry-assembly-only, and named parameter options even after `--help`.
+
+Help and export use the same Script-only precedence: current-directory files, then its `Resources` directory, then registered assemblies in `Args.ProbeAssemblies` order (last registered first), then remaining migrator/provider fallbacks. The provider's built-in assembly remains a fallback even if the migrator adds it to the registered list. Each source prefers an extensionless template, then `.hb`, then `.hbs`. A higher-priority source wins regardless of extension; equal-priority ambiguous names are errors. Only the effective winner is listed in help. This does not change resolution of unrelated migration infrastructure resources, and no arbitrary loaded assemblies are scanned.
+
+Use simple, unquoted schema/table identifier inputs such as `Sales`, `OrderHistory`, or `order_history`. The existing Handlebars renderer inserts raw values: it does **not** SQL-escape quotes, brackets, or backticks inside identifiers. Templates retain provider-specific identifier delimiters; names containing those delimiters are unsupported. Rendered migration filenames must be valid single filenames.
+
+Exports use the existing UTC timestamp/provider extension convention under the application's migration directory and **never execute SQL**. A filename collision fails without overwriting the earlier file. Review and check in each export as an application-owned snapshot; once applied, it is immutable. A package upgrade requires a new export, not modification or automatic reapplication of an old migration.
+
+These discovery/default-resolution enhancements are available starting with **DbEx 3.5.0**; 3.4.0 packages do not contain them. A consuming package such as CoreEx still needs to provide its own provider-specific templates and integration tests; DbEx does not provision that package's schema automatically.
 
 #### Execute command
 
